@@ -1,0 +1,385 @@
+class HA_CoreAI : PlayerPawn
+{
+	actor MyPlayer, attacker;
+	string HexenType;
+	int HexenTypeNumeric;
+	bool gotType;
+	
+	int CountdownToDeath;
+	bool CertainDeath;
+	
+	virtual void SearchForPlayer()
+	{
+		if (MyPlayer) return;
+		
+		BlockThingsIterator it = BlockThingsIterator.Create (self, 1024); // 1024
+		
+		while (it.Next ()) 
+		{
+			let next = it.Thing;
+			
+			if (!next) return;
+			
+			if (!CheckSight (next, SF_SeePastShootableLines)) // Not in sight
+				continue;
+			
+			if (next is "PlayerPawn" && next != self && !(next is "HA_CoreAI"))
+			{
+				MyPlayer = next;
+				SetStateLabel("See");
+			}
+		}
+	}
+	
+	static const string HexenListName[] =
+	{ // Uses actual PlayerClass names
+		"FighterPlayer",
+		"ClericPlayer",
+		"MagePlayer"
+	};
+	
+	static const string HexenAllyList[] =
+	{ // Uses actual PlayerClass names
+		"Fighter",
+		"Cleric",
+		"Mage"
+	};
+	
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		SearchForPlayer();
+		spawn("Teleportfog",pos);
+	}
+	
+	virtual void A_MovementChase(actor targ)
+	{
+		int oldDir = moveDir;
+		moveDir = (8 * AngleTo(targ, true) / 360) % 8;
+		if (!TryWalk())
+		{
+			moveDir = oldDir;
+			if(!TryWalk())
+			{
+				for (int i = 1; i <= 4; ++i)
+				{
+					moveDir = (oldDir + i) % 8;
+					if (TryWalk())
+						break;
+		
+					moveDir = (oldDir - i) % 8;
+					if (TryWalk())
+						break;
+				}
+			}
+		}
+		
+		// Face movement direction
+		angle = 360 * moveDir / 8;
+		if (angle > 180)
+			angle -= 360;
+	}
+	
+	int TimeBeforeRandomTurn, TimeProbablyGotStuck;
+	virtual void A_FollowerChase()
+	{
+		if (target && target.bKILLED || target is "PlayerPawn")
+		{
+			target = null;
+			TimeProbablyGotStuck = 0;
+			return;
+		}
+		
+		// Follow our player
+		if (!target && MyPlayer)
+		{
+			if (Distance3D(MyPlayer) > 100)
+			{
+				vector2 PlayerPos = (MyPlayer.pos.x,MyPlayer.pos.y);
+				if (CheckSight (MyPlayer, SF_SeePastShootableLines) && CheckMove(PlayerPos, flags: PCM_NOLINES))
+				{
+					Angle = AngleTo(MyPlayer);
+					//A_Recoil(-1.75);
+				}
+				else
+				{
+					// Note: There's a small.. or rather huge chance the AI will get stuck for some reason while
+					// trying to catch up to the Player, we'll countdown to 15 and teleport it back to the Player
+					if (TimeProbablyGotStuck == 0)
+					{
+						TimeProbablyGotStuck = level.time + 35 * 15;
+					}
+					else if (level.time > TimeProbablyGotStuck)
+					{
+						SetOrigin(MyPlayer.pos+(0,0,50), TRUE);
+						spawn("teleportfog", pos);
+						TimeProbablyGotStuck = 0;
+					}
+					
+					// Move towards Player
+					A_Recoil(-3);
+					A_MovementChase(MyPlayer);
+				}
+			}
+			else
+			{
+				TimeProbablyGotStuck = 0;
+				// random angle during staying in one place
+				if (level.time > TimeBeforeRandomTurn)
+				{
+					angle += random(0,360);
+					TimeBeforeRandomTurn = level.time + 35 * 4;
+				}
+			}
+		}
+		
+		// Look for enemies
+		if (!target && LookForEnemies(false))
+		{
+			Console.Printf("Got a new target!");
+		}
+		
+		// Active target we have
+		if (target && !target.bKILLED)
+		{
+			// target is not in line of sight, look for a new target
+			// (so they won't mindlessly attack walls)
+			if (!(CheckSight (target, SF_SeePastShootableLines)))
+			{
+				target = null;
+				return;
+			}
+			
+			FLineTraceData lineData;
+			
+			A_MovementChase(target);
+			
+			// Let's check if we can move right or left, is there a better way to do this?
+			if (InStateSequence(target.CurState, target.ResolveState("Missile")) || InStateSequence(target.CurState, target.ResolveState("Melee")))
+			{
+				bool HitWall1, HitWall2;
+				int ThrustValue = 10;
+				
+				LineTrace(angle+90,150,0, offsetz: 5, data: LineData);
+				if (LineData.HitType == TRACE_HitActor || LineData.HitType == TRACE_HitWall)
+				{
+					Console.Printf("hit into a wall plus");
+					Thrust(ThrustValue, Angle - 90);
+					HitWall1 = true;
+				}
+				
+				LineTrace(angle-90,150,0, offsetz: 5, data: LineData);
+				if (LineData.HitType == TRACE_HitActor || LineData.HitType == TRACE_HitWall)
+				{
+					Console.Printf("hit into a wall minus");
+					Thrust(ThrustValue, Angle + 90);
+					HitWall2 = true;
+				}
+				
+				// Not fool proof, they will still sometimes run into a projectile unfortunately
+				if (!HitWall1 && !HitWall2)
+				{
+					Thrust(ThrustValue, Angle + 90);
+				}
+			}
+			
+			// Closing in or closing out
+			if (Distance3D(target) > 150)
+				A_Recoil(-3);
+			else
+				A_Recoil(3);
+			
+			if (random[chanceshoot]() < 50 && !(InStateSequence(CurState, ResolveState("Missile"))))
+			{
+				angle = AngleTo(target, true);
+				
+				LineTrace(angle,1000,0, offsetz: 5, data: LineData);
+				
+				if (LineData.HitType == TRACE_HitActor)
+				{
+					if (LineData.HitActor is "PlayerPawn")
+					{
+						int mov = random(5,8);
+						bool LR = random(0,1);
+						if (LR)
+							Thrust(mov, Angle + 90);
+						else
+							Thrust(mov, Angle - 90);
+						return;
+					}
+				}
+				
+				double bangle = angle;
+				double slope = AimLineAttack(bangle, MISSILERANGE);
+			
+				for (int i=0 ; i<3 ; i++)
+				{
+					double ang = bangle + Random2[SPosAttack]() * (22.5/256);
+					int damage = Random[SPosAttack](1, 5) * 3;
+					LineAttack(ang, MISSILERANGE, slope, damage, "Hitscan", "Bulletpuff");
+				}
+				
+				A_StartSound("shotguy/attack", CHAN_WEAPON);
+				
+				SetStateLabel("Missile");
+			}
+		
+		}
+	}
+	
+	override int DamageMobj(Actor inflictor, Actor source, int damage, Name mod, int flags, double angle)
+	{
+		if (source)
+		{
+			attacker = source;
+		}
+		
+		if (Health > damage)
+		{
+			A_StartSound("PlayerFighterPain", CHAN_VOICE);
+		}
+		
+		return Super.DamageMobj(inflictor,source,damage,mod,flags,angle);
+	}
+	
+	virtual void A_AllyScream()
+	{
+		A_StartSound("PlayerFighterNormalDeath", CHAN_VOICE);
+	}
+	
+	override void Tick()
+	{
+		Super.Tick();
+		
+		if (MyPlayer && !gotType)
+		{
+			HexenType = "Fighter";
+			gotType = true;
+			/*
+			string PlayerClass = MyPlayer.GetClassName();
+			int i = 0;
+			bool Duplicate = false;
+			while (i < 2)
+			{
+				if (PlayerClass ~== HexenListName[i])
+					Duplicate = true;
+				else
+					Duplicate = false;
+				
+				if (!Duplicate && PlayerClass != HexenListName[i])
+				{
+					HexenType = HexenAllyList[i];
+					gotType = true;
+					HexenTypeNumeric = i;
+					break;
+				}
+				
+				i++;
+			}
+			*/
+		}
+		
+		/*
+		if (bKILLED && MyPlayer && CountdownToDeath != 0 && level.time > CountdownToDeath)
+		{
+			spawn("TeleportFog",pos);
+			Console.Printf("A dead follower has been teleported into it's dimension back...");
+			Destroy();
+		}
+		*/
+	}
+
+	Default
+	{
+		Speed 5;
+		Health 100;
+		Radius 16;
+		Height 56;
+		Mass 100;
+		PainChance 255;
+		//MONSTER;
+		//+FRIENDLY;
+		+BLOCKASPLAYER;
+		+PUSHABLE;
+		+ACTIVATEIMPACT;
+		+CANPUSHWALLS;
+		+CANUSEWALLS;
+		-ACTIVATEMCROSS;
+		+NOTELESTOMP;
+		+NOBLOCKMONST;
+		+NOTIMEFREEZE;
+		+NOFEAR;
+		+SEEINVISIBLE;
+		-COUNTKILL;
+		-ISMONSTER;
+	}
+	States
+	{
+	Spawn:
+		PLAY AAABBB 4;
+		Loop;
+	See:
+		PLAY ABCD 4 A_FollowerChase();
+		Loop;
+	Missile:
+		Goto Melee;
+	Melee:
+		PLAY EF 8;
+		Goto See;
+	Pain:
+		PLAY G 4;
+		PLAY G 4;
+		Goto See;
+	Death:
+		TNT1 A 0
+		{
+			CountdownToDeath = level.time + 35 * 5;
+		}
+		PLAY H 6;
+		PLAY I 6 A_AllyScream;
+		PLAY JK 6;
+		PLAY L 6 A_NoBlocking;
+		PLAY M 6;
+		PLAY N -1;
+		Stop;		
+	XDeath:
+		TNT1 A 0
+		{
+			CountdownToDeath = level.time + 35 * 5;
+		}
+		PLAY O 5 A_AllyScream;
+		PLAY P 5 A_SkullPop("BloodyFighterSkull");
+		PLAY R 5 A_NoBlocking;
+		PLAY STUV 5;
+		PLAY W -1;
+		Stop;
+	Ice:
+		PLAY X 5 A_FreezeDeath;
+		PLAY X 1 A_FreezeDeathChunks;
+		Wait;
+	Burn:
+		FDTH A 5 BRIGHT A_StartSound("*burndeath");
+		FDTH B 4 BRIGHT;
+		FDTH G 5 BRIGHT;
+		FDTH H 4 BRIGHT A_AllyScream;
+		FDTH I 5 BRIGHT;
+		FDTH J 4 BRIGHT;
+		FDTH K 5 BRIGHT;
+		FDTH L 4 BRIGHT;
+		FDTH M 5 BRIGHT;
+		FDTH N 4 BRIGHT;
+		FDTH O 5 BRIGHT;
+		FDTH P 4 BRIGHT;
+		FDTH Q 5 BRIGHT;
+		FDTH R 4 BRIGHT;
+		FDTH S 5 BRIGHT A_NoBlocking;
+		FDTH T 4 BRIGHT;
+		FDTH U 5 BRIGHT;
+		FDTH V 4 BRIGHT;
+		ACLO E 35 A_CheckPlayerDone;
+		Wait;
+		ACLO E 8;
+		Stop;	
+	
+	}
+}
