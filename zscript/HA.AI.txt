@@ -167,7 +167,7 @@ class HA_CoreAI : Actor
 		// Active target we have
 		if (target && !target.bKILLED)
 		{
-			if (Distance3D(MyPlayer) > 750)
+			if (Distance3D(MyPlayer) > 450)
 			{
 				if (!CDtoTele)
 				{
@@ -230,31 +230,8 @@ class HA_CoreAI : Actor
 		FLineTraceData lineData;
 		int ThrustValue = 10;
 		
-		// Oh no, they are trying to melee attack!
-		if (InStateSequence(target.CurState, target.ResolveState("Melee")))
-		{
-			if (target.target && target.target == self)
-			{
-				// Can we even dodge behind?
-				LineTrace(-angle,150,0, offsetz: 5, data: LineData);
-				if (LineData.HitType == TRACE_HitWall || LineData.HitType == TRACE_HitActor)
-				{
-					bool rr = random[ly](0,1);
-					if (rr)
-						Thrust(ThrustValue, Angle - 90);
-					else
-						Thrust(ThrustValue, Angle + 90);
-					
-					return;
-				}
-				
-				A_Recoil(4);
-				return;
-			}
-		}
-		
 		// Let's check if we can move right or left, is there a better way to do this?
-		if (InStateSequence(target.CurState, target.ResolveState("Missile")))
+		if (InStateSequence(target.CurState, target.ResolveState("Missile")) || InStateSequence(target.CurState, target.ResolveState("Melee")))
 		{
 			bool HitWall1, HitWall2;
 			
@@ -279,15 +256,37 @@ class HA_CoreAI : Actor
 			{
 				Thrust(ThrustValue, Angle + 90);
 			}
+			
+			// Oh no, they are trying to melee attack!
+			if (InStateSequence(target.CurState, target.ResolveState("Melee")))
+			{
+				if (target.target && target.target == self)
+				{
+					// Can we even dodge behind?
+					LineTrace(-angle,150,0, offsetz: 5, data: LineData);
+					if (LineData.HitType == TRACE_HitWall || LineData.HitType == TRACE_HitActor)
+					{
+						bool rr = random[ly](0,1);
+						if (rr)
+							Thrust(ThrustValue, Angle - 90);
+						else
+							Thrust(ThrustValue, Angle + 90);
+						
+						return;
+					}
+					
+					A_Recoil(4);
+				}
+			}
 		}
 	}
 	
 	virtual void A_AllyShoot()
 	{
-		if (!IsMelee)
+		if (!IsMelee) // Mage Wand
 		{
 			FLineTraceData lineData;
-			if (random[chanceshoot]() < 50 && !(InStateSequence(CurState, ResolveState("Missile"))))
+			if (random[chanceshoot]() < 75 && !(InStateSequence(CurState, ResolveState("Missile"))))
 			{
 				angle = AngleTo(target, true);
 				
@@ -303,33 +302,40 @@ class HA_CoreAI : Actor
 							Thrust(mov, Angle + 90);
 						else
 							Thrust(mov, Angle - 90);
+						
 						return;
 					}
 				}
 				
-				double bangle = angle;
-				double slope = AimLineAttack(bangle, MISSILERANGE);
-			
-				for (int i=0 ; i<3 ; i++)
+				Actor proj = A_SpawnProjectile("MageWandMissile", 55);
+				if (proj)
 				{
-					double ang = bangle + Random2[SPosAttack]() * (22.5/256);
-					int damage = Random[SPosAttack](1, 5) * 3;
-					LineAttack(ang, MISSILERANGE, slope, damage, "Hitscan", "Bulletpuff");
+					proj.bMTHRUSPECIES = true;
+					SetStateLabel("Missile");
 				}
 				
-				A_StartSound("shotguy/attack", CHAN_WEAPON);
 				
-				SetStateLabel("Missile");
 			}
 		}
 		else if (CheckMeleeRange()) // Fighter Fist
 		{
+			FLineTraceData lineData;
+			LineTrace(angle,100,0, offsetz: height, data: LineData);
+			if (LineData.HitType == TRACE_HitActor)
+			{
+				if (LineData.HitActor is "PlayerPawn")
+				{
+					return;
+				}
+			}
+			
 			int damage = random[FighterAtk](40, 55);
 			FTranslatedLineTarget t;
-			double slope = AimLineAttack (angle, 2*DEFMELEERANGE, t, 0., ALF_CHECK3D);
+			
+			double slope = AimLineAttack (angle, 2*DEFMELEERANGE, t, 0, ALF_CHECK3D);
 			if (t.linetarget != null)
 			{
-				LineAttack (angle, 2*DEFMELEERANGE, slope, damage, 'Melee', "PunchPuff", true, t);
+				Actor puff = LineAttack (angle, 2*DEFMELEERANGE, slope, damage, "FriendlyFire", "PunchPuff", LAF_TARGETISSOURCE, t);
 				if (t.linetarget != null && t.linetarget != MyPlayer)
 				{
 					if (!t.linetarget.bDontThrust)
@@ -346,8 +352,15 @@ class HA_CoreAI : Actor
 	{
 		if (source)
 		{
-			attacker = source;
-			target = attacker;
+			if (!(source is "PlayerPawn"))
+			{
+				attacker = source;
+				target = attacker;
+			}
+			else
+			{
+				return Super.DamageMobj(inflictor,source,0,mod,flags,angle);
+			}
 		}
 		
 		if (Health > damage)
@@ -367,11 +380,15 @@ class HA_CoreAI : Actor
 	{
 		Super.Tick();
 		
+		sprite = GetSpriteIndex("MAGE");
+		
 		if (MyPlayer && !gotType)
 		{
 			HexenType = "Fighter";
 			gotType = true;
 			IsMelee = true;
+			MyPlayer.Species = "HexenAlly";
+			MyPlayer.ApplyDamageFactor("FriendlyFire", 0);
 			/*
 			string PlayerClass = MyPlayer.GetClassName();
 			int i = 0;
@@ -408,6 +425,7 @@ class HA_CoreAI : Actor
 
 	Default
 	{
+		Species "HexenAlly";
 		Speed 5;
 		Health 100;
 		Radius 16;
@@ -427,6 +445,11 @@ class HA_CoreAI : Actor
 		+NOTIMEFREEZE;
 		+NOFEAR;
 		+SEEINVISIBLE;
+		+DONTHARMCLASS;
+		+DONTHARMSPECIES
+		+NOTELEFRAG
+		+THRUSPECIES
+		+MTHRUSPECIES
 		-COUNTKILL;
 		-ISMONSTER;
 	}
