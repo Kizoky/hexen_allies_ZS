@@ -28,7 +28,7 @@ As time went on Brutal Doom was released, and it had a really impressive AI for 
 **V2.1**: Bug fix attempt for AI attacking the Player randomly
 
 
-__For more info__:
+## For more info:
 
 https://github.com/Kizoky/hexen_allies (DECORATE/old version)
 
