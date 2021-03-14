@@ -1,4 +1,4 @@
-class HA_CoreAI : PlayerPawn
+class HA_CoreAI : Actor
 {
 	actor MyPlayer, attacker;
 	string HexenType;
@@ -102,6 +102,7 @@ class HA_CoreAI : PlayerPawn
 				if (CheckSight (MyPlayer, SF_SeePastShootableLines) && CheckMove(PlayerPos, flags: PCM_NOLINES))
 				{
 					Angle = AngleTo(MyPlayer);
+					A_MovementChase(MyPlayer);
 					//A_Recoil(-1.75);
 				}
 				else
@@ -413,8 +414,8 @@ class HA_CoreAI : PlayerPawn
 		Height 56;
 		Mass 100;
 		PainChance 255;
-		//MONSTER;
-		//+FRIENDLY;
+		MONSTER;
+		+FRIENDLY;
 		+BLOCKASPLAYER;
 		+PUSHABLE;
 		+ACTIVATEIMPACT;
