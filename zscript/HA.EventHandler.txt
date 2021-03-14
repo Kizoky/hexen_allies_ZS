@@ -1,0 +1,39 @@
+class HexenAlliesCoreHandler : EventHandler 
+{
+	override void WorldTick()
+	{
+		let player = players[consoleplayer].mo;
+	}
+
+	override void NetworkProcess (ConsoleEvent e)
+	{
+		//
+	}
+   
+	override void PlayerEntered (PlayerEvent e)
+	{
+		PlayerPawn n = PlayerPawn(players[e.PlayerNumber].mo);
+	}
+   
+	override void WorldThingSpawned (Worldevent e)
+	{
+		let SpawnedThing = e.Thing;
+	}
+	
+	override void WorldThingDied(WorldEvent e)
+	{	
+		if (e.Inflictor && e.Thing)
+		{
+			let player = players[consoleplayer].mo;
+			
+			if (player && e.Thing != Player)
+			{
+				if (e.Thing.target is "PlayerPawn")
+				{
+					//
+				}
+			}
+		}
+		
+	}
+}

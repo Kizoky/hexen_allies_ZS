@@ -1,0 +1,27 @@
+OptionValue "Debugoption"
+{
+    0, "None"
+    1, "Monsters"
+    2, "Pickups"
+	3, "Solids"
+	4, "Shootables"
+	5, "All"
+}
+
+OptionMenu "HAllyOptionMenu"
+{
+	Title "Hexen Allies mod settings"
+	StaticText ""
+	
+	StaticText "Debug Settings", "Gold"
+	StaticText "Displays a box around actors", "White"
+	StaticText "based on Height and Weight, depending on the setting (in realtime)", "White"
+	Option "Radius Debug", "radiusDebug", "Debugoption"
+	StaticText ""
+}
+
+AddOptionMenu "OptionsMenu"
+{
+	StaticText " "
+	Submenu "Hexen Allies Options", "HAllyOptionMenu"
+}

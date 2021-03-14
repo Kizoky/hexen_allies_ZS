@@ -1,0 +1,9 @@
+gameinfo
+{
+	AddEventHandlers = "RadiusDebugHandler", "HexenAlliesCoreHandler"
+}
+
+episode DEVMAP
+{
+	name="Development Map"
+}
