@@ -11,6 +11,8 @@ class HA_CoreAI : Actor
 	bool IsMelee;
 	bool CDtoTele;
 	
+	string SpriteName;
+	
 	virtual void SearchForPlayer()
 	{
 		if (MyPlayer) return;
@@ -42,10 +44,17 @@ class HA_CoreAI : Actor
 	};
 	
 	static const string HexenAllyList[] =
-	{ // Uses actual PlayerClass names
+	{
 		"Fighter",
 		"Cleric",
 		"Mage"
+	};
+	
+	static const string HexenAllySprite[] =
+	{
+		"PLAY",
+		"CLER",
+		"MAGE"
 	};
 	
 	override void PostBeginPlay()
@@ -103,7 +112,7 @@ class HA_CoreAI : Actor
 				{
 					Angle = AngleTo(MyPlayer);
 					A_MovementChase(MyPlayer);
-					//A_Recoil(-1.75);
+					A_Recoil(-1.75);
 				}
 				else
 				{
@@ -228,12 +237,13 @@ class HA_CoreAI : Actor
 	virtual void A_AllyDodge()
 	{
 		FLineTraceData lineData;
-		int ThrustValue = 10;
+		int ThrustValue = 6;
 		
 		// Let's check if we can move right or left, is there a better way to do this?
 		if (InStateSequence(target.CurState, target.ResolveState("Missile")) || InStateSequence(target.CurState, target.ResolveState("Melee")))
 		{
-			bool HitWall1, HitWall2;
+			bool HitWall1 = false;
+			bool HitWall2 = false;
 			
 			LineTrace(angle+90,150,0, offsetz: 5, data: LineData);
 			if (LineData.HitType == TRACE_HitActor || LineData.HitType == TRACE_HitWall)
@@ -275,7 +285,7 @@ class HA_CoreAI : Actor
 						return;
 					}
 					
-					A_Recoil(4);
+					A_Recoil(3.25);
 				}
 			}
 		}
@@ -307,6 +317,7 @@ class HA_CoreAI : Actor
 					}
 				}
 				
+				vel.xy = (0,0);
 				Actor proj = A_SpawnProjectile("MageWandMissile", 55);
 				if (proj)
 				{
@@ -340,7 +351,8 @@ class HA_CoreAI : Actor
 				{
 					if (!t.linetarget.bDontThrust)
 						t.linetarget.Thrust(2, t.attackAngleFromSource);
-						
+					
+					vel.xy = (0,0);
 					SetStateLabel("Missile");
 				}
 			}
@@ -376,41 +388,57 @@ class HA_CoreAI : Actor
 		A_StartSound("PlayerFighterNormalDeath", CHAN_VOICE);
 	}
 	
+	void AllyChat(string msg)
+	{
+		Console.Printf("\c[red]%s's \c[white]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
+		A_StartSound("misc/chat", CHAN_7,attenuation:ATTN_NONE);
+	}
+	
 	override void Tick()
 	{
 		Super.Tick();
 		
-		sprite = GetSpriteIndex("MAGE");
+		sprite = GetSpriteIndex(SpriteName);
 		
 		if (MyPlayer && !gotType)
 		{
-			HexenType = "Fighter";
-			gotType = true;
-			IsMelee = true;
+			//HexenType = "Fighter";
+			//gotType = true;
+			//IsMelee = true;
 			MyPlayer.Species = "HexenAlly";
 			MyPlayer.ApplyDamageFactor("FriendlyFire", 0);
-			/*
+			
 			string PlayerClass = MyPlayer.GetClassName();
+			
+			// numeric to avoid
+			int PlayerclassNum = 666;
+			Array<int> Available;
+			
 			int i = 0;
-			bool Duplicate = false;
-			while (i < 2)
+			while (i < HexenListName.Size())
 			{
 				if (PlayerClass ~== HexenListName[i])
-					Duplicate = true;
-				else
-					Duplicate = false;
-				
-				if (!Duplicate && PlayerClass != HexenListName[i])
 				{
-					HexenType = HexenAllyList[i];
-					gotType = true;
-					HexenTypeNumeric = i;
-					break;
+					PlayerclassNum = i;
 				}
-				
+				else
+				{
+					Available.Push(i);
+				}
 				i++;
 			}
-			*/
+			
+			// not efficent way of doing this but whatever
+			int Chosen = random[choseone](Available[0],Available[Available.Size()-1]);
+			if (Chosen != PlayerclassNum && Chosen != 1) // Cleric not supported atm
+			{
+				HexenType = HexenAllyList[Chosen];
+				HexenTypeNumeric = Chosen;
+				SpriteName = HexenAllySprite[Chosen];
+				AllyChat(String.Format("I'm a %s", HexenType));
+				
+				gotType = true;
+			}
 		}
 		
 		/*
