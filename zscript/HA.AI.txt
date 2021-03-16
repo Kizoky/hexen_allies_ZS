@@ -13,7 +13,6 @@ class HA_FriendlyFire : Inventory
     {
         if (Owner && source is "HA_CoreAI")
 		{
-			Console.Printf("Ouchie!");
 			newdamage = 0;
 		}
     }
@@ -60,13 +59,6 @@ class HA_CoreAI : Actor
 					{
 						MyPlayer.A_GiveInventory("HA_FriendlyFire", 1);
 						
-						/* debug
-						HexenType = "Fighter";
-						gotType = true;
-						IsMelee = false;
-						SpriteName = HexenAllySprite[2];
-						*/
-						
 						string PlayerClass = MyPlayer.GetClassName();
 						int Available[2];
 						
@@ -99,6 +91,26 @@ class HA_CoreAI : Actor
 
 								SpawnedAI.SetStateLabel("See");
 
+								int rndColor = random[clr](0, HexenColors.Size()-1);
+								string AIcolor = "n/a";
+								if (SpawnedAI.HexenType ~== "Cleric" || 
+									SpawnedAI.HexenType ~== "Mage")
+								{
+									AIcolor = String.Format("CM%s", HexenColors[rndColor]);
+
+									// Cleric and Mage is blue by default, so we don't need to set it
+									if (rndColor != 2)
+										SpawnedAI.A_SetTranslation(AIcolor);
+								}
+								else
+								{
+									AIcolor = String.Format("F%s", HexenColors[rndColor]);
+
+									// Fighter is Silver by default
+									if (rndColor != 3)
+										SpawnedAI.A_SetTranslation(AIcolor);
+								}
+
 								Destroy();
 								break;
 							}
@@ -109,6 +121,15 @@ class HA_CoreAI : Actor
 		}
 	}
 	
+	static const string HexenColors[] =
+	{
+		"Green",
+		"Red",
+		"Blue",
+		"Silver",
+		"Yellow"
+	};
+
 	static const class<actor> HexenSpawnList[] =
 	{
 		"HA_Fighter",
