@@ -53,8 +53,48 @@ class HA_CoreAI : Actor
 				if (next is "PlayerPawn" && next != self && !(next is "HA_CoreAI"))
 				{
 					MyPlayer = next;
-					MyPlayer.A_GiveInventory("HA_FriendlyFire", 1);
-					SetStateLabel("See");
+					
+					if (MyPlayer && !gotType)
+					{
+						MyPlayer.A_GiveInventory("HA_FriendlyFire", 1);
+						
+						/* debug
+						HexenType = "Fighter";
+						gotType = true;
+						IsMelee = false;
+						SpriteName = HexenAllySprite[2];
+						*/
+						
+						string PlayerClass = MyPlayer.GetClassName();
+						// numeric to avoid
+						int PlayerclassNum = -1;
+						int Available[2];
+						//Available[0] = 0;
+						//Available[1] = 0;
+						
+						int j = 0;
+						for (int i = 0; i < HexenListName.Size(); i++)
+						{
+							if (!(PlayerClass ~== HexenListName[i]))
+							{
+								Available[j] = i;
+								j++;
+							}
+						}
+						
+						// not efficent way of doing this but whatever
+						int Chosen = randompick[choseone](Available[0], Available[1]);
+						
+						HexenType = HexenAllyList[Chosen];
+						HexenTypeNumeric = Chosen;
+						SpriteName = HexenAllySprite[Chosen];
+						AllyChat(String.Format("I'm a %s", HexenType));
+						
+						gotType = true;
+						
+						SetStateLabel("See");
+						
+					}
 				}
 			}
 		}
@@ -126,7 +166,6 @@ class HA_CoreAI : Actor
 		{
 			target = null;
 			TimeProbablyGotStuck = 0;
-			return;
 		}
 		
 		// Follow our player
@@ -181,7 +220,6 @@ class HA_CoreAI : Actor
 		if (!target)
 		{
 			LookForEnemies(false);
-			return;
 		}
 		
 		// Active target we have
@@ -433,44 +471,10 @@ class HA_CoreAI : Actor
 		
 		A_AllyDodge();
 		
-		if (MyPlayer && !gotType)
-		{
-			//HexenType = "Fighter";
-			//gotType = true;
-			IsMelee = false;
-			
-			string PlayerClass = MyPlayer.GetClassName();
-			
-			// numeric to avoid
-			int PlayerclassNum = 666;
-			Array<int> Available;
-			
-			int i = 0;
-			while (i < HexenListName.Size())
-			{
-				if (PlayerClass ~== HexenListName[i])
-				{
-					PlayerclassNum = i;
-				}
-				else
-				{
-					Available.Push(i);
-				}
-				i++;
-			}
-			
-			// not efficent way of doing this but whatever
-			int Chosen = random[choseone](Available[0],Available[Available.Size()-1]);
-			if (Chosen != PlayerclassNum && Chosen != 1) // Cleric not supported atm
-			{
-				HexenType = HexenAllyList[Chosen];
-				HexenTypeNumeric = Chosen;
-				SpriteName = HexenAllySprite[Chosen];
-				AllyChat(String.Format("I'm a %s", HexenType));
-				
-				gotType = true;
-			}
-		}
+		if (!(pos.z ~== floorz))
+			bTHRUSPECIES = true;
+		else
+			bTHRUSPECIES = false;
 		
 		/*
 		if (bKILLED && MyPlayer && CountdownToDeath != 0 && level.time > CountdownToDeath)
