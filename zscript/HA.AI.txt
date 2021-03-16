@@ -429,7 +429,7 @@ class HA_CoreAI : Actor
 		if (DeathType ~== "Burn")
 			Cause = "burned to death";
 
-		Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was %s by a(n) %s", MyPlayer.player.GetUserName(), HexenType, Cause, attacker.GetClassName());
+		Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was %s by a(n) %s", MyPlayer.player.GetUserName(), HexenType, Cause, attacker.GetTag());
 	}
 	
 	virtual void HA_Tick()
