@@ -220,6 +220,14 @@ class HA_CoreAI : Actor
 		if (!target)
 		{
 			LookForEnemies(false);
+			
+			// Acquired a new target
+			if (target)
+			{
+				if (Distance3D(target) > 750)
+					target = null; return;
+			}
+			
 		}
 		
 		// Active target we have
@@ -463,6 +471,11 @@ class HA_CoreAI : Actor
 		A_StartSound("misc/chat", CHAN_7, attenuation:ATTN_NONE);
 	}
 	
+	void AllyDied()
+	{
+		Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was killed by a(n) %s", MyPlayer.player.GetUserName(), HexenType, attacker.GetClassName());
+	}
+	
 	override void Tick()
 	{
 		Super.Tick();
@@ -540,6 +553,7 @@ class HA_CoreAI : Actor
 		TNT1 A 0
 		{
 			CountdownToDeath = level.time + 35 * 5;
+			AllyDied();
 		}
 		PLAY H 6;
 		PLAY I 6 A_AllyScream;
@@ -552,6 +566,7 @@ class HA_CoreAI : Actor
 		TNT1 A 0
 		{
 			CountdownToDeath = level.time + 35 * 5;
+			AllyDied();
 		}
 		PLAY O 5 A_AllyScream;
 		PLAY P 5 A_SkullPop("BloodyFighterSkull");
@@ -560,10 +575,12 @@ class HA_CoreAI : Actor
 		PLAY W -1;
 		Stop;
 	Ice:
+		TNT1 A 0 AllyDied();
 		PLAY X 5 A_FreezeDeath;
 		PLAY X 1 A_FreezeDeathChunks;
 		Wait;
 	Burn:
+		TNT1 A 0 AllyDied();
 		FDTH A 5 BRIGHT A_StartSound("*burndeath");
 		FDTH B 4 BRIGHT;
 		FDTH G 5 BRIGHT;
