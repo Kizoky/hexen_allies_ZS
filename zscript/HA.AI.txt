@@ -66,8 +66,6 @@ class HA_CoreAI : Actor
 						*/
 						
 						string PlayerClass = MyPlayer.GetClassName();
-						// numeric to avoid
-						int PlayerclassNum = -1;
 						int Available[2];
 						
 						int j = 0;
@@ -374,7 +372,7 @@ class HA_CoreAI : Actor
 		
 		if (!IsMelee) // Mage Wand
 		{
-			if (random[chanceshoot]() < 75 && !(InStateSequence(CurState, ResolveState("Missile"))))
+			if (random[chanceshoot]() < 75 && !(InStateSequence(CurState, ResolveState("Missile"))) && CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
 			{
 				FLineTraceData lineData;
 				angle = AngleTo(target, true);
@@ -461,22 +459,8 @@ class HA_CoreAI : Actor
 			}
 		}
 		
-		/*
-		if (Health > damage)
-		{
-			A_StartSound("PlayerFighterPain", CHAN_VOICE);
-		}
-		*/
-		
 		return Super.DamageMobj(inflictor,source,damage,mod,flags,angle);
 	}
-	
-	/*
-	virtual void A_AllyScream()
-	{
-		A_StartSound("PlayerFighterNormalDeath", CHAN_VOICE);
-	}
-	*/
 
 	void AllyChat(string msg)
 	{
@@ -491,7 +475,6 @@ class HA_CoreAI : Actor
 	
 	virtual void HA_Tick()
 	{
-		//sprite = GetSpriteIndex(SpriteName);
 		
 		A_AllyDodge();
 		
