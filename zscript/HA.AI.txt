@@ -69,8 +69,6 @@ class HA_CoreAI : Actor
 						// numeric to avoid
 						int PlayerclassNum = -1;
 						int Available[2];
-						//Available[0] = 0;
-						//Available[1] = 0;
 						
 						int j = 0;
 						for (int i = 0; i < HexenListName.Size(); i++)
@@ -84,22 +82,40 @@ class HA_CoreAI : Actor
 						
 						// not efficent way of doing this but whatever
 						int Chosen = randompick[choseone](Available[0], Available[1]);
-						
-						HexenType = HexenAllyList[Chosen];
-						HexenTypeNumeric = Chosen;
-						SpriteName = HexenAllySprite[Chosen];
-						AllyChat(String.Format("I'm a %s", HexenType));
-						
-						gotType = true;
-						
-						SetStateLabel("See");
-						
+
+						actor SpawnAI = spawn(HexenSpawnList[Chosen], self.pos, ALLOW_REPLACE);
+
+						if (SpawnAI)
+						{
+							let SpawnedAI = HA_CoreAI(SpawnAI);
+							if (SpawnedAI)
+							{
+								SpawnedAI.MyPlayer = MyPlayer;
+								SpawnedAI.HexenType = HexenAllyList[Chosen];
+								SpawnedAI.HexenTypeNumeric = Chosen;
+								SpawnedAI.AllyChat(String.Format("I'm a %s", SpawnedAI.HexenType));
+
+								SpawnedAI.gotType = true;
+
+								SpawnedAI.SetStateLabel("See");
+
+								Destroy();
+								break;
+							}
+						}
 					}
 				}
 			}
 		}
 	}
 	
+	static const class<actor> HexenSpawnList[] =
+	{
+		"HA_Fighter",
+		"HA_Cleric",
+		"HA_Mage"
+	};
+
 	static const string HexenListName[] =
 	{ // Uses actual PlayerClass names
 		"FighterPlayer",
@@ -112,13 +128,6 @@ class HA_CoreAI : Actor
 		"Fighter",
 		"Cleric",
 		"Mage"
-	};
-	
-	static const string HexenAllySprite[] =
-	{
-		"PLAY",
-		"CLER",
-		"MAGE"
 	};
 	
 	override void PostBeginPlay()
@@ -365,9 +374,9 @@ class HA_CoreAI : Actor
 		
 		if (!IsMelee) // Mage Wand
 		{
-			FLineTraceData lineData;
 			if (random[chanceshoot]() < 75 && !(InStateSequence(CurState, ResolveState("Missile"))))
 			{
+				FLineTraceData lineData;
 				angle = AngleTo(target, true);
 				
 				LineTrace(angle,1000,0, height, data: LineData);
@@ -452,19 +461,23 @@ class HA_CoreAI : Actor
 			}
 		}
 		
+		/*
 		if (Health > damage)
 		{
 			A_StartSound("PlayerFighterPain", CHAN_VOICE);
 		}
+		*/
 		
 		return Super.DamageMobj(inflictor,source,damage,mod,flags,angle);
 	}
 	
+	/*
 	virtual void A_AllyScream()
 	{
 		A_StartSound("PlayerFighterNormalDeath", CHAN_VOICE);
 	}
-	
+	*/
+
 	void AllyChat(string msg)
 	{
 		Console.Printf("\c[red]%s's \c[white]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
@@ -476,11 +489,9 @@ class HA_CoreAI : Actor
 		Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was killed by a(n) %s", MyPlayer.player.GetUserName(), HexenType, attacker.GetClassName());
 	}
 	
-	override void Tick()
+	virtual void HA_Tick()
 	{
-		Super.Tick();
-		
-		sprite = GetSpriteIndex(SpriteName);
+		//sprite = GetSpriteIndex(SpriteName);
 		
 		A_AllyDodge();
 		
@@ -497,6 +508,14 @@ class HA_CoreAI : Actor
 			Destroy();
 		}
 		*/
+		
+	}
+	
+	override void Tick()
+	{
+		Super.Tick();
+		
+		HA_Tick();
 	}
 
 	Default
@@ -505,7 +524,7 @@ class HA_CoreAI : Actor
 		Speed 5;
 		Health 100;
 		Radius 16;
-		Height 56;
+		Height 64;
 		Mass 100;
 		PainChance 255;
 		MONSTER;
@@ -527,82 +546,5 @@ class HA_CoreAI : Actor
 		+MTHRUSPECIES
 		-COUNTKILL;
 		-ISMONSTER;
-	}
-	States
-	{
-	Spawn:
-		PLAY AAA 4;
-		Loop;
-	See:
-		PLAY A 0 A_AlertMonsters(184, AMF_TARGETEMITTER);
-		PLAY ABCD 4 A_FollowerChase();
-		Loop;
-	Missile:
-		Goto Melee;
-	Melee:
-		PLAY E 0 A_AlertMonsters(512, AMF_TARGETEMITTER);
-		PLAY E 4 A_AllyDodge();
-		PLAY F 17 A_AllyDodge(); //was 8
-		PLAY E 2 A_AllyDodge();
-		Goto See;
-	Pain:
-		PLAY G 4;
-		PLAY G 4;
-		Goto See;
-	Death:
-		TNT1 A 0
-		{
-			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
-		}
-		PLAY H 6;
-		PLAY I 6 A_AllyScream;
-		PLAY JK 6;
-		PLAY L 6 A_NoBlocking;
-		PLAY M 6;
-		PLAY N -1;
-		Stop;		
-	XDeath:
-		TNT1 A 0
-		{
-			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
-		}
-		PLAY O 5 A_AllyScream;
-		PLAY P 5 A_SkullPop("BloodyFighterSkull");
-		PLAY R 5 A_NoBlocking;
-		PLAY STUV 5;
-		PLAY W -1;
-		Stop;
-	Ice:
-		TNT1 A 0 AllyDied();
-		PLAY X 5 A_FreezeDeath;
-		PLAY X 1 A_FreezeDeathChunks;
-		Wait;
-	Burn:
-		TNT1 A 0 AllyDied();
-		FDTH A 5 BRIGHT A_StartSound("*burndeath");
-		FDTH B 4 BRIGHT;
-		FDTH G 5 BRIGHT;
-		FDTH H 4 BRIGHT A_AllyScream;
-		FDTH I 5 BRIGHT;
-		FDTH J 4 BRIGHT;
-		FDTH K 5 BRIGHT;
-		FDTH L 4 BRIGHT;
-		FDTH M 5 BRIGHT;
-		FDTH N 4 BRIGHT;
-		FDTH O 5 BRIGHT;
-		FDTH P 4 BRIGHT;
-		FDTH Q 5 BRIGHT;
-		FDTH R 4 BRIGHT;
-		FDTH S 5 BRIGHT A_NoBlocking;
-		FDTH T 4 BRIGHT;
-		FDTH U 5 BRIGHT;
-		FDTH V 4 BRIGHT;
-		ACLO E 35 A_CheckPlayerDone;
-		Wait;
-		ACLO E 8;
-		Stop;	
-	
 	}
 }

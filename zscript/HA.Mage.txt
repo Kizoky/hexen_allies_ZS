@@ -1,0 +1,92 @@
+// Mage AI
+class HA_Mage : HA_CoreAI
+{
+	override void SearchForPlayer()
+	{
+		// stub
+	}
+
+	Default
+	{
+		Species "HexenAlly";
+		PainSound "PlayerMagePain";
+		DeathSound "PlayerMageNormalDeath";
+	}
+	States
+	{
+	Spawn:
+		MAGE AAA 4;
+		Loop;
+	See:
+		MAGE A 0 A_AlertMonsters(184, AMF_TARGETEMITTER);
+		MAGE ABCD 4 A_FollowerChase();
+		Loop;
+	Missile:
+		Goto Melee;
+	Melee:
+		MAGE E 0 A_AlertMonsters(512, AMF_TARGETEMITTER);
+		MAGE E 4 A_AllyDodge();
+		MAGE F 17 A_AllyDodge(); //was 8
+		MAGE E 2 A_AllyDodge();
+		Goto See;
+	Pain:
+		MAGE G 4;
+		MAGE G 4 A_Pain;
+		Goto See;
+	Death:
+		TNT1 A 0
+		{
+			CountdownToDeath = level.time + 35 * 5;
+			AllyDied();
+		}
+		MAGE H 6;
+		MAGE I 6 A_Scream;
+		MAGE JK 6;
+		MAGE L 6 A_NoBlocking;
+		MAGE M 6;
+		MAGE N -1;
+		Stop;		
+	XDeath:
+		TNT1 A 0
+		{
+			CountdownToDeath = level.time + 35 * 5;
+			AllyDied();
+		}
+		MAGE O 5 A_Scream;
+		MAGE P 5;
+		MAGE R 5 A_NoBlocking;
+		MAGE STUVW 5;
+		MAGE X -1;
+		Stop;
+	Ice:
+		TNT1 A 0 AllyDied();
+		MAGE Y 5 A_FreezeDeath;
+		MAGE Y 1 A_FreezeDeathChunks;
+		Wait;
+	Burn:
+		TNT1 A 0 AllyDied();
+		FDTH E 5 BRIGHT A_StartSound("*burndeath");
+		FDTH F 4 BRIGHT;
+		FDTH G 5 BRIGHT;
+		FDTH H 4 BRIGHT A_Scream;
+		FDTH I 5 BRIGHT;
+		FDTH J 4 BRIGHT;
+		FDTH K 5 BRIGHT;
+		FDTH L 4 BRIGHT;
+		FDTH M 5 BRIGHT;
+		FDTH N 4 BRIGHT;
+		FDTH O 5 BRIGHT;
+		FDTH P 4 BRIGHT;
+		FDTH Q 5 BRIGHT;
+		FDTH R 4 BRIGHT;
+		FDTH S 5 BRIGHT A_NoBlocking;
+		FDTH T 4 BRIGHT;
+		FDTH U 5 BRIGHT;
+		FDTH V 4 BRIGHT;
+		ACLO E 35 A_CheckPlayerDone;
+		Wait;
+		ACLO E 8;
+		Stop;	
+	
+	}
+}
