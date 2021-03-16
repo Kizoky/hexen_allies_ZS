@@ -37,6 +37,8 @@ class HA_CoreAI : Actor
 	string SpriteName;
 	
 	int CDtoSeekEnemy;
+
+	string ActiveWeapon;
 	
 	virtual void SearchForPlayer()
 	{
@@ -366,82 +368,28 @@ class HA_CoreAI : Actor
 		}
 	}
 	
+	virtual void HA_RangeShoot()
+	{
+		if (!IsMelee && CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0))
+		{
+			// Implement it in an actor inheriting from HA_CoreAI
+		}
+	}
+
+	virtual void HA_MeleeShoot()
+	{
+		if (IsMelee && CheckMeleeRange())
+		{
+			// Implement it in an actor inheriting from HA_CoreAI
+		}
+	}
+
 	virtual void A_AllyShoot()
 	{
 		if (!target) return;
 		
-		if (!IsMelee) // Mage Wand
-		{
-			if (random[chanceshoot]() < 75 && !(InStateSequence(CurState, ResolveState("Missile"))) && CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
-			{
-				FLineTraceData lineData;
-				angle = AngleTo(target, true);
-				
-				LineTrace(angle,1000,0, height, data: LineData);
-				
-				if (LineData.HitType == TRACE_HitActor)
-				{
-					if (LineData.HitActor is "PlayerPawn")
-					{
-						int mov = random(5,8);
-						bool LR = random(0,1);
-						if (LR)
-							Thrust(mov, Angle + 90);
-						else
-							Thrust(mov, Angle - 90);
-						
-						return;
-					}
-					
-					if (LineData.HitActor != target)
-					{
-						// Don't do anything if you cannot hit target
-						target = null;
-						return;
-					}
-				}
-				
-				vel.xy = (0,0);
-				Actor proj = A_SpawnProjectile("MageWandMissile", 55);
-				if (proj)
-				{
-					proj.bMTHRUSPECIES = true;
-					SetStateLabel("Missile");
-				}
-				
-				
-			}
-		}
-		else if (CheckMeleeRange()) // Fighter Fist
-		{
-			FLineTraceData lineData;
-			LineTrace(angle,100,0, offsetz: height, data: LineData);
-			if (LineData.HitType == TRACE_HitActor)
-			{
-				if (LineData.HitActor is "PlayerPawn")
-				{
-					return;
-				}
-			}
-			
-			int damage = random[FighterAtk](40, 55);
-			FTranslatedLineTarget t;
-			
-			double slope = AimLineAttack (angle, 2*DEFMELEERANGE, t, 0, ALF_CHECK3D);
-			if (t.linetarget != null)
-			{
-				Actor puff = LineAttack (angle, 2*DEFMELEERANGE, slope, damage, "FriendlyFire", "PunchPuff", LAF_TARGETISSOURCE, t);
-				if (t.linetarget != null && t.linetarget != MyPlayer)
-				{
-					if (!t.linetarget.bDontThrust)
-						t.linetarget.Thrust(2, t.attackAngleFromSource);
-					
-					vel.xy = (0,0);
-					SetStateLabel("Missile");
-				}
-			}
-		
-		}
+		HA_RangeShoot();
+		HA_MeleeShoot();
 	}
 	
 	override int DamageMobj(Actor inflictor, Actor source, int damage, Name mod, int flags, double angle)
@@ -468,9 +416,20 @@ class HA_CoreAI : Actor
 		A_StartSound("misc/chat", CHAN_7, attenuation:ATTN_NONE);
 	}
 	
-	void AllyDied()
+	void AllyDied(string DeathType)
 	{
-		Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was killed by a(n) %s", MyPlayer.player.GetUserName(), HexenType, attacker.GetClassName());
+		string Cause = "killed";
+
+		if (DeathType ~== "Normal")
+			Cause = "killed";
+		if (DeathType ~== "Crispy")
+			Cause = "brutally killed";
+		if (DeathType ~== "Ice")
+			Cause = "frozen to death";
+		if (DeathType ~== "Burn")
+			Cause = "burned to death";
+
+		Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was %s by a(n) %s", MyPlayer.player.GetUserName(), HexenType, Cause, attacker.GetClassName());
 	}
 	
 	virtual void HA_Tick()

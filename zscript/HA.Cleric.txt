@@ -1,9 +1,59 @@
 // Cleric AI
 class HA_Cleric : HA_CoreAI
 {
-	override void SearchForPlayer()
+	override void PostBeginPlay()
 	{
-		// stub
+		Super.PostBeginPlay();
+		ActiveWeapon = "Mace";
+		IsMelee = true;
+	}
+
+	override void HA_MeleeShoot()
+	{
+		if (!IsMelee) return;
+		if (!CheckMeleeRange()) return;
+
+		if (ActiveWeapon ~== "Mace")
+		{
+			FTranslatedLineTarget t;
+
+			FLineTraceData lineData;
+			LineTrace(angle,100,0, offsetz: height, data: LineData);
+			if (LineData.HitType == TRACE_HitActor)
+			{
+				if (LineData.HitActor is "PlayerPawn")
+				{
+					return;
+				}
+			}
+
+			int damage = random[MaceAtk](25, 40);
+			for (int i = 0; i < 16; i++)
+			{
+				for (int j = 1; j >= -1; j -= 2)
+				{
+					double ang = angle + j*i*(45. / 16);
+					double slope = AimLineAttack(ang, 2 * DEFMELEERANGE, t, 0., ALF_CHECK3D);
+					if (t.linetarget)
+					{
+						LineAttack(ang, 2 * DEFMELEERANGE, slope, damage, 'Melee', "HammerPuff", true, t);
+						if (t.linetarget != null)
+						{
+							AdjustPlayerAngle(t);
+							SetStateLabel("Melee");
+							vel.xy = (0,0);
+							return;
+						}
+					}
+				}
+			}
+			// didn't find any creatures, so try to strike any walls
+
+			double slope = AimLineAttack (angle, DEFMELEERANGE, null, 0., ALF_CHECK3D);
+			LineAttack (angle, DEFMELEERANGE, slope, damage, 'Melee', "HammerPuff");
+			SetStateLabel("Melee");
+			vel.xy = (0,0);
+		}
 	}
 
 	Default
@@ -37,7 +87,7 @@ class HA_Cleric : HA_CoreAI
 		TNT1 A 0
 		{
 			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
+			AllyDied("Normal");
 		}
 		CLER I 6;
 		CLER J 6 A_Scream;
@@ -50,7 +100,7 @@ class HA_Cleric : HA_CoreAI
 		TNT1 A 0
 		{
 			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
+			AllyDied("Crispy");
 		}
 		CLER R 5 A_Scream;
 		CLER S 5;
@@ -59,12 +109,12 @@ class HA_Cleric : HA_CoreAI
 		CLER [ -1;
 		Stop;
 	Ice:
-		TNT1 A 0 AllyDied();
+		TNT1 A 0 AllyDied("Ice");
 		CLER \ 5 A_FreezeDeath;
 		CLER \ 1 A_FreezeDeathChunks;
 		Wait;
 	Burn:
-		TNT1 A 0 AllyDied();
+		TNT1 A 0 AllyDied("Burn");
 		FDTH A 5 BRIGHT A_StartSound("*burndeath");
 		FDTH B 4 BRIGHT;
 		FDTH G 5 BRIGHT;

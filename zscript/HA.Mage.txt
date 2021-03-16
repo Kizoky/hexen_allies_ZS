@@ -1,9 +1,60 @@
 // Mage AI
 class HA_Mage : HA_CoreAI
 {
-	override void SearchForPlayer()
+	override void PostBeginPlay()
 	{
-		// stub
+		Super.PostBeginPlay();
+		ActiveWeapon = "Wand";
+		IsMelee = false;
+	}
+
+	// Mage cannot do melee attack
+	override void HA_MeleeShoot() {}
+
+	override void HA_RangeShoot()
+	{
+		if (random[chanceshoot]() < 75 && 
+			!(InStateSequence(CurState, ResolveState("Missile"))) && 
+			CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
+		{
+			if (ActiveWeapon ~== "Wand")
+			{
+				FLineTraceData lineData;
+				angle = AngleTo(target, true);
+
+				LineTrace(angle,1000,0, height, data: LineData);
+
+				if (LineData.HitType == TRACE_HitActor)
+				{
+					if (LineData.HitActor is "PlayerPawn")
+					{
+						int mov = random(5,8);
+						bool LR = random(0,1);
+						if (LR)
+							Thrust(mov, Angle + 90);
+						else
+							Thrust(mov, Angle - 90);
+
+						return;
+					}
+
+					if (LineData.HitActor != target)
+					{
+						// Don't do anything if you cannot hit target
+						target = null;
+						return;
+					}
+				}
+
+				vel.xy = (0,0);
+				Actor proj = A_SpawnProjectile("MageWandMissile", 55);
+				if (proj)
+				{
+					proj.bMTHRUSPECIES = true;
+					SetStateLabel("Missile");
+				}
+			}
+		}
 	}
 
 	Default
@@ -37,7 +88,7 @@ class HA_Mage : HA_CoreAI
 		TNT1 A 0
 		{
 			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
+			AllyDied("Normal");
 		}
 		MAGE H 6;
 		MAGE I 6 A_Scream;
@@ -50,7 +101,7 @@ class HA_Mage : HA_CoreAI
 		TNT1 A 0
 		{
 			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
+			AllyDied("Crispy");
 		}
 		MAGE O 5 A_Scream;
 		MAGE P 5;
@@ -59,12 +110,12 @@ class HA_Mage : HA_CoreAI
 		MAGE X -1;
 		Stop;
 	Ice:
-		TNT1 A 0 AllyDied();
+		TNT1 A 0 AllyDied("Ice");
 		MAGE Y 5 A_FreezeDeath;
 		MAGE Y 1 A_FreezeDeathChunks;
 		Wait;
 	Burn:
-		TNT1 A 0 AllyDied();
+		TNT1 A 0 AllyDied("Burn");
 		FDTH E 5 BRIGHT A_StartSound("*burndeath");
 		FDTH F 4 BRIGHT;
 		FDTH G 5 BRIGHT;

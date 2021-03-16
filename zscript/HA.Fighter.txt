@@ -1,9 +1,47 @@
 // Fighter AI
 class HA_Fighter : HA_CoreAI
 {
-	override void SearchForPlayer()
+	override void PostBeginPlay()
 	{
-		// stub
+		Super.PostBeginPlay();
+		ActiveWeapon = "Fist";
+		IsMelee = true;
+	}
+
+	override void HA_MeleeShoot()
+	{
+		if (!IsMelee) return;
+		if (!CheckMeleeRange()) return;
+
+		if (ActiveWeapon ~== "Fist")
+		{
+			FLineTraceData lineData;
+			LineTrace(angle,100,0, offsetz: height, data: LineData);
+			if (LineData.HitType == TRACE_HitActor)
+			{
+				if (LineData.HitActor is "PlayerPawn")
+				{
+					return;
+				}
+			}
+
+			int damage = random[FighterAtk](40, 55);
+			FTranslatedLineTarget t;
+
+			double slope = AimLineAttack (angle, 2*DEFMELEERANGE, t, 0, ALF_CHECK3D);
+			if (t.linetarget != null)
+			{
+				Actor puff = LineAttack (angle, 2*DEFMELEERANGE, slope, damage, "FriendlyFire", "PunchPuff", LAF_TARGETISSOURCE, t);
+				if (t.linetarget != null && t.linetarget != MyPlayer)
+				{
+					if (!t.linetarget.bDontThrust)
+						t.linetarget.Thrust(2, t.attackAngleFromSource);
+
+					vel.xy = (0,0);
+					SetStateLabel("Missile");
+				}
+			}
+		}
 	}
 
 	Default
@@ -37,7 +75,7 @@ class HA_Fighter : HA_CoreAI
 		TNT1 A 0
 		{
 			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
+			AllyDied("Normal");
 		}
 		PLAY H 6;
 		PLAY I 6 A_Scream;
@@ -50,7 +88,7 @@ class HA_Fighter : HA_CoreAI
 		TNT1 A 0
 		{
 			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
+			AllyDied("Crispy");
 		}
 		PLAY O 5 A_Scream;
 		PLAY P 5 A_SkullPop("BloodyFighterSkull");
@@ -59,12 +97,12 @@ class HA_Fighter : HA_CoreAI
 		PLAY W -1;
 		Stop;
 	Ice:
-		TNT1 A 0 AllyDied();
+		TNT1 A 0 AllyDied("Ice");
 		PLAY X 5 A_FreezeDeath;
 		PLAY X 1 A_FreezeDeathChunks;
 		Wait;
 	Burn:
-		TNT1 A 0 AllyDied();
+		TNT1 A 0 AllyDied("Burn");
 		FDTH A 5 BRIGHT A_StartSound("*burndeath");
 		FDTH B 4 BRIGHT;
 		FDTH G 5 BRIGHT;
