@@ -87,7 +87,7 @@ class HA_Cleric : HA_CoreAI
 		TNT1 A 0
 		{
 			CountdownToDeath = level.time + 35 * 5;
-			AllyDied("Normal");
+			AllyDied();
 		}
 		CLER I 6;
 		CLER J 6 A_Scream;
@@ -100,7 +100,7 @@ class HA_Cleric : HA_CoreAI
 		TNT1 A 0
 		{
 			CountdownToDeath = level.time + 35 * 5;
-			AllyDied("Crispy");
+			AllyDied();
 		}
 		CLER R 5 A_Scream;
 		CLER S 5;
@@ -109,12 +109,12 @@ class HA_Cleric : HA_CoreAI
 		CLER [ -1;
 		Stop;
 	Ice:
-		TNT1 A 0 AllyDied("Ice");
+		TNT1 A 0 AllyDied();
 		CLER \ 5 A_FreezeDeath;
 		CLER \ 1 A_FreezeDeathChunks;
 		Wait;
 	Burn:
-		TNT1 A 0 AllyDied("Burn");
+		TNT1 A 0 AllyDied();
 		FDTH A 5 BRIGHT A_StartSound("*burndeath");
 		FDTH B 4 BRIGHT;
 		FDTH G 5 BRIGHT;

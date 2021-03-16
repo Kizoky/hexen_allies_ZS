@@ -437,20 +437,16 @@ class HA_CoreAI : Actor
 		A_StartSound("misc/chat", CHAN_7, attenuation:ATTN_NONE);
 	}
 	
-	void AllyDied(string DeathType)
+	void AllyDied()
 	{
-		string Cause = "killed";
-
-		if (DeathType ~== "Normal")
-			Cause = "killed";
-		if (DeathType ~== "Crispy")
-			Cause = "brutally killed";
-		if (DeathType ~== "Ice")
-			Cause = "frozen to death";
-		if (DeathType ~== "Burn")
-			Cause = "burned to death";
-
-		Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was %s by a(n) %s", MyPlayer.player.GetUserName(), HexenType, Cause, attacker.GetTag());
+		//Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was killed by a(n) %s", MyPlayer.player.GetUserName(), HexenType, Cause, attacker.GetTag());
+		
+		string ob = attacker.GetObituary(self, attacker, "none", false);
+		string AIname = String.Format("\c[red]%s's \c[white]%s", MyPlayer.player.GetUserName(), HexenType);
+		ob = StringTable.Localize (ob);
+		ob.Replace("%o ", "");
+		
+		Console.Printf("%s \c[yellow]%s", AIname, ob);
 	}
 	
 	virtual void HA_Tick()
@@ -484,6 +480,7 @@ class HA_CoreAI : Actor
 	Default
 	{
 		Species "HexenAlly";
+		Obituary "%o was killed by a Hexen Ally. Wait.. what???";
 		Speed 5;
 		Health 100;
 		Radius 16;
