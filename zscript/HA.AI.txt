@@ -162,6 +162,19 @@ class HA_CoreAI : Actor
 	{
 		if (targ)
 		{
+			FLineTraceData lineData;
+
+			LineTrace(angle,50,0, offsetz: 5, data: LineData);
+			if (LineData.HitType == TRACE_HitWall)
+			{
+				if (pos.z ~== floorz)
+				{
+					Angle = AngleTo(targ);
+					A_ChangeVelocity (0, 0, 7, 0);
+					A_Recoil(-1.00);
+				}
+			}
+
 			int oldDir = moveDir;
 			moveDir = (8 * AngleTo(targ, true) / 360) % 8;
 			if (!TryWalk())
@@ -174,18 +187,19 @@ class HA_CoreAI : Actor
 						moveDir = (oldDir + i) % 8;
 						if (TryWalk())
 							break;
-			
+
 						moveDir = (oldDir - i) % 8;
 						if (TryWalk())
 							break;
 					}
 				}
 			}
-		
+
 			// Face movement direction
 			angle = 360 * moveDir / 8;
 			if (angle > 180)
 				angle -= 360;
+
 		}
 	}
 	
@@ -206,8 +220,8 @@ class HA_CoreAI : Actor
 				vector2 PlayerPos = (MyPlayer.pos.x,MyPlayer.pos.y);
 				if (CheckSight (MyPlayer, SF_SeePastShootableLines) && CheckMove(PlayerPos, flags: PCM_NOLINES))
 				{
-					Angle = AngleTo(MyPlayer);
 					A_MovementChase(MyPlayer);
+					Angle = AngleTo(MyPlayer);
 					A_Recoil(-1.75);
 				}
 				else
@@ -501,7 +515,10 @@ class HA_CoreAI : Actor
 		+NOFEAR;
 		+SEEINVISIBLE;
 		+DONTHARMCLASS;
-		+NOTELEFRAG
+		+NOTELEFRAG;
+		+JUMPDOWN;
+		+NOFEAR;
+		+DROPOFF
 		//+THRUSPECIES
 		+MTHRUSPECIES
 		-COUNTKILL;
