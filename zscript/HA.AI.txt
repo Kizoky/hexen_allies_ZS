@@ -235,7 +235,7 @@ class HA_CoreAI : Actor
 		{
 			if (MyPlayer)
 			{
-				if (Distance3D(MyPlayer) > 450)
+				if (Distance3D(MyPlayer) > 425)
 				{
 					if (!CDtoTele)
 					{

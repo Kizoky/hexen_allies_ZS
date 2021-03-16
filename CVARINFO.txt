@@ -1,1 +1,10 @@
 user String radiusDebug = "None";
+
+user bool friendlyfire = false;
+user bool seek = false;
+user bool allies = false;
+user bool spawning = false;
+user bool attacking = false;
+user bool colors = false;
+user bool chat = false;
+user bool interact = false;
