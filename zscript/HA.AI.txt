@@ -1,3 +1,26 @@
+// Added to PlayerPawns
+class HA_FriendlyFire : Inventory
+{
+    Default 
+	{
+       +INVENTORY.UNDROPPABLE;
+       +INVENTORY.UNTOSSABLE;
+       +INVENTORY.PERSISTENTPOWER;
+       inventory.maxamount 1;
+    }
+	
+    override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
+    {
+        if (Owner && source is "HA_CoreAI")
+		{
+			Console.Printf("Ouchie!");
+			newdamage = 0;
+		}
+    }
+}
+
+// HA_CoreAI spawns first, then according to what kind of class the Player is playing as 
+// spawns the correspending AI (HA_Figher, HA_Cleric, HA_Mage)
 class HA_CoreAI : Actor
 {
 	actor MyPlayer, attacker;
@@ -13,25 +36,26 @@ class HA_CoreAI : Actor
 	
 	string SpriteName;
 	
+	int CDtoSeekEnemy;
+	
 	virtual void SearchForPlayer()
 	{
 		if (MyPlayer) return;
 		
-		BlockThingsIterator it = BlockThingsIterator.Create (self, 1024); // 1024
+		BlockThingsIterator it = BlockThingsIterator.Create (self, 256);
 		
-		while (it.Next ()) 
+		while (it.Next () && it.Thing) 
 		{
 			let next = it.Thing;
 			
-			if (!next) return;
-			
-			if (!CheckSight (next, SF_SeePastShootableLines)) // Not in sight
-				continue;
-			
-			if (next is "PlayerPawn" && next != self && !(next is "HA_CoreAI"))
+			if (next)
 			{
-				MyPlayer = next;
-				SetStateLabel("See");
+				if (next is "PlayerPawn" && next != self && !(next is "HA_CoreAI"))
+				{
+					MyPlayer = next;
+					MyPlayer.A_GiveInventory("HA_FriendlyFire", 1);
+					SetStateLabel("See");
+				}
 			}
 		}
 	}
@@ -66,36 +90,39 @@ class HA_CoreAI : Actor
 	
 	virtual void A_MovementChase(actor targ)
 	{
-		int oldDir = moveDir;
-		moveDir = (8 * AngleTo(targ, true) / 360) % 8;
-		if (!TryWalk())
+		if (targ)
 		{
-			moveDir = oldDir;
-			if(!TryWalk())
+			int oldDir = moveDir;
+			moveDir = (8 * AngleTo(targ, true) / 360) % 8;
+			if (!TryWalk())
 			{
-				for (int i = 1; i <= 4; ++i)
+				moveDir = oldDir;
+				if(!TryWalk())
 				{
-					moveDir = (oldDir + i) % 8;
-					if (TryWalk())
-						break;
-		
-					moveDir = (oldDir - i) % 8;
-					if (TryWalk())
-						break;
+					for (int i = 1; i <= 4; ++i)
+					{
+						moveDir = (oldDir + i) % 8;
+						if (TryWalk())
+							break;
+			
+						moveDir = (oldDir - i) % 8;
+						if (TryWalk())
+							break;
+					}
 				}
 			}
-		}
 		
-		// Face movement direction
-		angle = 360 * moveDir / 8;
-		if (angle > 180)
-			angle -= 360;
+			// Face movement direction
+			angle = 360 * moveDir / 8;
+			if (angle > 180)
+				angle -= 360;
+		}
 	}
 	
 	int TimeBeforeRandomTurn, TimeProbablyGotStuck;
 	virtual void A_FollowerChase()
 	{
-		if (target && target.bKILLED || target is "PlayerPawn")
+		if ((target && target.bKILLED) || (target && target is "PlayerPawn"))
 		{
 			target = null;
 			TimeProbablyGotStuck = 0;
@@ -151,63 +178,51 @@ class HA_CoreAI : Actor
 		}
 		
 		// Look for enemies
-		if (!target && LookForEnemies(false))
+		if (!target)
 		{
-			FLineTraceData lineData;
-			
-			LineTrace(AngleTo(target),150,0, offsetz: height, data: LineData);
-			if (LineData.HitType == TRACE_HitWall)
-			{
-				Console.Printf("Impossible targetting");
-				target = null;
-				return;
-			}
-			else if (LineData.HitType == TRACE_HitActor)
-			{
-				if (LineData.HitActor != target)
-				{
-					Console.Printf("Impossible targetting (actor)");
-					target = null;
-					return;
-				}
-			}
+			LookForEnemies(false);
+			return;
 		}
 		
 		// Active target we have
 		if (target && !target.bKILLED)
 		{
-			if (Distance3D(MyPlayer) > 450)
+			if (MyPlayer)
 			{
-				if (!CDtoTele)
+				if (Distance3D(MyPlayer) > 450)
 				{
-					TimeProbablyGotStuck = level.time + 35 * 6;
-					CDtoTele = true;
-				
-				}
+					if (!CDtoTele)
+					{
+						TimeProbablyGotStuck = level.time + 35 * 6;
+						CDtoTele = true;
 					
-				if (CDtoTele && level.time > TimeProbablyGotStuck)
-				{
-					CDtoTele = false;
-					target = null;
-					spawn("teleportfog", pos);
-					SetOrigin(MyPlayer.pos+(0,0,50), TRUE);
-					spawn("teleportfog", pos);
-					TimeProbablyGotStuck = 0;
-					return;
+					}
+						
+					if (CDtoTele && level.time > TimeProbablyGotStuck)
+					{
+						CDtoTele = false;
+						target = null;
+						spawn("teleportfog", pos);
+						SetOrigin(MyPlayer.pos+(0,0,50), TRUE);
+						spawn("teleportfog", pos);
+						TimeProbablyGotStuck = 0;
+						return;
+					}
 				}
-			}
-			else
-			{
-				CDtoTele = false;
+				else
+					CDtoTele = false;
 			}
 			
 			// target is not in line of sight, look for a new target
 			// (so they won't mindlessly attack walls)
-			if (!(CheckSight (target, SF_SeePastShootableLines)))
+			/*
+			if (!(IsVisible (target, true)))
 			{
 				target = null;
+				Console.Printf("Out of sight");
 				return;
 			}
+			*/
 			
 			A_MovementChase(target);
 			
@@ -217,14 +232,17 @@ class HA_CoreAI : Actor
 			
 			if (!IsMelee)
 			{
-				if (Distance3D(target) > 150)
-					A_Recoil(-1.75);
-				else
-					A_Recoil(1.75);
+				if (target)
+				{
+					if (Distance3D(target) > 150)
+						A_Recoil(-1.75);
+					else
+						A_Recoil(1.75);
+				}
 			}
 			else
 			{
-				if (Distance3D(target) > 25)
+				if (target && Distance3D(target) > 25)
 					A_Recoil(-1.75);
 			}
 			
@@ -236,8 +254,12 @@ class HA_CoreAI : Actor
 	
 	virtual void A_AllyDodge()
 	{
+		if (!target) return;
+		
+		if (!(level.time % 2 == 0)) return;
+		
 		FLineTraceData lineData;
-		int ThrustValue = 6;
+		double ThrustValue = 0.0001;
 		
 		// Let's check if we can move right or left, is there a better way to do this?
 		if (InStateSequence(target.CurState, target.ResolveState("Missile")) || InStateSequence(target.CurState, target.ResolveState("Melee")))
@@ -248,7 +270,7 @@ class HA_CoreAI : Actor
 			LineTrace(angle+90,150,0, offsetz: 5, data: LineData);
 			if (LineData.HitType == TRACE_HitActor || LineData.HitType == TRACE_HitWall)
 			{
-				Console.Printf("hit into a wall plus");
+				//Console.Printf("hit into a wall plus");
 				Thrust(ThrustValue, Angle - 90);
 				HitWall1 = true;
 			}
@@ -256,7 +278,7 @@ class HA_CoreAI : Actor
 			LineTrace(angle-90,150,0, offsetz: 5, data: LineData);
 			if (LineData.HitType == TRACE_HitActor || LineData.HitType == TRACE_HitWall)
 			{
-				Console.Printf("hit into a wall minus");
+				//Console.Printf("hit into a wall minus");
 				Thrust(ThrustValue, Angle + 90);
 				HitWall2 = true;
 			}
@@ -293,6 +315,8 @@ class HA_CoreAI : Actor
 	
 	virtual void A_AllyShoot()
 	{
+		if (!target) return;
+		
 		if (!IsMelee) // Mage Wand
 		{
 			FLineTraceData lineData;
@@ -300,7 +324,7 @@ class HA_CoreAI : Actor
 			{
 				angle = AngleTo(target, true);
 				
-				LineTrace(angle,1000,0, offsetz: 5, data: LineData);
+				LineTrace(angle,1000,0, height, data: LineData);
 				
 				if (LineData.HitType == TRACE_HitActor)
 				{
@@ -313,6 +337,13 @@ class HA_CoreAI : Actor
 						else
 							Thrust(mov, Angle - 90);
 						
+						return;
+					}
+					
+					if (LineData.HitActor != target)
+					{
+						// Don't do anything if you cannot hit target
+						target = null;
 						return;
 					}
 				}
@@ -391,7 +422,7 @@ class HA_CoreAI : Actor
 	void AllyChat(string msg)
 	{
 		Console.Printf("\c[red]%s's \c[white]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
-		A_StartSound("misc/chat", CHAN_7,attenuation:ATTN_NONE);
+		A_StartSound("misc/chat", CHAN_7, attenuation:ATTN_NONE);
 	}
 	
 	override void Tick()
@@ -400,13 +431,13 @@ class HA_CoreAI : Actor
 		
 		sprite = GetSpriteIndex(SpriteName);
 		
+		A_AllyDodge();
+		
 		if (MyPlayer && !gotType)
 		{
 			//HexenType = "Fighter";
 			//gotType = true;
-			//IsMelee = true;
-			MyPlayer.Species = "HexenAlly";
-			MyPlayer.ApplyDamageFactor("FriendlyFire", 0);
+			IsMelee = false;
 			
 			string PlayerClass = MyPlayer.GetClassName();
 			
@@ -474,9 +505,8 @@ class HA_CoreAI : Actor
 		+NOFEAR;
 		+SEEINVISIBLE;
 		+DONTHARMCLASS;
-		+DONTHARMSPECIES
 		+NOTELEFRAG
-		+THRUSPECIES
+		//+THRUSPECIES
 		+MTHRUSPECIES
 		-COUNTKILL;
 		-ISMONSTER;
