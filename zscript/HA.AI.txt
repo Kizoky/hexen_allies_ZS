@@ -24,18 +24,12 @@ class HA_CoreAI : Actor
 {
 	actor MyPlayer, attacker;
 	string HexenType;
-	int HexenTypeNumeric;
 	bool gotType;
 	
 	int CountdownToDeath;
-	bool CertainDeath;
 	
-	bool IsMelee;
+	bool IsMelee, IsRanged;
 	bool CDtoTele;
-	
-	string SpriteName;
-	
-	int CDtoSeekEnemy;
 
 	string ActiveWeapon;
 	
@@ -84,8 +78,7 @@ class HA_CoreAI : Actor
 							{
 								SpawnedAI.MyPlayer = MyPlayer;
 								SpawnedAI.HexenType = HexenAllyList[Chosen];
-								SpawnedAI.HexenTypeNumeric = Chosen;
-								SpawnedAI.AllyChat(String.Format("I'm a %s", SpawnedAI.HexenType));
+								SpawnedAI.AllySay(String.Format("I'm a %s", SpawnedAI.HexenType));
 
 								SpawnedAI.gotType = true;
 
@@ -162,8 +155,9 @@ class HA_CoreAI : Actor
 	{
 		if (targ)
 		{
+			/* Jumping
+			// Currently buggy so it's disabled
 			FLineTraceData lineData;
-
 			LineTrace(angle,50,0, offsetz: 5, data: LineData);
 			if (LineData.HitType == TRACE_HitWall)
 			{
@@ -174,6 +168,7 @@ class HA_CoreAI : Actor
 					A_Recoil(-1.00);
 				}
 			}
+			*/
 
 			int oldDir = moveDir;
 			moveDir = (8 * AngleTo(targ, true) / 360) % 8;
@@ -251,6 +246,7 @@ class HA_CoreAI : Actor
 				CDtoTele = false;
 				TimeProbablyGotStuck = 0;
 				frame = 0;
+
 				// random angle during staying in one place
 				if (level.time > TimeBeforeRandomTurn)
 				{
@@ -268,6 +264,7 @@ class HA_CoreAI : Actor
 			// Acquired a new target
 			if (target)
 			{
+				// Target is too far away
 				if (Distance3D(target) > 750)
 					target = null; return;
 			}
@@ -445,7 +442,7 @@ class HA_CoreAI : Actor
 		return Super.DamageMobj(inflictor,source,damage,mod,flags,angle);
 	}
 
-	void AllyChat(string msg)
+	void AllySay(string msg)
 	{
 		Console.Printf("\c[red]%s's \c[white]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
 		A_StartSound("misc/chat", CHAN_7, attenuation:ATTN_NONE);
@@ -455,17 +452,22 @@ class HA_CoreAI : Actor
 	{
 		//Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was killed by a(n) %s", MyPlayer.player.GetUserName(), HexenType, Cause, attacker.GetTag());
 		
-		string ob = attacker.GetObituary(self, attacker, "none", false);
-		string AIname = String.Format("\c[red]%s's \c[white]%s", MyPlayer.player.GetUserName(), HexenType);
-		ob = StringTable.Localize (ob);
-		ob.Replace("%o ", "");
-		
-		Console.Printf("%s \c[yellow]%s", AIname, ob);
+		if (attacker)
+		{
+			string ob = attacker.GetObituary(self, attacker, "none", false);
+			string AIname = String.Format("\c[red]%s's \c[white]%s", MyPlayer.player.GetUserName(), HexenType);
+			ob = StringTable.Localize (ob);
+			ob.Replace("%o ", "");
+
+			Console.Printf("%s \c[yellow]%s", AIname, ob);
+		}
+		// Died to World
+		else
+			Console.Printf("\c[red]%s's \c[white]%s\c[yellow] has died.", MyPlayer.player.GetUserName(), HexenType);
 	}
 	
 	virtual void HA_Tick()
 	{
-		
 		A_AllyDodge();
 		
 		if (!(pos.z ~== floorz))
