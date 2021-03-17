@@ -1,12 +1,12 @@
-// Added to PlayerPawns
+// Prevents Friendly Fire
 class HA_FriendlyFire : Inventory
 {
-    Default 
+    Default
 	{
-       +INVENTORY.UNDROPPABLE;
-       +INVENTORY.UNTOSSABLE;
-       +INVENTORY.PERSISTENTPOWER;
-       inventory.maxamount 1;
+       	+INVENTORY.UNDROPPABLE;
+       	+INVENTORY.UNTOSSABLE;
+       	+INVENTORY.PERSISTENTPOWER;
+       	inventory.maxamount 1;
     }
 	
     override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
@@ -18,13 +18,114 @@ class HA_FriendlyFire : Inventory
     }
 }
 
+// Stores information about the Player's allies, then spawns them into the level accordingly
+class HA_AIHub : Inventory
+{
+	string PrevMap;
+
+	Array<int> AllyHealth;
+	Array<string> AllyType, AllyColor, AllyWeapon, AllyColorChat;
+	int TotalNum;
+	Array<Actor> Allies;
+
+	override void PostBeginPlay()
+	{
+		TotalNum = 0;
+	}
+
+	// Add an Ally for restoration
+	// Preserves everything
+	void AddAlly(string Type, string Color, string Weapon, int Health, actor Ally, string ChatColor)
+	{
+		TotalNum++;
+		let AA = HA_CoreAI(Ally);
+		if (AA)
+		{
+			AA.SpawnSlot = TotalNum;
+		}
+
+		AllyHealth.Push(Health);
+		AllyType.Push(Type);
+		AllyColor.Push(Color);
+		AllyWeapon.Push(Weapon);
+		Allies.Push(Ally);
+		AllyColorChat.Push(ChatColor);
+	}
+
+	// Remove an Ally from restoration
+	// Mainly because they died
+	// Look in HA.EventHandler
+	void RemoveAlly(actor Whom)
+	{	
+		for (uint i = 0; i < Allies.size(); ++i)
+		{
+			if (Allies[i] == Whom)
+			{
+				AllyHealth.Delete(i);
+				AllyType.Delete(i);
+				AllyColor.Delete(i);
+				AllyWeapon.Delete(i);
+				Allies.Delete(i);
+				AllyColorChat.Delete(i);
+				TotalNum--;
+			}
+		}
+	}
+
+	void RestoreAlly()
+	{
+		// Clear this array because the pointers will become garbage after a level change
+		Allies.Clear();
+
+		for (uint i = 0; i < AllyType.Size(); ++i)
+		{
+			class<Actor> AllySpawn = null;
+
+			if (AllyType[i] ~== "Fighter") AllySpawn = "HA_Fighter";
+			if (AllyType[i] ~== "Cleric") AllySpawn = "HA_Cleric";
+			if (AllyType[i] ~== "Mage") AllySpawn = "HA_Mage";
+
+			actor Ally = spawn(AllySpawn, owner.pos, ALLOW_REPLACE);
+			if (Ally)
+			{
+				let HAlly = HA_CoreAI(Ally);
+				if (HAlly)
+				{
+					if (AllyColor[i] != "default")
+						HAlly.A_SetTranslation(AllyColor[i]);
+					
+					HAlly.Health = AllyHealth[i];
+					HAlly.MyPlayer = owner;
+					HAlly.HexenType = AllyType[i];
+					HAlly.gotType = true;
+					HAlly.Restored = true;
+					HAlly.HexenColor = AllyColorChat[i];
+					// Push the new pointer to the array
+					Allies.Push(HAlly);
+					HAlly.SetStateLabel("See");
+				}
+			}
+		}
+
+	}
+
+	Default
+	{
+		+INVENTORY.UNDROPPABLE;
+       	+INVENTORY.UNTOSSABLE;
+       	+INVENTORY.PERSISTENTPOWER;
+       	inventory.maxamount 1;
+	}
+}
+
 // HA_CoreAI spawns first, then according to what kind of class the Player is playing as 
 // spawns the correspending AI (HA_Figher, HA_Cleric, HA_Mage)
 class HA_CoreAI : Actor
 {
 	actor MyPlayer, attacker;
-	string HexenType;
-	bool gotType;
+	string HexenType, HexenColorTrnsl, HexenColor;
+	bool gotType, Restored;
+	int SpawnSlot;
 	
 	int CountdownToDeath;
 	
@@ -52,6 +153,7 @@ class HA_CoreAI : Actor
 					if (MyPlayer && !gotType)
 					{
 						MyPlayer.A_GiveInventory("HA_FriendlyFire", 1);
+						MyPlayer.A_GiveInventory("HA_AIHub", 1);
 						
 						string PlayerClass = MyPlayer.GetClassName();
 						int Available[2];
@@ -78,13 +180,14 @@ class HA_CoreAI : Actor
 							{
 								SpawnedAI.MyPlayer = MyPlayer;
 								SpawnedAI.HexenType = HexenAllyList[Chosen];
-								SpawnedAI.AllySay(String.Format("I'm a %s", SpawnedAI.HexenType));
 
 								SpawnedAI.gotType = true;
 
 								SpawnedAI.SetStateLabel("See");
 
+								// Say hooray for Color randomization!
 								int rndColor = random[clr](0, HexenColors.Size()-1);
+
 								string AIcolor = "n/a";
 								if (SpawnedAI.HexenType ~== "Cleric" || 
 									SpawnedAI.HexenType ~== "Mage")
@@ -94,6 +197,7 @@ class HA_CoreAI : Actor
 									// Cleric and Mage is blue by default, so we don't need to set it
 									if (rndColor != 2)
 										SpawnedAI.A_SetTranslation(AIcolor);
+									else AIcolor = "default";
 								}
 								else
 								{
@@ -102,8 +206,26 @@ class HA_CoreAI : Actor
 									// Fighter is Silver by default
 									if (rndColor != 3)
 										SpawnedAI.A_SetTranslation(AIcolor);
+									else AIcolor = "default";
 								}
 
+								// Needed for level restoration, this uses actual translation value
+								SpawnedAI.HexenColorTrnsl = AIcolor;
+
+								// Needed for chat
+								SpawnedAI.HexenColor = HexenColors[rndColor];
+
+								// Execute function from Player's inventory
+								let HubStuff = MyPlayer.FindInventory("HA_AIHub");
+								let Inven = HA_AIHub(HubStuff);
+								if (Inven && !Restored)
+								{
+									Inven.AddAlly(SpawnedAI.HexenType, AIcolor, "null", SpawnedAI.Health, SpawnedAI, SpawnedAI.HexenColor);
+								}
+
+								SpawnedAI.AllySay("Ready for action!");
+								// Destroy the "spawner"
+								// I think there's a better way of making a proper spawner, but this should do as of now
 								Destroy();
 								break;
 							}
@@ -442,12 +564,24 @@ class HA_CoreAI : Actor
 		return Super.DamageMobj(inflictor,source,damage,mod,flags,angle);
 	}
 
+	// For the chat
 	void AllySay(string msg)
 	{
-		Console.Printf("\c[red]%s's \c[white]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
+		if (HexenColor ~== "Green") 
+			Console.Printf("\c[white]%s's \c[green]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
+		if (HexenColor ~== "Red")
+			Console.Printf("\c[white]%s's \c[red]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
+		if (HexenColor ~== "Blue")
+			Console.Printf("\c[white]%s's \c[blue]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
+		if (HexenColor ~== "Silver")
+			Console.Printf("\c[white]%s's \c[silver]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
+		if (HexenColor ~== "Yellow")
+			Console.Printf("\c[white]%s's \c[yellow]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
+
 		A_StartSound("misc/chat", CHAN_7, attenuation:ATTN_NONE);
 	}
 	
+	// Prints out Obituary (as if they were a Player) to the chat
 	void AllyDied()
 	{
 		//Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was killed by a(n) %s", MyPlayer.player.GetUserName(), HexenType, Cause, attacker.GetTag());

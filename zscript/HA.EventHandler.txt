@@ -1,5 +1,7 @@
 class HexenAlliesCoreHandler : EventHandler 
 {
+	Array<Actor> Allies;
+
 	override void WorldTick()
 	{
 		let player = players[consoleplayer].mo;
@@ -18,21 +20,60 @@ class HexenAlliesCoreHandler : EventHandler
 	override void WorldThingSpawned (Worldevent e)
 	{
 		let SpawnedThing = e.Thing;
+		if (SpawnedThing is "HA_CoreAI")
+		{
+			Allies.Push(SpawnedThing);
+		}
 	}
 	
+	override void WorldUnloaded (WorldEvent e)
+	{
+		//let player = players[consoleplayer].mo;
+		for (uint i = 0; i < Allies.size(); ++i)
+		{
+			if (Allies[i] && !Allies[i].bKILLED)
+			{
+				Allies[i].Destroy();
+			}
+		}
+	}
+
+	override void WorldLoaded (WorldEvent e)
+	{
+		let player = players[consoleplayer].mo;
+		let HubStuff = player.FindInventory("HA_AIHub");
+		let Inven = HA_AIHub(HubStuff);
+		if (Inven)
+		{
+			Inven.RestoreAlly();
+		}
+	}
+
 	override void WorldThingDied(WorldEvent e)
 	{	
-		if (e.Inflictor && e.Thing)
+		if (e.Thing)
 		{
-			let player = players[consoleplayer].mo;
-			
-			if (player && e.Thing != Player)
+			if (e.Thing is 'HA_CoreAI')
 			{
-				if (e.Thing.target is "PlayerPawn")
+				let player = players[consoleplayer].mo;
+				let HubStuff = player.FindInventory("HA_AIHub");
+				let Inven = HA_AIHub(HubStuff);
+				if (Inven)
+				{
+					Inven.RemoveAlly(e.Thing);
+				}
+			}
+
+			let player = players[consoleplayer].mo;
+			/*
+			if (player && e.Thing && e.Thing != Player)
+			{
+				if (e.Thing.Target && (e.Thing.target is "PlayerPawn" || e.Thing.Target is "HA_CoreAI" || e.Thing.Target.bFRIENDLY))
 				{
 					//
 				}
 			}
+			*/
 		}
 		
 	}
