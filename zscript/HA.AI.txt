@@ -502,6 +502,7 @@ class HA_CoreAI : Actor
 			if (LineData.HitType == TRACE_HitActor || LineData.HitType == TRACE_HitWall)
 			{
 				//Console.Printf("hit into a wall plus");
+				angle = AngleTo(target);
 				Thrust(ThrustValue, Angle - 90);
 				HitWall1 = true;
 			}
@@ -510,6 +511,7 @@ class HA_CoreAI : Actor
 			if (LineData.HitType == TRACE_HitActor || LineData.HitType == TRACE_HitWall)
 			{
 				//Console.Printf("hit into a wall minus");
+				angle = AngleTo(target);
 				Thrust(ThrustValue, Angle + 90);
 				HitWall2 = true;
 			}
