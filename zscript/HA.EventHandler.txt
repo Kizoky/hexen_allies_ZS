@@ -2,9 +2,10 @@ class HexenAlliesCoreHandler : EventHandler
 {
 	Array<Actor> Allies;
 
+	/*
 	override void WorldTick()
 	{
-		let player = players[consoleplayer].mo;
+		//let player = players[consoleplayer].mo;
 	}
 
 	override void NetworkProcess (ConsoleEvent e)
@@ -14,13 +15,14 @@ class HexenAlliesCoreHandler : EventHandler
    
 	override void PlayerEntered (PlayerEvent e)
 	{
-		PlayerPawn n = PlayerPawn(players[e.PlayerNumber].mo);
+		//PlayerPawn n = PlayerPawn(players[e.PlayerNumber].mo);
 	}
-   
+	*/
+
 	override void WorldThingSpawned (Worldevent e)
 	{
 		let SpawnedThing = e.Thing;
-		if (SpawnedThing is "HA_CoreAI")
+		if (SpawnedThing && SpawnedThing is "HA_CoreAI")
 		{
 			Allies.Push(SpawnedThing);
 		}
@@ -30,17 +32,25 @@ class HexenAlliesCoreHandler : EventHandler
 	{
 		// Update information of Allies
 		// Health, Active Weapon, etc...
-		let player = players[consoleplayer].mo;
-		let HubStuff = player.FindInventory("HA_AIHub");
-		let Inven = HA_AIHub(HubStuff);
-		if (Inven)
+		for (uint i = 0; i < MAXPLAYERS; i++)
 		{
-			Inven.UpdateAlly();
+			if (Players[i].mo)
+			{
+				let HubStuff = Players[i].mo.FindInventory("HA_AIHub");
+				if (HubStuff)
+				{
+					let Inven = HA_AIHub(HubStuff);
+					if (Inven)
+					{
+						Inven.UpdateAlly();
+					}
+				}
+			}
 		}
 
 		// Destroy all Allies, if we don't Players will have duplicate amount of allies
 		// Of course the dead ones shouldn't be counted
-		for (uint i = 0; i < Allies.size(); ++i)
+		for (uint i = 0; i < Allies.size(); i++)
 		{
 			if (Allies[i] && !Allies[i].bKILLED)
 			{
@@ -52,12 +62,20 @@ class HexenAlliesCoreHandler : EventHandler
 	override void WorldLoaded (WorldEvent e)
 	{
 		// This is where the allies will get "respawned" for the Players
-		let player = players[consoleplayer].mo;
-		let HubStuff = player.FindInventory("HA_AIHub");
-		let Inven = HA_AIHub(HubStuff);
-		if (Inven)
+		for (uint i = 0; i < MAXPLAYERS; i++)
 		{
-			Inven.RestoreAlly();
+			if (Players[i].mo)
+			{
+				let HubStuff = Players[i].mo.FindInventory("HA_AIHub");
+				if (HubStuff)
+				{
+					let Inven = HA_AIHub(HubStuff);
+					if (Inven)
+					{
+						Inven.RestoreAlly();
+					}
+				}
+			}
 		}
 	}
 
@@ -66,19 +84,29 @@ class HexenAlliesCoreHandler : EventHandler
 		if (e.Thing)
 		{
 			// Remove dead Ally from the database, never attempt to spawn dead allies
+			// Also make sure we remove it from the correct Player
 			if (e.Thing is 'HA_CoreAI')
 			{
-				let player = players[consoleplayer].mo;
-				let HubStuff = player.FindInventory("HA_AIHub");
-				let Inven = HA_AIHub(HubStuff);
-				if (Inven)
+				let Ally = HA_CoreAI(e.Thing);
+				if (Ally)
 				{
-					Inven.RemoveAlly(e.Thing);
+					if (Ally.MyPlayer)
+					{
+						let HubStuff = Ally.MyPlayer.FindInventory("HA_AIHub");
+						if (HubStuff)
+						{
+							let Inven = HA_AIHub(HubStuff);
+							if (Inven)
+							{
+								Inven.RemoveAlly(Ally);
+							}
+						}
+					}
 				}
 			}
 
-			let player = players[consoleplayer].mo;
 			/*
+			let player = players[consoleplayer].mo;
 			if (player && e.Thing && e.Thing != Player)
 			{
 				if (e.Thing.Target && (e.Thing.target is "PlayerPawn" || e.Thing.Target is "HA_CoreAI" || e.Thing.Target.bFRIENDLY))

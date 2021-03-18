@@ -58,7 +58,7 @@ class HA_AIHub : Inventory
 	// Look into HA.EventHandler.txt, WorldUnloaded func
 	void UpdateAlly()
 	{
-		for (uint i = 0; i < Allies.size(); ++i)
+		for (uint i = 0; i < Allies.size(); i++)
 		{
 			if (Allies[i])
 			{
@@ -77,9 +77,9 @@ class HA_AIHub : Inventory
 	// Look also in HA.EventHandler how actors are getting removed on each level reset
 	void RemoveAlly(actor Whom)
 	{	
-		for (uint i = 0; i < Allies.size(); ++i)
+		for (uint i = 0; i < Allies.size(); i++)
 		{
-			if (Allies[i] == Whom)
+			if (Allies[i] && Whom && Allies[i] == Whom)
 			{
 				AllyHealth.Delete(i);
 				AllyType.Delete(i);
@@ -239,7 +239,7 @@ class HA_CoreAI : Actor
 								// Execute function from Player's inventory
 								let HubStuff = MyPlayer.FindInventory("HA_AIHub");
 								let Inven = HA_AIHub(HubStuff);
-								if (Inven && !Restored)
+								if (HubStuff && Inven && !Restored)
 								{
 									// Store Ally information
 									Inven.AddAlly(SpawnedAI.HexenType, AIcolor, "null", SpawnedAI.Health, SpawnedAI, SpawnedAI.HexenColor);
