@@ -28,7 +28,18 @@ class HexenAlliesCoreHandler : EventHandler
 	
 	override void WorldUnloaded (WorldEvent e)
 	{
-		//let player = players[consoleplayer].mo;
+		// Update information of Allies
+		// Health, Active Weapon, etc...
+		let player = players[consoleplayer].mo;
+		let HubStuff = player.FindInventory("HA_AIHub");
+		let Inven = HA_AIHub(HubStuff);
+		if (Inven)
+		{
+			Inven.UpdateAlly();
+		}
+
+		// Destroy all Allies, if we don't Players will have duplicate amount of allies
+		// Of course the dead ones shouldn't be counted
 		for (uint i = 0; i < Allies.size(); ++i)
 		{
 			if (Allies[i] && !Allies[i].bKILLED)
@@ -40,6 +51,7 @@ class HexenAlliesCoreHandler : EventHandler
 
 	override void WorldLoaded (WorldEvent e)
 	{
+		// This is where the allies will get "respawned" for the Players
 		let player = players[consoleplayer].mo;
 		let HubStuff = player.FindInventory("HA_AIHub");
 		let Inven = HA_AIHub(HubStuff);
@@ -53,6 +65,7 @@ class HexenAlliesCoreHandler : EventHandler
 	{	
 		if (e.Thing)
 		{
+			// Remove dead Ally from the database, never attempt to spawn dead allies
 			if (e.Thing is 'HA_CoreAI')
 			{
 				let player = players[consoleplayer].mo;

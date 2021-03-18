@@ -34,7 +34,8 @@ class HA_AIHub : Inventory
 	}
 
 	// Add an Ally for restoration
-	// Preserves everything
+	// Preserves everything, with the exception of Actor array, which needs to be refilled
+	// after a new level
 	void AddAlly(string Type, string Color, string Weapon, int Health, actor Ally, string ChatColor)
 	{
 		TotalNum++;
@@ -50,6 +51,25 @@ class HA_AIHub : Inventory
 		AllyWeapon.Push(Weapon);
 		Allies.Push(Ally);
 		AllyColorChat.Push(ChatColor);
+	}
+
+	// Update information on the allies before destroying them, and changing onto the next level
+	// i.e. They should not have more Health if they were hurt previously
+	// Look into HA.EventHandler.txt, WorldUnloaded func
+	void UpdateAlly()
+	{
+		for (uint i = 0; i < Allies.size(); ++i)
+		{
+			if (Allies[i])
+			{
+				let Ally = HA_CoreAI(Allies[i]);
+				if (Ally)
+				{
+					AllyHealth[i] = Ally.Health;
+					AllyWeapon[i] = Ally.ActiveWeapon;
+				}
+			}
+		}
 	}
 
 	// Remove an Ally from restoration
@@ -407,7 +427,6 @@ class HA_CoreAI : Actor
 					{
 						TimeProbablyGotStuck = level.time + 35 * 6;
 						CDtoTele = true;
-					
 					}
 						
 					if (CDtoTele && level.time > TimeProbablyGotStuck)
@@ -471,7 +490,7 @@ class HA_CoreAI : Actor
 		if (!(level.time % 2 == 0)) return;
 		
 		FLineTraceData lineData;
-		double ThrustValue = 0.0001;
+		double ThrustValue = 3;
 		
 		// Let's check if we can move right or left, is there a better way to do this?
 		if (InStateSequence(target.CurState, target.ResolveState("Missile")) || InStateSequence(target.CurState, target.ResolveState("Melee")))
@@ -496,13 +515,15 @@ class HA_CoreAI : Actor
 			}
 			
 			// Not fool proof, they will still sometimes run into a projectile unfortunately
+			/*
 			if (!HitWall1 && !HitWall2)
 			{
 				Thrust(ThrustValue, Angle + 90);
 			}
+			*/
 			
 			// Oh no, they are trying to melee attack!
-			if (InStateSequence(target.CurState, target.ResolveState("Melee")))
+			if (InStateSequence(target.CurState, target.ResolveState("Melee")) && !HitWall1 && !HitWall2)
 			{
 				if (target.target && target.target == self)
 				{
@@ -616,7 +637,8 @@ class HA_CoreAI : Actor
 	
 	virtual void HA_Tick()
 	{
-		A_AllyDodge();
+		if (!bKILLED)
+			A_AllyDodge();
 		
 		if (!(pos.z ~== floorz))
 			bTHRUSPECIES = true;
@@ -644,14 +666,14 @@ class HA_CoreAI : Actor
 	Default
 	{
 		Species "HexenAlly";
-		Obituary "%o was killed by a Hexen Ally. Wait.. what???";
+		Obituary "%o was killed by a Hexen Ally. This wasn't supposed to happen!";
 		Speed 5;
 		Health 100;
 		Radius 16;
 		Height 64;
 		Mass 100;
 		PainChance 255;
-		MaxStepHeight 32;
+		MaxStepHeight 50;
 		MONSTER;
 		+FRIENDLY;
 		+BLOCKASPLAYER;
