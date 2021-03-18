@@ -54,7 +54,7 @@ class HA_AIHub : Inventory
 
 	// Remove an Ally from restoration
 	// Mainly because they died
-	// Look in HA.EventHandler
+	// Look also in HA.EventHandler how actors are getting removed on each level reset
 	void RemoveAlly(actor Whom)
 	{	
 		for (uint i = 0; i < Allies.size(); ++i)
@@ -100,9 +100,10 @@ class HA_AIHub : Inventory
 					HAlly.gotType = true;
 					HAlly.Restored = true;
 					HAlly.HexenColor = AllyColorChat[i];
+					HAlly.SetStateLabel("See");
+
 					// Push the new pointer to the array
 					Allies.Push(HAlly);
-					HAlly.SetStateLabel("See");
 				}
 			}
 		}
@@ -212,7 +213,7 @@ class HA_CoreAI : Actor
 								// Needed for level restoration, this uses actual translation value
 								SpawnedAI.HexenColorTrnsl = AIcolor;
 
-								// Needed for chat
+								// Needed for chat coloring
 								SpawnedAI.HexenColor = HexenColors[rndColor];
 
 								// Execute function from Player's inventory
@@ -220,10 +221,12 @@ class HA_CoreAI : Actor
 								let Inven = HA_AIHub(HubStuff);
 								if (Inven && !Restored)
 								{
+									// Store Ally information
 									Inven.AddAlly(SpawnedAI.HexenType, AIcolor, "null", SpawnedAI.Health, SpawnedAI, SpawnedAI.HexenColor);
 								}
 
 								SpawnedAI.AllySay("Ready for action!");
+
 								// Destroy the "spawner"
 								// I think there's a better way of making a proper spawner, but this should do as of now
 								Destroy();
@@ -516,7 +519,7 @@ class HA_CoreAI : Actor
 						return;
 					}
 					
-					A_Recoil(3.25);
+					A_Recoil(1.25);
 				}
 			}
 		}
@@ -575,7 +578,7 @@ class HA_CoreAI : Actor
 		if (HexenColor ~== "Blue")
 			Console.Printf("\c[white]%s's \c[blue]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
 		if (HexenColor ~== "Silver")
-			Console.Printf("\c[white]%s's \c[silver]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
+			Console.Printf("\c[white]%s's \c[white]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
 		if (HexenColor ~== "Yellow")
 			Console.Printf("\c[white]%s's \c[yellow]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
 
@@ -585,12 +588,22 @@ class HA_CoreAI : Actor
 	// Prints out Obituary (as if they were a Player) to the chat
 	void AllyDied()
 	{
-		//Console.Printf("\c[red]%s's \c[white]%s\c[yellow] was killed by a(n) %s", MyPlayer.player.GetUserName(), HexenType, Cause, attacker.GetTag());
-		
+		string AIname = "error";
+
+		if (HexenColor ~== "Green") 
+			AIname = String.Format("\c[white]%s's \c[green]%s", MyPlayer.player.GetUserName(), HexenType);
+		if (HexenColor ~== "Red")
+			AIname = String.Format("\c[white]%s's \c[red]%s", MyPlayer.player.GetUserName(), HexenType);
+		if (HexenColor ~== "Blue")
+			AIname = String.Format("\c[white]%s's \c[blue]%s", MyPlayer.player.GetUserName(), HexenType);
+		if (HexenColor ~== "Silver")
+			AIname = String.Format("\c[white]%s's \c[white]%s", MyPlayer.player.GetUserName(), HexenType);
+		if (HexenColor ~== "Yellow")
+			AIname = String.Format("\c[white]%s's \c[yellow]%s", MyPlayer.player.GetUserName(), HexenType);
+
 		if (attacker)
 		{
 			string ob = attacker.GetObituary(self, attacker, "none", false);
-			string AIname = String.Format("\c[red]%s's \c[white]%s", MyPlayer.player.GetUserName(), HexenType);
 			ob = StringTable.Localize (ob);
 			ob.Replace("%o ", "");
 
@@ -598,7 +611,7 @@ class HA_CoreAI : Actor
 		}
 		// Died to World
 		else
-			Console.Printf("\c[red]%s's \c[white]%s\c[yellow] has died.", MyPlayer.player.GetUserName(), HexenType);
+			Console.Printf("%s has died.", AIname);
 	}
 	
 	virtual void HA_Tick()
