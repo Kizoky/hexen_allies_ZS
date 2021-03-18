@@ -588,7 +588,7 @@ class HA_CoreAI : Actor
 	// Prints out Obituary (as if they were a Player) to the chat
 	void AllyDied()
 	{
-		string AIname = "error";
+		string AIname = "Ally Death: Failed to get Ally's Color! (HexenColor variable)";
 
 		if (HexenColor ~== "Green") 
 			AIname = String.Format("\c[white]%s's \c[green]%s", MyPlayer.player.GetUserName(), HexenType);
@@ -651,6 +651,7 @@ class HA_CoreAI : Actor
 		Height 64;
 		Mass 100;
 		PainChance 255;
+		MaxStepHeight 32;
 		MONSTER;
 		+FRIENDLY;
 		+BLOCKASPLAYER;
