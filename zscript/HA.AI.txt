@@ -38,21 +38,22 @@ class HA_CoreAI : Actor
 						string PlayerClass = MyPlayer.GetClassName();
 
 						//------------ WoC support
-						/* todo:
-						BaseHunterPlayer
-						BaseNecromancerPlayer
-						BaseAssassinPlayer
-						*/
-						string WoCFighter = "BaseFighterPlayer";
-						string WoCCleric = "BaseClericPlayer";
-						string WoCMage = "BaseMagePlayer";
-
-						if (PlayerClass ~== WoCFighter)
+						if (PlayerClass ~== "NewFighterPlayer")
 							PlayerClass = "FighterPlayer";
-						if (PlayerClass ~== WoCCleric)
+						if (PlayerClass ~== "NewClericPlayer")
 							PlayerClass = "ClericPlayer";
-						if (PlayerClass ~== WoCMage)
+						if (PlayerClass ~== "NewMagePlayer")
 							PlayerClass = "MagePlayer";
+
+						// todo: #1 WoC: Add Ally version of Hunter, Necromancer, and Assassin
+						if (PlayerClass ~== "NewHunterPlayer" ||
+							PlayerClass ~== "NewNecromancerPlayer" ||
+							PlayerClass ~== "NewAssassinPlayer")
+							{
+								Console.Printf("\c[red]Hexen Allies: \c[yellow]The Playerclass you play as doesn't have an Ally version!");
+								int randomclass = random[woc](0, HexenListName.Size()-1);
+								PlayerClass = HexenListName[randomclass];
+							}
 						//------------ WoC support
 
 						int Available[2];
