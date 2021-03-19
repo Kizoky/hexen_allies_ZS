@@ -1,0 +1,140 @@
+// Prevents Friendly Fire
+class HA_FriendlyFire : Inventory
+{
+    Default
+	{
+       	+INVENTORY.UNDROPPABLE;
+       	+INVENTORY.UNTOSSABLE;
+       	+INVENTORY.PERSISTENTPOWER;
+       	inventory.maxamount 1;
+    }
+	
+    override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
+    {
+        if (Owner && source is "HA_CoreAI")
+		{
+			newdamage = 0;
+		}
+    }
+}
+
+// Stores information about the Player's allies, then spawns them into the level accordingly
+class HA_AIHub : Inventory
+{
+	string PrevMap;
+
+	Array<int> AllyHealth;
+	Array<string> AllyType, AllyColor, AllyWeapon, AllyColorChat;
+	int TotalNum;
+	Array<Actor> Allies;
+
+	override void PostBeginPlay()
+	{
+		TotalNum = 0;
+	}
+
+	// Add an Ally for restoration
+	// Preserves everything, with the exception of Actor array, which needs to be refilled
+	// after a new level
+	void AddAlly(string Type, string Color, string Weapon, int Health, actor Ally, string ChatColor)
+	{
+		TotalNum++;
+		let AA = HA_CoreAI(Ally);
+		if (AA)
+		{
+			AA.SpawnSlot = TotalNum;
+		}
+
+		AllyHealth.Push(Health);
+		AllyType.Push(Type);
+		AllyColor.Push(Color);
+		AllyWeapon.Push(Weapon);
+		Allies.Push(Ally);
+		AllyColorChat.Push(ChatColor);
+	}
+
+	// Update information on the allies before destroying them, and changing onto the next level
+	// i.e. They should not have more Health if they were hurt previously
+	// Look into HA.EventHandler.txt, WorldUnloaded func
+	void UpdateAlly()
+	{
+		for (uint i = 0; i < Allies.size(); i++)
+		{
+			if (Allies[i])
+			{
+				let Ally = HA_CoreAI(Allies[i]);
+				if (Ally)
+				{
+					AllyHealth[i] = Ally.Health;
+					AllyWeapon[i] = Ally.ActiveWeapon;
+				}
+			}
+		}
+	}
+
+	// Remove an Ally from restoration
+	// Mainly because they died
+	// Look also in HA.EventHandler how actors are getting removed on each level reset
+	void RemoveAlly(actor Whom)
+	{	
+		for (uint i = 0; i < Allies.size(); i++)
+		{
+			if (Allies[i] && Whom && Allies[i] == Whom)
+			{
+				AllyHealth.Delete(i);
+				AllyType.Delete(i);
+				AllyColor.Delete(i);
+				AllyWeapon.Delete(i);
+				Allies.Delete(i);
+				AllyColorChat.Delete(i);
+				TotalNum--;
+			}
+		}
+	}
+
+	void RestoreAlly()
+	{
+		// Clear this array because the pointers will become garbage after a level change
+		Allies.Clear();
+
+		for (uint i = 0; i < AllyType.Size(); ++i)
+		{
+			class<Actor> AllySpawn = null;
+
+			if (AllyType[i] ~== "Fighter") AllySpawn = "HA_Fighter";
+			if (AllyType[i] ~== "Cleric") AllySpawn = "HA_Cleric";
+			if (AllyType[i] ~== "Mage") AllySpawn = "HA_Mage";
+
+			actor Ally = spawn(AllySpawn, owner.pos, ALLOW_REPLACE);
+			if (Ally)
+			{
+				let HAlly = HA_CoreAI(Ally);
+				if (HAlly)
+				{
+					if (AllyColor[i] != "default")
+						HAlly.A_SetTranslation(AllyColor[i]);
+					
+					HAlly.Health = AllyHealth[i];
+					HAlly.MyPlayer = owner;
+					HAlly.HexenType = AllyType[i];
+					HAlly.gotType = true;
+					HAlly.Restored = true;
+					HAlly.HexenColor = AllyColorChat[i];
+					HAlly.SetStateLabel("See");
+
+					// Push the new pointer to the array
+					Allies.Push(HAlly);
+				}
+			}
+		}
+
+	}
+
+	Default
+	{
+		+INVENTORY.UNDROPPABLE;
+       	+INVENTORY.UNTOSSABLE;
+       	+INVENTORY.PERSISTENTPOWER;
+       	inventory.maxamount 1;
+	}
+}

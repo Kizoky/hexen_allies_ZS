@@ -17,16 +17,6 @@ class HA_Cleric : HA_CoreAI
 		{
 			FTranslatedLineTarget t;
 
-			FLineTraceData lineData;
-			LineTrace(angle,100,0, offsetz: height, data: LineData);
-			if (LineData.HitType == TRACE_HitActor)
-			{
-				if (LineData.HitActor is "PlayerPawn")
-				{
-					return;
-				}
-			}
-
 			int damage = random[MaceAtk](25, 40);
 			for (int i = 0; i < 16; i++)
 			{

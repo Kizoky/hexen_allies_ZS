@@ -2,6 +2,7 @@ version "4.3"
 
 #include "zscript/HA.EventHandler.txt"
 #include "zscript/HA.AI.txt"
+#include "zscript/HA.Inventory.txt"
 
 #include "zscript/HA.Fighter.txt"
 #include "zscript/HA.Cleric.txt"

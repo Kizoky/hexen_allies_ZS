@@ -48,7 +48,7 @@ class HexenAlliesCoreHandler : EventHandler
 			}
 		}
 
-		// Destroy all Allies, if we don't Players will have duplicate amount of allies
+		// Destroy all Allies, if we don't, Players will have duplicate amount of allies
 		// Of course the dead ones shouldn't be counted
 		for (uint i = 0; i < Allies.size(); i++)
 		{
