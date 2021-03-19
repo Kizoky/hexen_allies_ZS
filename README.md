@@ -4,6 +4,8 @@ Hexen Allies is a mod for GZDoom that brings AI controlled companions to Hexen.
 
 Cleric, Fighter, or the Mage, depending on which Playerclass the player is playing as.
 
+Note: This mod is still WIP! Currently the only way to spawn an Ally is by doing "summon HA_CoreAI"
+
 # Todo:
 - [x] Port WIP AI from *Mr. Smiley Head's Safari 2*, use that as a base, and improve upon
 - [x] Implement/mimic features from V1 and V2
