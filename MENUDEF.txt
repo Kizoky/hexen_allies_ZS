@@ -15,7 +15,6 @@ OptionMenu "HAllyOptionMenu"
 	
 	StaticText "Gameplay Settings", "Gold"
 	Option "Friendly Fire", "friendlyfire", "TrueFalse"
-	Option "Unlimited AI Distance Enemy Seeking", "seek", "False"
 	Option "Unlimited Amount of Allies", "allies", "False"
 	Option "AI Ignores Player Class when Spawning", "spawning", "False"
 	Option "AI Randomized Weapon attacks", "attacking", "False"
