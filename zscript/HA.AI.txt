@@ -38,6 +38,13 @@ class HA_CoreAI : Actor
 						string PlayerClass = MyPlayer.GetClassName();
 
 						//------------ WoC support
+						/* todo:
+						BaseHunterPlayer
+						BaseNecromancerPlayer
+						BaseAssassinPlayer
+						BaseMetamorphPlayer (this probably isn't a true class)
+
+						*/
 						string WoCFighter = "BaseFighterPlayer";
 						string WoCCleric = "BaseClericPlayer";
 						string WoCMage = "BaseMagePlayer";
