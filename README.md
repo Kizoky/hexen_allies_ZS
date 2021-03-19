@@ -8,13 +8,14 @@ Cleric, Fighter, or the Mage, depending on which Playerclass the player is playi
 - [x] Port WIP AI from *Mr. Smiley Head's Safari 2*, use that as a base, and improve upon
 - [x] Implement/mimic features from V1 and V2
 - [x] In HUBs AI should follow the Player(s) through levels
-- [ ] Fighter AI
-- [ ] Cleric AI
-- [ ] Mage AI
 - [ ] Command System
 - [ ] Make Souls spawnable from fallen monsters
-- [ ] AI Spawning Criteria, etc...
+- [ ] AI Spawning Criteria, Inventory item for spawning allies
 - [ ] Toggleable Gameplay features
+## Port Weapon code:
+- [x] Fighter AI
+- [ ] Cleric AI
+- [ ] Mage AI
 
 ## History
 
