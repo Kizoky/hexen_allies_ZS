@@ -42,8 +42,6 @@ class HA_CoreAI : Actor
 						BaseHunterPlayer
 						BaseNecromancerPlayer
 						BaseAssassinPlayer
-						BaseMetamorphPlayer (this probably isn't a true class)
-
 						*/
 						string WoCFighter = "BaseFighterPlayer";
 						string WoCCleric = "BaseClericPlayer";
