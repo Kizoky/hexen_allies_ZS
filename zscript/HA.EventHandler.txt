@@ -12,12 +12,18 @@ class HexenAlliesCoreHandler : EventHandler
 	{
 		//
 	}
-   
+   */
+
 	override void PlayerEntered (PlayerEvent e)
 	{
-		//PlayerPawn n = PlayerPawn(players[e.PlayerNumber].mo);
+		PlayerPawn n = PlayerPawn(players[e.PlayerNumber].mo);
+		if (n)
+		{
+			n.A_GiveInventory("HA_AllySpawner", 1);
+			n.A_GiveInventory("HA_FriendlyFire", 1);
+			n.A_GiveInventory("HA_AIHub", 1);
+		}
 	}
-	*/
 
 	override void WorldThingSpawned (Worldevent e)
 	{
@@ -105,16 +111,22 @@ class HexenAlliesCoreHandler : EventHandler
 				}
 			}
 
-			/*
-			let player = players[consoleplayer].mo;
-			if (player && e.Thing && e.Thing != Player)
+			// Make sure we have a player in-game..
+			actor Player = null;
+			for (uint i = 0; i < MAXPLAYERS; i++)
 			{
-				if (e.Thing.Target && (e.Thing.target is "PlayerPawn" || e.Thing.Target is "HA_CoreAI" || e.Thing.Target.bFRIENDLY))
+				if (Players[i].mo)
 				{
-					//
+					Player = Players[i].mo;
+					break;
 				}
 			}
-			*/
+
+			if (!(e.Thing is "PlayerPawn") && !e.Thing.bFRIENDLY && !(e.Thing is "HA_CoreAI") && e.Thing.bIsMonster)
+			{
+				if (Player)
+					Player.spawn("HA_Soul", e.thing.pos+(0,0,35));
+			}
 		}
 		
 	}
