@@ -8,51 +8,151 @@ class HA_Mage : HA_CoreAI
 		IsMelee = false;
 	}
 
+	override void Tick()
+	{
+		Super.Tick();
+		HA_Tick();
+
+		if (ActiveWeapon ~== "Lightning")
+		{
+			if (random[LightningReady]() > 250)
+			{
+				if (IsActorPlayingSound(CHAN_WEAPON)) return;
+				A_StartSound ("MageLightningReady", CHAN_WEAPON);
+			}
+		}
+	}
+
+	private void MStaffSpawn (double angle, Actor alttarget)
+	{
+		FTranslatedLineTarget t;
+
+		Actor mo = SpawnPlayerMissile ("MageStaffFX2", angle, pLineTarget:t);
+		if (mo)
+		{
+			mo.target = self;
+			if (t.linetarget && !t.unlinked)
+				mo.tracer = t.linetarget;
+			else
+				mo.tracer = alttarget;
+		}
+	}
+
 	// Mage cannot do melee attack
 	override void HA_MeleeShoot() {}
 
 	override void HA_RangeShoot()
 	{
-		if (random[chanceshoot]() < 75 && 
-			!(InStateSequence(CurState, ResolveState("Missile"))) && 
-			CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
+		angle = AngleTo(target, true);
+		if (!CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0)) return;
+		if (InStateSequence(CurState, ResolveState("Missile"))) return;
+
+		// ================================= Wand
+		if (ActiveWeapon ~== "Wand")
 		{
-			if (ActiveWeapon ~== "Wand")
+			if (random[chanceshoot]() < 75)
 			{
-				FLineTraceData lineData;
-				angle = AngleTo(target, true);
-
-				LineTrace(angle,1000,0, height, data: LineData);
-
-				if (LineData.HitType == TRACE_HitActor)
-				{
-					if (LineData.HitActor is "PlayerPawn")
-					{
-						int mov = random(5,8);
-						bool LR = random(0,1);
-						if (LR)
-							Thrust(mov, Angle + 90);
-						else
-							Thrust(mov, Angle - 90);
-
-						return;
-					}
-
-					if (LineData.HitActor != target)
-					{
-						// Don't do anything if you cannot hit target
-						target = null;
-						return;
-					}
-				}
-
-				vel.xy = (0,0);
 				Actor proj = A_SpawnProjectile("MageWandMissile", 55);
 				if (proj)
 				{
 					proj.bMTHRUSPECIES = true;
+					vel.xy = (0,0);
 					SetStateLabel("Missile");
 				}
+			}
+		}
+
+		// ================================= Frost Cone 
+		if (ActiveWeapon ~== "Frost")
+		{
+			if (random[chanceshoot]() > 175)
+			{
+				bool conedone=false;
+				FTranslatedLineTarget t;
+
+				A_StartSound ("MageShardsFire", CHAN_BODY);
+
+				int damage = random[MageCone](90, 105);
+				for (int i = 0; i < 16; i++)
+				{
+					double ang = angle + i*(45./16);
+					double slope = AimLineAttack (ang, DEFMELEERANGE, t, 0., ALF_CHECK3D);
+					if (t.linetarget)
+					{
+						t.linetarget.DamageMobj (self, self, damage, 'Ice', DMG_USEANGLE, t.angleFromSource);
+						conedone = true;
+						vel.xy = (0,0);
+						SetStateLabel("Missile");
+						break;
+					}
+				}
+
+				// didn't find any creatures, so fire projectiles
+				if (!conedone)
+				{
+					Actor mo = SpawnPlayerMissile ("FrostMissile");
+					if (mo)
+					{
+						mo.special1 = FrostMissile.SHARDSPAWN_LEFT|FrostMissile.SHARDSPAWN_DOWN|FrostMissile.SHARDSPAWN_UP|FrostMissile.SHARDSPAWN_RIGHT;
+						mo.special2 = 3; // Set sperm count (levels of reproductivity)
+						mo.target = self;
+						mo.args[0] = 3;		// Mark Initial shard as super damage
+					}
+					vel.xy = (0,0);
+					SetStateLabel("Missile");
+				}
+			}
+		}
+
+		// ================================= Lightning Arc of Death
+		if (ActiveWeapon ~== "Lightning")
+		{
+			if (random[chanceshoot]() > 225)
+			{
+				class<Actor> floor = "LightningFloor";
+				class<Actor> ceiling = "LightningCeiling";
+
+				LightningFloor fmo = LightningFloor(SpawnPlayerMissile (floor));
+				LightningCeiling cmo = LightningCeiling(SpawnPlayerMissile (ceiling));
+				if (fmo)
+				{
+					fmo.special1 = 0;
+					fmo.lastenemy = cmo;
+					fmo.A_LightningZap();
+				}
+				if (cmo)
+				{
+					cmo.tracer = NULL;
+					cmo.lastenemy = fmo;
+					cmo.A_LightningZap();
+				}
+				A_StartSound ("MageLightningFire", CHAN_BODY);
+
+				vel.xy = (0,0);
+				SetStateLabel("Missile");
+			}
+		}
+
+		// ================================= Bloodscourge
+		if (ActiveWeapon ~== "Blood")
+		{
+			if (random[chanceshoot]() > 225)
+			{
+				FTranslatedLineTarget t;
+
+				// [RH] Let's try and actually track what the player aimed at
+				AimLineAttack (angle, PLAYERMISSILERANGE, t, 32.);
+				if (t.linetarget == NULL)
+				{
+					t.linetarget = RoughMonsterSearch(10, true, true);
+				}
+				MStaffSpawn (angle, t.linetarget);
+				MStaffSpawn (angle-5, t.linetarget);
+				MStaffSpawn (angle+5, t.linetarget);
+				A_StartSound ("MageStaffFire", CHAN_BODY);
+
+				vel.xy = (0,0);
+				SetStateLabel("Missile");
 			}
 		}
 	}

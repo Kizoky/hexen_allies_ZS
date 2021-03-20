@@ -365,7 +365,7 @@ class HA_CoreAI : Actor
 	{
 		if (!target) return;
 		
-		if (!(level.time % 2 == 0)) return;
+		if (!(level.time % 1 == 0)) return;
 		
 		FLineTraceData lineData;
 		double ThrustValue = 3;
@@ -463,6 +463,8 @@ class HA_CoreAI : Actor
 			target = attacker;
 			angle = AngleTo(target);
 		}
+		else
+			attacker = null;
 		
 		return Super.DamageMobj(inflictor,source,damage,mod,flags,angle);
 	}

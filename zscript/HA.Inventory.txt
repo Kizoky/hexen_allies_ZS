@@ -1,4 +1,5 @@
 // Prevents Friendly Fire
+// Cross-mod compatible
 class HA_FriendlyFire : Inventory
 {
     Default
@@ -11,7 +12,7 @@ class HA_FriendlyFire : Inventory
 	
     override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
     {
-        if (Owner && source is "HA_CoreAI")
+        if (owner && source is "HA_CoreAI")
 		{
 			newdamage = 0;
 		}
@@ -21,11 +22,9 @@ class HA_FriendlyFire : Inventory
 // Stores information about the Player's allies, then spawns them into the level accordingly
 class HA_AIHub : Inventory
 {
-	string PrevMap;
-
+	int TotalNum;
 	Array<int> AllyHealth;
 	Array<string> AllyType, AllyColor, AllyWeapon, AllyColorChat;
-	int TotalNum;
 	Array<Actor> Allies;
 
 	override void PostBeginPlay()

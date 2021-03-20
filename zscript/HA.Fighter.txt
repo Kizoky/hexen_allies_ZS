@@ -7,9 +7,9 @@ class HA_Fighter : HA_CoreAI
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		ActiveWeapon = "Quietus";
+		ActiveWeapon = "Fist";
 		IsMelee = true;
-		IsRanged = true;
+		IsRanged = false;
 	}
 
 	override void HA_MeleeShoot()

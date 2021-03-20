@@ -17,7 +17,7 @@ Note: This mod is still WIP! Currently the only way to spawn an Ally is by doing
 ## Port Weapon code:
 - [x] Fighter AI
 - [x] Cleric AI
-- [ ] Mage AI
+- [x] Mage AI
 
 ## History
 
@@ -36,7 +36,7 @@ As time went on Brutal Doom was released, and it had a really impressive AI for 
 
 ## For more info:
 
-https://github.com/Kizoky/hexen_allies (DECORATE/old version)
+https://github.com/Kizoky/hexen_allies (V2.1)
 
 https://www.moddb.com/mods/hexen-ally-bots
 
