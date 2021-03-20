@@ -21,16 +21,6 @@ class HA_Fighter : HA_CoreAI
 		// ================================= Fist
 		if (ActiveWeapon ~== "Fist")
 		{
-			FLineTraceData lineData;
-			LineTrace(angle,100,0, offsetz: height, data: LineData);
-			if (LineData.HitType == TRACE_HitActor)
-			{
-				if (LineData.HitActor is "PlayerPawn")
-				{
-					return;
-				}
-			}
-
 			int damage = random[FighterAtk](40, 55);
 			FTranslatedLineTarget t;
 

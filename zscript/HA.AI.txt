@@ -455,7 +455,9 @@ class HA_CoreAI : Actor
 		if (source)
 		{
 			if (source is "PlayerPawn" || source is "HA_CoreAI")
+			{
 				return Super.DamageMobj(inflictor,source,0,mod,flags,angle);
+			}
 
 			attacker = source;
 			target = attacker;

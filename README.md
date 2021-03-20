@@ -16,7 +16,7 @@ Note: This mod is still WIP! Currently the only way to spawn an Ally is by doing
 - [ ] Toggleable Gameplay features
 ## Port Weapon code:
 - [x] Fighter AI
-- [ ] Cleric AI
+- [x] Cleric AI
 - [ ] Mage AI
 
 ## History
