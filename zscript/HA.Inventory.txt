@@ -343,6 +343,7 @@ class HA_AllySpawner : CustomInventory
 					}
 
 					SpawnedAI.AllySay("Ready for action!");
+					SpawnedAI.Following = true;
 
 				}
 			}

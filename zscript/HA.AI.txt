@@ -2,7 +2,7 @@
 // spawns the correspending AI (HA_Figher, HA_Cleric, HA_Mage)
 class HA_CoreAI : Actor
 {
-	actor MyPlayer, attacker;
+	actor MyPlayer, attacker, GuardSpot;
 	string HexenType, HexenColorTrnsl, HexenColor;
 	bool gotType, Restored;
 	int SpawnSlot;
@@ -16,12 +16,15 @@ class HA_CoreAI : Actor
 
 	bool isInAir;
 	double LastAirZ;
+
+	bool Following;
 	
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
 		spawn("Teleportfog",pos);
-		
+		Following = true;
+
 		if (!MyPlayer)
 		{
 			Console.Printf("\c[red]Hexen Allies:\c[yellow] Summoning via console isn't supported!");
@@ -76,6 +79,53 @@ class HA_CoreAI : Actor
 		}
 	}
 	
+	void FollowActor(actor MyPlayer)
+	{
+		if (Distance3D(MyPlayer) > 100)
+		{
+			vector2 PlayerPos = (MyPlayer.pos.x,MyPlayer.pos.y);
+			if (CheckSight (MyPlayer, SF_SeePastShootableLines) && CheckMove(PlayerPos, flags: PCM_NOLINES))
+			{
+				A_MovementChase(MyPlayer);
+				Angle = AngleTo(MyPlayer);
+				A_Recoil(-1.75);
+			}
+			else
+			{
+				// Note: There's a small.. or rather huge chance the AI will get stuck for some reason while
+				// trying to catch up to the Player, we'll countdown to 15 and teleport it back to the Player
+				if (TimeProbablyGotStuck == 0)
+				{
+					TimeProbablyGotStuck = level.time + 35 * 15;
+				}
+				else if (level.time > TimeProbablyGotStuck)
+				{
+					spawn("teleportfog", pos);
+					SetOrigin(MyPlayer.pos+(0,0,50), TRUE);
+					spawn("teleportfog", pos);
+					TimeProbablyGotStuck = 0;
+					CDtoTele = false;
+				}
+				
+				// Move towards Player
+				A_Recoil(-3);
+				A_MovementChase(MyPlayer);
+			}
+		}
+		else
+		{
+			CDtoTele = false;
+			TimeProbablyGotStuck = 0;
+			frame = 0;
+			// random angle during staying in one place
+			if (level.time > TimeBeforeRandomTurn)
+			{
+				angle = random[ang](-360,360);
+				TimeBeforeRandomTurn = level.time + 35 * random[tiem](1,4);
+			}
+		}
+	}
+
 	int TimeBeforeRandomTurn, TimeProbablyGotStuck;
 	virtual void A_FollowerChase()
 	{
@@ -85,53 +135,13 @@ class HA_CoreAI : Actor
 			TimeProbablyGotStuck = 0;
 		}
 		
-		// Follow our player
+		// Follow our player, or guard Area
 		if (!target && MyPlayer)
 		{
-			if (Distance3D(MyPlayer) > 100)
-			{
-				vector2 PlayerPos = (MyPlayer.pos.x,MyPlayer.pos.y);
-				if (CheckSight (MyPlayer, SF_SeePastShootableLines) && CheckMove(PlayerPos, flags: PCM_NOLINES))
-				{
-					A_MovementChase(MyPlayer);
-					Angle = AngleTo(MyPlayer);
-					A_Recoil(-1.75);
-				}
-				else
-				{
-					// Note: There's a small.. or rather huge chance the AI will get stuck for some reason while
-					// trying to catch up to the Player, we'll countdown to 15 and teleport it back to the Player
-					if (TimeProbablyGotStuck == 0)
-					{
-						TimeProbablyGotStuck = level.time + 35 * 15;
-					}
-					else if (level.time > TimeProbablyGotStuck)
-					{
-						spawn("teleportfog", pos);
-						SetOrigin(MyPlayer.pos+(0,0,50), TRUE);
-						spawn("teleportfog", pos);
-						TimeProbablyGotStuck = 0;
-						CDtoTele = false;
-					}
-					
-					// Move towards Player
-					A_Recoil(-3);
-					A_MovementChase(MyPlayer);
-				}
-			}
-			else
-			{
-				CDtoTele = false;
-				TimeProbablyGotStuck = 0;
-				frame = 0;
-
-				// random angle during staying in one place
-				if (level.time > TimeBeforeRandomTurn)
-				{
-					angle = random[ang](-360,360);
-					TimeBeforeRandomTurn = level.time + 35 * random[tiem](1,4);
-				}
-			}
+			if (Following)
+				FollowActor(MyPlayer);
+			else if (!Following && GuardSpot)
+				FollowActor(GuardSpot);
 		}
 		
 		// Look for enemies
@@ -283,18 +293,22 @@ class HA_CoreAI : Actor
 	
 	virtual void HA_RangeShoot()
 	{
+		/*
 		if (!IsMelee && CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0))
 		{
 			// Implement it in an actor inheriting from HA_CoreAI
 		}
+		*/
 	}
 
 	virtual void HA_MeleeShoot()
 	{
+		/*
 		if (IsMelee && CheckMeleeRange())
 		{
 			// Implement it in an actor inheriting from HA_CoreAI
 		}
+		*/
 	}
 
 	virtual void A_AllyShoot()
@@ -406,20 +420,20 @@ class HA_CoreAI : Actor
 				if (IsInAir)
 				{
 					if (IsActorPlayingSound(CHAN_VOICE)) return;
-			
+
 					double Diff = floorz-LastAirZ;
-			
+
 					if (-Diff > 40 && -Diff < 69)
 					{
 						A_StartSound("PlayerLand", CHAN_VOICE);
 					}
-			
+
 					if (-Diff > 69)
 					{
 						string Sound = String.Format("Player%sGrunt", HexenType);
 						A_StartSound(Sound, CHAN_VOICE);
 					}
-			
+
 					IsInAir = false;
 					LastAirZ = 0;
 				}
@@ -442,6 +456,37 @@ class HA_CoreAI : Actor
 		Super.Tick();
 		
 		HA_Tick();
+	}
+
+	override void Activate(Actor activator)
+	{
+		if (activator && MyPlayer && activator == MyPlayer)
+		{
+			if (Following)
+			{
+				GuardSpot = spawn("HA_GuardSpot", pos, ALLOW_REPLACE);
+
+				if (GuardSpot)
+				{
+					AllySay("Okay, I will stay here!");
+					Following = false;
+				}
+			}
+			else if (!Following)
+			{
+				Following = true;
+				GuardSpot.Destroy();
+				AllySay("Okay, I'm following you!");
+			}
+		}
+	}
+	
+	override void Deactivate(Actor activator)
+	{
+		if (activator)
+		{
+			activate(activator);
+		}
 	}
 
 	Default
@@ -478,5 +523,28 @@ class HA_CoreAI : Actor
 		+MTHRUSPECIES
 		-COUNTKILL;
 		-ISMONSTER;
+		//+BUMPSPECIAL
+		+USESPECIAL
+		Activation THINGSPEC_Default | THINGSPEC_Switch;
+	}
+}
+
+class HA_GuardSpot : Actor
+{
+	Default
+	{
+		Radius 1;
+		Height 1;
+		Speed 0;
+		+NOGRAVITY
+		+NOINTERACTION
+		+NOBLOCKMAP
+		-SHOOTABLE
+	}
+	States
+	{
+		Spawn:
+			TNT1 A 1;
+			Loop;
 	}
 }
