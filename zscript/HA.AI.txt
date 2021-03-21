@@ -13,6 +13,9 @@ class HA_CoreAI : Actor
 	bool CDtoTele;
 
 	string ActiveWeapon;
+
+	bool isInAir;
+	double LastAirZ;
 	
 	override void PostBeginPlay()
 	{
@@ -311,6 +314,12 @@ class HA_CoreAI : Actor
 				return Super.DamageMobj(inflictor,source,0,mod,flags,angle);
 			}
 
+			if (!source.bIsMonster)
+			{
+				attacker = null;
+				return Super.DamageMobj(inflictor,source,damage,mod,flags,angle);
+			}
+
 			attacker = source;
 			target = attacker;
 			angle = AngleTo(target);
@@ -372,11 +381,51 @@ class HA_CoreAI : Actor
 		if (!bKILLED)
 			A_AllyDodge();
 		
+		// Monsters are more likely to get stuck if they spawn in-air
 		if (!(pos.z ~== floorz))
 			bTHRUSPECIES = true;
 		else
 			bTHRUSPECIES = false;
 		
+		// Play a Landing or Grunt sound
+		// Note: in Doom games it's based on the velocity Z (falling speed)
+		// not the difference between last position Z and floor Z
+		// But because I believe it's unreliable with non-Players this should do the job plenty
+		if (!bKILLED)
+		{
+			if (pos.z > floorz)
+			{
+				IsInAir = true;
+				if (LastAirZ == 0)
+				{
+					LastAirZ = pos.z;
+				}
+			}
+			else if (pos.z ~== floorz)
+			{
+				if (IsInAir)
+				{
+					if (IsActorPlayingSound(CHAN_VOICE)) return;
+			
+					double Diff = floorz-LastAirZ;
+			
+					if (-Diff > 40 && -Diff < 69)
+					{
+						A_StartSound("PlayerLand", CHAN_VOICE);
+					}
+			
+					if (-Diff > 69)
+					{
+						string Sound = String.Format("Player%sGrunt", HexenType);
+						A_StartSound(Sound, CHAN_VOICE);
+					}
+			
+					IsInAir = false;
+					LastAirZ = 0;
+				}
+			}
+		}
+
 		/*
 		if (bKILLED && MyPlayer && CountdownToDeath != 0 && level.time > CountdownToDeath)
 		{

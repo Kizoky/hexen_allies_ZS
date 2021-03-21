@@ -9,7 +9,7 @@ class HA_FriendlyFire : Inventory
        	+INVENTORY.PERSISTENTPOWER;
        	inventory.maxamount 1;
     }
-	
+
     override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
     {
         if (owner && source is "HA_CoreAI")
@@ -176,13 +176,19 @@ class HA_AllySpawner : CustomInventory
 		{
 			actor MyPlayer = owner;
 			
-			if (MyPlayer.CountInv("HA_AllySpawner") < 3)
+			if (MyPlayer.CountInv("HA_AllySpawner") < 5)
 			{
-				Console.Printf("\c[red]Not enough souls to spawn Ally! (3)");
+				if (MyPlayer.checkLocalView())
+				{
+					int Req = 5 - MyPlayer.CountInv("HA_AllySpawner");
+					string Requ = String.Format("\c[red]Not enough souls to spawn Ally!\n\c[silver]You need %d more", Req);
+					Console.MidPrint(NULL, Requ);
+				}
+				owner.A_StartSound("DoorLocked", CHAN_BODY);
 				return;
 			}
 
-			MyPlayer.A_TakeInventory("HA_AllySpawner", 3);
+			MyPlayer.A_TakeInventory("HA_AllySpawner", 5);
 
 			if (MyPlayer.CountInv("HA_AllySpawner") == 0)
 				MyPlayer.A_GiveInventory("HA_AllySpawner", 1);
@@ -218,7 +224,7 @@ class HA_AllySpawner : CustomInventory
 				}
 			}
 			
-			// not efficent way of doing this but whatever
+			// not efficient way of doing this but whatever
 			int Chosen = randompick[choseone](Available[0], Available[1]);
 			actor SpawnAI = spawn(HexenSpawnList[Chosen], MyPlayer.pos, ALLOW_REPLACE);
 			if (SpawnAI)
