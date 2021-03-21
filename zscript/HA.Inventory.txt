@@ -126,7 +126,38 @@ class HA_AIHub : Inventory
 				}
 			}
 		}
+	}
 
+	int NonDuplicateClass(int ActiveClass)
+	{
+		int NewClass = 0;
+
+		if (TotalNum != 0)
+		{
+			for (uint i = 0; i < Allies.size(); i++)
+			{
+				if (Allies[i])
+				{
+					let Ally = HA_CoreAI(Allies[i]);
+					if (Ally)
+					{
+						for (uint j = 0; j < HA_AllySpawner.HexenAllyList.Size(); j++)
+						{
+							if (!(Ally.HexenType ~== HA_AllySpawner.HexenAllyList[j]))
+							{
+								if (j != ActiveClass)
+								{
+									NewClass = j;
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return NewClass;
 	}
 
 	Default
@@ -176,6 +207,22 @@ class HA_AllySpawner : CustomInventory
 		{
 			actor MyPlayer = owner;
 			
+			// Only 2 Active Ally
+			// todo: Add a cvar for disabling this
+			let Hub = MyPlayer.FindInventory("HA_AIHub");
+			let HubInv = HA_AIHub(Hub);
+			if (Hub && HubInv)
+			{
+				if (HubInv.TotalNum >= 2)
+				{
+					if (MyPlayer.checkLocalView())
+					{
+						Console.MidPrint(NULL, "\c[red]You reached the maximum limit for Ally spawning (2)");
+						return;
+					}
+				}
+			}
+
 			if (MyPlayer.CountInv("HA_AllySpawner") < 5)
 			{
 				if (MyPlayer.checkLocalView())
@@ -213,19 +260,36 @@ class HA_AllySpawner : CustomInventory
 				}
 			//------------ WoC support
 
+			// todo: Add a cvar for ignoring Playerclass
+			int ActiveClass = 0;
 			int Available[2];
 			int j = 0;
 			for (int i = 0; i < HexenListName.Size(); i++)
 			{
+				if (PlayerClass ~== HexenListName[i])
+				{
+					ActiveClass = i;
+				}
+
 				if (!(PlayerClass ~== HexenListName[i]))
 				{
 					Available[j] = i;
 					j++;
 				}
 			}
-			
-			// not efficient way of doing this but whatever
+
+			// Randomize the Ally's class on spawn
 			int Chosen = randompick[choseone](Available[0], Available[1]);
+
+			// Check if there's an Ally already spawned (this should also be cvar dependent, ignoring playerclass)
+			if (Hub && HubInv)
+			{
+				if (HubInv.TotalNum != 0)
+				{
+					Chosen = HubInv.NonDuplicateClass(ActiveClass);
+				}
+			}
+
 			actor SpawnAI = spawn(HexenSpawnList[Chosen], MyPlayer.pos, ALLOW_REPLACE);
 			if (SpawnAI)
 			{
