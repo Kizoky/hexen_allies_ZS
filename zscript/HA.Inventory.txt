@@ -282,11 +282,18 @@ class HA_AllySpawner : CustomInventory
 			int Chosen = randompick[choseone](Available[0], Available[1]);
 
 			// Check if there's an Ally already spawned (this should also be cvar dependent, ignoring playerclass)
-			if (Hub && HubInv)
+			// If TotalNum is more than 3 then we can just mindlessly randomize the classes
+			if (Hub && HubInv && HubInv.TotalNum > 0 && HubInv.TotalNum < 3)
 			{
 				if (HubInv.TotalNum != 0)
 				{
 					Chosen = HubInv.NonDuplicateClass(ActiveClass);
+
+					// We can just assume the Third Ally will always be the Player's class
+					if (HubInv.TotalNum == 2)
+					{
+						Chosen = ActiveClass;
+					}
 				}
 			}
 
