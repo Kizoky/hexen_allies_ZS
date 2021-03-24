@@ -121,6 +121,9 @@ class HA_AIHub : Inventory
 					HAlly.HexenColor = AllyColorChat[i];
 					HAlly.SetStateLabel("See");
 
+					// Set the name properly for the Ally
+					HAlly.SetTag(HAlly.AllyName());
+
 					// Push the new pointer to the array
 					Allies.Push(HAlly);
 				}
@@ -243,21 +246,35 @@ class HA_AllySpawner : CustomInventory
 			string PlayerClass = MyPlayer.GetClassName();
 
 			//------------ WoC support
-			if (PlayerClass ~== "NewFighterPlayer")
-				PlayerClass = "FighterPlayer";
-			if (PlayerClass ~== "NewClericPlayer")
-				PlayerClass = "ClericPlayer";
-			if (PlayerClass ~== "NewMagePlayer")
-				PlayerClass = "MagePlayer";
-			// todo: #1 WoC: Add Ally version of Hunter, Necromancer, and Assassin
-			if (PlayerClass ~== "NewHunterPlayer" ||
-				PlayerClass ~== "NewNecromancerPlayer" ||
-				PlayerClass ~== "NewAssassinPlayer")
-				{
-					Console.Printf("\c[red]Hexen Allies: \c[yellow]The Playerclass you play as doesn't have an Ally version!");
-					int randomclass = random[woc](0, HexenListName.Size()-1);
-					PlayerClass = HexenListName[randomclass];
-				}
+
+			// Check for an item that is 100% always in the mod, and not in any other mod
+			bool isWoCLoaded = false;
+			string WoCItem = "WoC_Stat";
+			class<Actor> woc = WoCItem;
+			if (woc)
+			{
+				Console.Printf("\c[red]Hexen Allies: \c[yellow]Wrath of Cronos \c[red]detected!");
+				isWoCLoaded = true;
+			}
+
+			if (isWoCLoaded)
+			{
+				if (PlayerClass ~== "NewFighterPlayer")
+					PlayerClass = "FighterPlayer";
+				if (PlayerClass ~== "NewClericPlayer")
+					PlayerClass = "ClericPlayer";
+				if (PlayerClass ~== "NewMagePlayer")
+					PlayerClass = "MagePlayer";
+				// todo: #1 WoC: Add Ally version of Hunter, Necromancer, and Assassin
+				if (PlayerClass ~== "NewHunterPlayer" ||
+					PlayerClass ~== "NewNecromancerPlayer" ||
+					PlayerClass ~== "NewAssassinPlayer")
+					{
+						Console.Printf("\c[red]Hexen Allies: \c[yellow]The Playerclass you play as doesn't have an Ally version!");
+						int randomclass = random[woc](0, HexenListName.Size()-1);
+						PlayerClass = HexenListName[randomclass];
+					}
+			}
 			//------------ WoC support
 
 			// todo: Add a cvar for ignoring Playerclass
@@ -344,6 +361,14 @@ class HA_AllySpawner : CustomInventory
 
 					SpawnedAI.AllySay("Ready for action!");
 					SpawnedAI.Following = true;
+
+					SpawnedAI.SetTag(SpawnedAI.AllyName());
+
+					// Settings for AI after WoC is detected
+					if (isWoCLoaded)
+					{
+						SpawnedAI.ACS_NamedExecuteAlways("WOC Monster Init", 0, 56, 0);
+					}
 
 				}
 			}

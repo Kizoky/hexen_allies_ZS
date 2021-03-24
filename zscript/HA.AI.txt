@@ -389,6 +389,11 @@ class HA_CoreAI : Actor
 		else
 			Console.Printf("%s has died.", AIname);
 	}
+
+	string AllyName()
+	{
+		return String.Format("%s's %s", MyPlayer.player.GetUserName(), HexenType);
+	}
 	
 	virtual void HA_Tick()
 	{
