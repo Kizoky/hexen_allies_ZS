@@ -27,6 +27,8 @@ class HA_AIHub : Inventory
 	Array<string> AllyType, AllyColor, AllyWeapon, AllyColorChat;
 	Array<Actor> Allies;
 
+	bool WoCMod;
+
 	override void PostBeginPlay()
 	{
 		TotalNum = 0;
@@ -113,7 +115,8 @@ class HA_AIHub : Inventory
 					if (AllyColor[i] != "default")
 						HAlly.A_SetTranslation(AllyColor[i]);
 					
-					HAlly.Health = AllyHealth[i];
+					//HAlly.Health = AllyHealth[i];
+					HAlly.A_SetHealth(AllyHealth[i]);
 					HAlly.MyPlayer = owner;
 					HAlly.HexenType = AllyType[i];
 					HAlly.gotType = true;
@@ -124,6 +127,17 @@ class HA_AIHub : Inventory
 					// Set the name properly for the Ally
 					HAlly.SetTag(HAlly.AllyName());
 
+					if (WoCMod)
+					{
+						// No experience for now, will have to save that too into an array
+						HAlly.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
+						HAlly.WoC = true;
+
+						// Fix bug with the HUD
+						HAlly.A_SetInventory("CurrentMaxHealth", 100);
+						HAlly.A_SetInventory("Level", 1);
+					}
+
 					// Push the new pointer to the array
 					Allies.Push(HAlly);
 				}
@@ -131,6 +145,8 @@ class HA_AIHub : Inventory
 		}
 	}
 
+	// If one Ally has been spawned already, check for the other class that's not a duplicate
+	// and isn't the Player's doppelganger
 	int NonDuplicateClass(int ActiveClass)
 	{
 		int NewClass = 0;
@@ -255,6 +271,12 @@ class HA_AllySpawner : CustomInventory
 			{
 				Console.Printf("\c[red]Hexen Allies: \c[yellow]Wrath of Cronos \c[red]detected!");
 				isWoCLoaded = true;
+				
+				// Make the Hub inventory item aware of WoC
+				if (Hub && HubInv)
+				{
+					HubInv.WoCMod = true;
+				}
 			}
 
 			if (isWoCLoaded)
@@ -367,7 +389,13 @@ class HA_AllySpawner : CustomInventory
 					// Settings for AI after WoC is detected
 					if (isWoCLoaded)
 					{
-						SpawnedAI.ACS_NamedExecuteAlways("WOC Monster Init", 0, 56, 0);
+						// No experience for now, will have to save that too into an array
+						SpawnedAI.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
+						SpawnedAI.WoC = true;
+
+						// Force set this for now
+						SpawnedAI.A_SetInventory("CurrentMaxHealth", 100);
+						SpawnedAI.A_SetInventory("Level", 1);
 					}
 
 				}

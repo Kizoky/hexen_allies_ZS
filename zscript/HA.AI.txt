@@ -2,6 +2,10 @@
 // spawns the correspending AI (HA_Figher, HA_Cleric, HA_Mage)
 class HA_CoreAI : Actor
 {
+	// cross-mod specific variables
+	bool WoC;
+
+	// Hexen Allies variables
 	actor MyPlayer, attacker, GuardSpot;
 	string HexenType, HexenColorTrnsl, HexenColor;
 	bool gotType, Restored;
@@ -231,6 +235,9 @@ class HA_CoreAI : Actor
 		if (!target) return;
 		
 		if (!(level.time % 1 == 0)) return;
+
+		// todo: in WoC the AI becomes wack, most likely due to Missile and Melee state checking
+		if (WoC) return;
 		
 		FLineTraceData lineData;
 		double ThrustValue = 3;
@@ -521,7 +528,7 @@ class HA_CoreAI : Actor
 		+DONTHARMCLASS;
 		+DONTHURTSPECIES;
 		+NOTELEFRAG;
-		+JUMPDOWN;
+		//+JUMPDOWN;
 		+NOFEAR;
 		+DROPOFF
 		//+THRUSPECIES
