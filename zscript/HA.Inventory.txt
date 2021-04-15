@@ -132,10 +132,15 @@ class HA_AIHub : Inventory
 						// No experience for now, will have to save that too into an array
 						HAlly.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
 						HAlly.WoC = true;
-
+						
+						string WoCItem1 = "CurrentMaxHealth";
+						string WoCItem2 = "Level";
+						class<Inventory> CurrentMaxHealth = WoCItem1;
+						class<Inventory> Level = WoCItem2;
+						
 						// Fix bug with the HUD
-						HAlly.A_SetInventory("CurrentMaxHealth", 100);
-						HAlly.A_SetInventory("Level", 1);
+						HAlly.A_SetInventory(CurrentMaxHealth, 100);
+						HAlly.A_SetInventory(Level, 1);
 					}
 
 					// Push the new pointer to the array
@@ -392,10 +397,15 @@ class HA_AllySpawner : CustomInventory
 						// No experience for now, will have to save that too into an array
 						SpawnedAI.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
 						SpawnedAI.WoC = true;
-
+						
+						string WoCItem1 = "CurrentMaxHealth";
+						string WoCItem2 = "Level";
+						class<Inventory> CurrentMaxHealth = WoCItem1;
+						class<Inventory> Level = WoCItem2;
+						
 						// Force set this for now
-						SpawnedAI.A_SetInventory("CurrentMaxHealth", 100);
-						SpawnedAI.A_SetInventory("Level", 1);
+						SpawnedAI.A_SetInventory(CurrentMaxHealth, 100);
+						SpawnedAI.A_SetInventory(Level, 1);
 					}
 
 				}

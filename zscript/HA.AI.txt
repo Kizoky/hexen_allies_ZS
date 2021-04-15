@@ -236,14 +236,35 @@ class HA_CoreAI : Actor
 		
 		if (!(level.time % 1 == 0)) return;
 
-		// todo: in WoC the AI becomes wack, most likely due to Missile and Melee state checking
-		if (WoC) return;
+		// Special handling for WoC, possibly fixes issues with other mods too
+		// todo WoC: Check the base monster actor and check for specific states
+		bool dodge = false;
+		if (WoC)
+		{
+			if (!target.InStateSequence(target.CurState, target.ResolveState("Spawn")) &&
+				!target.InStateSequence(target.CurState, target.ResolveState("Pain")) &&
+				!target.InStateSequence(target.CurState, target.ResolveState("Death")) &&
+				!target.InStateSequence(target.CurState, target.ResolveState("XDeath")) &&
+				!target.InStateSequence(target.CurState, target.ResolveState("See")))
+			{
+				dodge = true;
+			}
+		}
 		
 		FLineTraceData lineData;
 		double ThrustValue = 3;
 		
+		if (!WoC)
+		{
+			if (target.InStateSequence(target.CurState, target.ResolveState("Missile")) || 
+				target.InStateSequence(target.CurState, target.ResolveState("Melee")))
+			{
+				dodge = true;
+			}
+		}
+		
 		// Let's check if we can move right or left, is there a better way to do this?
-		if (InStateSequence(target.CurState, target.ResolveState("Missile")) || InStateSequence(target.CurState, target.ResolveState("Melee")))
+		if (dodge)
 		{
 			bool HitWall1 = false;
 			bool HitWall2 = false;
