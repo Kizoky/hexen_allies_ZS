@@ -1,3 +1,4 @@
+![Logo](https://media.moddb.com/images/mods/1/24/23449/HXNA.png)
 # Hexen Allies V3
 
 Hexen Allies is a mod for GZDoom that brings AI controlled companions to Hexen.
