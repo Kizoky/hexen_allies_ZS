@@ -22,11 +22,15 @@ class HexenAlliesCoreHandler : EventHandler
 			n.A_GiveInventory("HA_AllySpawner", 1);
 			n.A_GiveInventory("HA_FriendlyFire", 1);
 			n.A_GiveInventory("HA_AIHub", 1);
+			//n.A_GiveInventory("HA_UpdateInventory", 1);
+			n.A_GiveInventory("HA_AllySlot", 2);
+			//n.A_GiveInventory("HA_Soul", 1);
 		}
 	}
 
 	override void WorldThingSpawned (Worldevent e)
 	{
+		// Store every Ally on the level to remove them later when the World is unloaded
 		let SpawnedThing = e.Thing;
 		if (SpawnedThing && SpawnedThing is "HA_CoreAI")
 		{
@@ -55,7 +59,7 @@ class HexenAlliesCoreHandler : EventHandler
 		}
 
 		// Destroy all Allies, if we don't, Players will have duplicate amount of allies
-		// Of course the dead ones shouldn't be counted
+		// Of course the dead ones should lay on the floor
 		for (uint i = 0; i < Allies.size(); i++)
 		{
 			if (Allies[i] && !Allies[i].bKILLED)
