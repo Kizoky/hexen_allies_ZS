@@ -26,13 +26,27 @@ class HA_CoreAI : Actor
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
-		spawn("Teleportfog",pos);
-		Following = true;
-
 		if (!MyPlayer)
 		{
 			Console.Printf("\c[red]Hexen Allies:\c[yellow] Summoning via console isn't supported!");
 			Destroy();
+			return;
+		}
+
+		spawn("Teleportfog",pos);
+		Following = true;
+
+		if (Multiplayer)
+		{
+			let identifier = spawn("HA_AllyIdentifier", pos);
+			if (identifier)
+			{
+				let identify = HA_AllyIdentifier(identifier);
+				if (identify)
+				{
+					identify.Ally = self;
+				}
+			}
 		}
 	}
 	
@@ -578,6 +592,36 @@ class HA_GuardSpot : Actor
 	{
 		Spawn:
 			TNT1 A 1;
+			Loop;
+	}
+}
+
+class HA_AllyIdentifier : HA_GuardSpot
+{
+	Default
+	{
+		Scale 0.27;
+		RenderStyle "Translucent";
+		Alpha 0.75;
+	}
+
+	actor Ally;
+	override void Tick()
+	{
+		Super.Tick();
+		if (Ally)
+		{
+			SetOrigin(Ally.pos+(0,0,63), TRUE);
+			if (Ally.bKILLED)
+			{
+				Destroy();
+			}
+		}
+	}
+	States
+	{
+		Spawn:
+			HXNA A 1 Bright;
 			Loop;
 	}
 }
