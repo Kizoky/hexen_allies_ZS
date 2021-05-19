@@ -251,7 +251,8 @@ class HA_AIHub : Inventory
 			Console.Printf("Hexen Allies: This causes an array out of bounds.");
 		}
 
-		return random[cls](NonDuplicateClasses[0], NonDuplicateClasses.Size());
+		int rng = random[cls](0, NonDuplicateClasses.Size()-1);
+		return NonDuplicateClasses[rng];
 	}
 
 	Default
@@ -393,7 +394,7 @@ class HA_AllySpawner : CustomInventory
 					PlayerClass ~== "NewAssassinPlayer")
 					{
 						Console.Printf("\c[red]Hexen Allies: \c[yellow]The Playerclass you play as doesn't have an Ally version!");
-						int randomclass = random[woc](0, HexenListName.Size());
+						int randomclass = random[woc](0, HexenListName.Size()-1);
 						PlayerClass = HexenListName[randomclass];
 					}
 			}
