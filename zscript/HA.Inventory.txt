@@ -172,7 +172,7 @@ class HA_AIHub : Inventory
 	// and isn't the Player's doppelganger
 	int NonDuplicateClass(int ActiveClass)
 	{
-		int NewClass = 0;
+		Array<int> NonDuplicateClasses;
 
 		if (TotalNum != 0)
 		{
@@ -189,8 +189,7 @@ class HA_AIHub : Inventory
 							{
 								if (j != ActiveClass)
 								{
-									NewClass = j;
-									break;
+									NonDuplicateClasses.Push(j);
 								}
 							}
 						}
@@ -198,8 +197,13 @@ class HA_AIHub : Inventory
 				}
 			}
 		}
+		else
+		{
+			Console.Printf("Hexen Allies: Warning, tried to use NonDuplicateClass without a single Ally spawned (TotalNum variable)");
+			Console.Printf("Hexen Allies: This causes an array out of bounds.");
+		}
 
-		return NewClass;
+		return random[cls](NonDuplicateClasses[0], NonDuplicateClasses.Size());
 	}
 
 	Default
@@ -236,6 +240,15 @@ class HA_AllySpawner : CustomInventory
 		"Yellow"
 	};
 
+	enum eHexenColors
+	{
+		HA_GREEN,
+		HA_RED,
+		HA_BLUE,
+		HA_SILVER,
+		HA_YELLOW,
+	}
+
 	static const string HexenAllyList[] =
 	{
 		"Fighter",
@@ -263,18 +276,20 @@ class HA_AllySpawner : CustomInventory
 				{
 					if (HubInv.TotalNum >= MyPlayer.CountInv("HA_AllySlot"))
 					{
+						string Req = String.Format("\c[red]You reached the maximum limit for Ally spawning (%d)", MyPlayer.CountInv("HA_AllySlot"));
 						if (MyPlayer.checkLocalView())
 						{
-							Console.MidPrint(NULL, "\c[red]You reached the maximum limit for Ally spawning (2)");
+							Console.MidPrint(NULL, Req);
 						}
 						return;
 					}
 				}
 			}
 
-			if (MyPlayer.CountInv("HA_Soul") < 5)
+			int CostToSpawn = 5;
+			if (MyPlayer.CountInv("HA_Soul") < CostToSpawn)
 			{
-				int Req = 5 - MyPlayer.CountInv("HA_Soul");
+				int Req = CostToSpawn - MyPlayer.CountInv("HA_Soul");
 				string Requ = String.Format("\c[red]Not enough souls to spawn Ally!\n\c[silver]You need %d more", Req);
 				if (MyPlayer.checkLocalView())
 				{
@@ -284,7 +299,7 @@ class HA_AllySpawner : CustomInventory
 				return;
 			}
 
-			MyPlayer.A_TakeInventory("HA_Soul", 5);
+			MyPlayer.A_TakeInventory("HA_Soul", CostToSpawn);
 			int Souls = MyPlayer.CountInv("HA_Soul");
 			MyPlayer.A_SetInventory("HA_AllySpawner", Souls);
 
@@ -315,6 +330,7 @@ class HA_AllySpawner : CustomInventory
 				}
 			}
 
+			//------------------------------ WoC support
 			if (isWoCLoaded)
 			{
 				if (PlayerClass ~== "NewFighterPlayer")
@@ -333,47 +349,56 @@ class HA_AllySpawner : CustomInventory
 						PlayerClass = HexenListName[randomclass];
 					}
 			}
-			//------------ WoC support
+			//------------------------------
 
-			// todo: Add a cvar for ignoring Playerclass
-			int ActiveClass = 0;
-			int Available[2];
-			int j = 0;
-			for (int i = 0; i < HexenListName.Size(); i++)
-			{
-				if (PlayerClass ~== HexenListName[i])
-				{
-					ActiveClass = i;
-				}
-
-				if (!(PlayerClass ~== HexenListName[i]))
-				{
-					Available[j] = i;
-					j++;
-				}
-			}
-
-			// Randomize the Ally's class on spawn
-			int Chosen = randompick[choseone](Available[0], Available[1]);
-
-			// Check if there's an Ally already spawned (this should also be cvar dependent, ignoring playerclass)
-			// If TotalNum is more than 3 then we can just mindlessly randomize the classes
+			int TotalAlliesSpawned = 0;
+			int Chosen = 0;
 			if (Hub)
 			{
 				let HubInv = HA_AIHub(Hub);
 				if (HubInv)
 				{
-					if (HubInv.TotalNum != 0 && HubInv.TotalNum > 0 && HubInv.TotalNum < 3)
-					{
-						Chosen = HubInv.NonDuplicateClass(ActiveClass);
+					TotalAlliesSpawned = HubInv.TotalNum;
+				}
+			}
 
-						// We can just assume the Third Ally will always be the Player's class
-						if (HubInv.TotalNum == 2)
-						{
-							Chosen = ActiveClass;
-						}
+			if (TotalAlliesSpawned <= 2)
+			{
+				int ActiveClass = 0;
+				Array<int> AvailableClass;
+				for (int i = 0; i < HexenListName.Size(); i++)
+				{
+					if (PlayerClass ~== HexenListName[i])
+					{
+						ActiveClass = i;
+					}
+
+					if (!(PlayerClass ~== HexenListName[i]))
+					{
+						AvailableClass.Push(i);
 					}
 				}
+
+				// Randomize the Ally's class on spawn
+				Chosen = randompick[choseone](AvailableClass[0], AvailableClass.Size());
+
+				// The idea here is that until the Player has 2 allies do not spawn an Ally class identical to the Player's
+				if (Hub && TotalAlliesSpawned > 0)
+				{
+					let HubInv = HA_AIHub(Hub);
+					if (HubInv) Chosen = HubInv.NonDuplicateClass(ActiveClass);
+				}
+
+				// We can just assume the Third Ally's class will always be the same like the Player's
+				if (TotalAlliesSpawned == 2)
+				{
+					Chosen = ActiveClass;
+				}
+			}
+			else
+			{
+				// Go amok, I guess!
+				Chosen = random[tas](0, HexenSpawnList.Size());
 			}
 
 			actor SpawnAI = spawn(HexenSpawnList[Chosen], MyPlayer.pos, ALLOW_REPLACE);
@@ -394,7 +419,7 @@ class HA_AllySpawner : CustomInventory
 					{
 						AIcolor = String.Format("CM%s", HexenColors[rndColor]);
 						// Cleric and Mage is blue by default, so we don't need to set it
-						if (rndColor != 2)
+						if (rndColor != HA_BLUE)
 							SpawnedAI.A_SetTranslation(AIcolor);
 						else AIcolor = "default";
 					}
@@ -402,7 +427,7 @@ class HA_AllySpawner : CustomInventory
 					{
 						AIcolor = String.Format("F%s", HexenColors[rndColor]);
 						// Fighter is Silver by default
-						if (rndColor != 3)
+						if (rndColor != HA_SILVER)
 							SpawnedAI.A_SetTranslation(AIcolor);
 						else AIcolor = "default";
 					}
@@ -491,10 +516,10 @@ class HA_AllySlot : CustomInventory
 
 			if (MyPlayer.CountInv("HA_Soul") < Cost)
 			{
+				int Req = Cost - MyPlayer.CountInv("HA_Soul");
+				string Requ = String.Format("\c[red]Not enough souls to add a slot!\n\c[silver]You need %d more", Req);
 				if (MyPlayer.checkLocalView())
 				{
-					int Req = Cost - MyPlayer.CountInv("HA_Soul");
-					string Requ = String.Format("\c[red]Not enough souls to increment a slot!\n\c[silver]You need %d more", Req);
 					Console.MidPrint(NULL, Requ);
 				}
 				MyPlayer.A_StartSound("DoorLocked", CHAN_BODY);
