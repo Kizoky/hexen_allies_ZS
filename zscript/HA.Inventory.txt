@@ -31,8 +31,16 @@ class HA_AIHub : Inventory
 
 					if (slot > UnlockWeaponry)
 					{
-						UnlockWeaponry++;
-						PrintTip("Slots", slot);
+						int differ = slot - UnlockWeaponry;
+
+						// Player might just never equip the previous slot weapon, so big brain time
+						UnlockWeaponry += slot - UnlockWeaponry;
+
+						if (differ == 1)
+							PrintTip("Slots", slot);
+						else 
+							PrintTip("Slots", slot, differ);
+
 						UnlockAllyWeaponry();
 					}
 				}
@@ -56,7 +64,7 @@ class HA_AIHub : Inventory
 		}
 	}
 
-	void PrintTip(string Tip, int param = 0)
+	void PrintTip(string Tip, int param1 = 0, double param2 = -1)
 	{
 		actor MyPlayer = owner;
 		if (Tip ~== "Slots")
@@ -65,20 +73,43 @@ class HA_AIHub : Inventory
 			{
 				if (MyPlayer.checkLocalView())
 				{
+					string Display = "n/a";
 					string number = "n/a";
 
-					switch (param)
+					if (param2 < 0)
 					{
-						case 1: number = "First"; break;
-						case 2: number = "Second"; break;
-						case 3: number = "Third"; break;
-						case 4: number = "Fourth"; break;
+						switch (param1)
+						{
+							case 1: number = "First"; break;
+							case 2: number = "Second"; break;
+							case 3: number = "Third"; break;
+						}
+
+						if (param1 != 4)
+							Display = string.Format("\c*Your allies are now able to use their %s weapon!", number);
+						else
+							Display = string.Format("\c*Your allies are now able to use all weapons!");
+
+						Console.MidPrint(NULL, Display);
 					}
+					else
+					{
+						// For some reason... the player skipped a weapon slot, we don't know why, and we'll never know why
 
-					string Display = string.Format("\c*Your allies are now able to use their %s weapon!", number);
+						// Slot 3, but the difference is 2 (Player equipped Slot 1 -> Slot 3)
+						if (param1 == 3 && param2 == 2)
+						{
+							Display = string.Format("\c*Your allies are now able to use their Second and Third weapons!");
+						}
 
-					Console.MidPrint(NULL, Display);
-					//A_StartSound("misc/chat", CHAN_7, attenuation:ATTN_NONE);
+						// We don't care, it's Slot 4
+						if (param1 == 4)
+						{
+							Display = string.Format("\c*Your allies are now able to use all weapons!");
+						}
+
+						Console.MidPrint(NULL, Display);
+					}
 				}
 			}
 		}
