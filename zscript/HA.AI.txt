@@ -22,6 +22,9 @@ class HA_CoreAI : Actor
 	double LastAirZ;
 
 	bool Following;
+
+	int WeaponCapability;
+	int Mana;
 	
 	override void PostBeginPlay()
 	{

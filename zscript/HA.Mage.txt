@@ -1,6 +1,22 @@
 // Mage AI
 class HA_Mage : HA_CoreAI
 {
+	static const string WeaponList[] =
+	{
+		"Wand",
+		"Frost",
+		"Lightning",
+		"Blood"
+	};
+
+	enum UnlockedWep
+	{
+		Wand = 1,
+		Frost,
+		Lightning,
+		Blood
+	}
+
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
@@ -43,6 +59,9 @@ class HA_Mage : HA_CoreAI
 
 	override void HA_RangeShoot()
 	{
+		int asd = random[asd](0, WeaponList.Size()-1);
+		ActiveWeapon = WeaponList[asd];
+
 		angle = AngleTo(target, true);
 		if (!CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0)) return;
 		if (InStateSequence(CurState, ResolveState("Missile"))) return;

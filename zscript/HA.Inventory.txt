@@ -1,41 +1,5 @@
 // todo: Maybe we could squash these Inventory items as one? Atleast the most important ones
 
-// Prevents Friendly Fire
-// Cross-mod compatible
-class HA_FriendlyFire : Inventory
-{
-    Default
-	{
-       	+INVENTORY.UNDROPPABLE;
-       	+INVENTORY.UNTOSSABLE;
-       	+INVENTORY.PERSISTENTPOWER;
-       	inventory.maxamount 1;
-    }
-
-    override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
-    {
-        if (owner && source is "HA_CoreAI")
-		{
-			newdamage = 0;
-		}
-    }
-}
-
-// Updates the soul amount accordingly between other HA Inventory items
-/*
-class HA_UpdateInventory : Inventory
-{
-	void UpdateInv(double Amount = 0)
-	{
-		if (owner)
-		{
-			int Souls = owner.CountInv("HA_Soul");
-			owner.A_SetInventory("HA_AllySpawner", Souls);
-		}
-	}
-}
-*/
-
 // Stores information about the Player's allies, then spawns them into the level accordingly
 class HA_AIHub : Inventory
 {
@@ -44,11 +8,94 @@ class HA_AIHub : Inventory
 	Array<string> AllyType, AllyColor, AllyWeapon, AllyColorChat;
 	Array<Actor> Allies;
 
+	int UnlockWeaponry;
+
+	// compatibility with other mods
 	bool WoCMod;
+
+	override void Tick()
+	{
+		Super.Tick();
+		actor MyPlayer = owner;
+		if (MyPlayer)
+		{
+			if (level.time % (35 * 2) == 0)
+			{
+				let wepP = MyPlayer.player.ReadyWeapon;
+				if (wepP)
+				{
+					class<weapon> weapon = MyPlayer.player.ReadyWeapon.GetClassName();
+
+					bool _; int slot;
+					[_, slot] = MyPlayer.player.weapons.locateWeapon(weapon);
+
+					if (slot > UnlockWeaponry)
+					{
+						UnlockWeaponry++;
+						PrintTip("Slots", slot);
+						UnlockAllyWeaponry();
+					}
+				}
+			}
+		}
+	}
+
+	// Checks UnlockWeaponry variable and unlocks weapon for current allies on the level
+	void UnlockAllyWeaponry()
+	{
+		for (uint i = 0; i < Allies.size(); i++)
+		{
+			if (Allies[i])
+			{
+				let Ally = HA_CoreAI(Allies[i]);
+				if (Ally)
+				{
+					Ally.WeaponCapability = UnlockWeaponry;
+				}
+			}
+		}
+	}
+
+	void PrintTip(string Tip, int param = 0)
+	{
+		actor MyPlayer = owner;
+		if (Tip ~== "Slots")
+		{
+			if (MyPlayer)
+			{
+				if (MyPlayer.checkLocalView())
+				{
+					string number = "n/a";
+
+					switch (param)
+					{
+						case 1: number = "First"; break;
+						case 2: number = "Second"; break;
+						case 3: number = "Third"; break;
+						case 4: number = "Fourth"; break;
+					}
+
+					string Display = string.Format("\c*Your allies are now able to use their %s weapon!", number);
+
+					Console.MidPrint(NULL, Display);
+					//A_StartSound("misc/chat", CHAN_7, attenuation:ATTN_NONE);
+				}
+			}
+		}
+	}
+
+	override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
+    {
+        if (owner && source is "HA_CoreAI")
+		{
+			newdamage = 0;
+		}
+    }
 
 	override void PostBeginPlay()
 	{
 		TotalNum = 0;
+		UnlockWeaponry = 1;
 	}
 
 	// Add an Ally for restoration
@@ -140,6 +187,7 @@ class HA_AIHub : Inventory
 					HAlly.gotType = true;
 					HAlly.Restored = true;
 					HAlly.HexenColor = AllyColorChat[i];
+					HAlly.WeaponCapability = UnlockWeaponry;
 					HAlly.SetStateLabel("See");
 
 					// Set the name properly for the Ally
@@ -345,7 +393,7 @@ class HA_AllySpawner : CustomInventory
 					PlayerClass ~== "NewAssassinPlayer")
 					{
 						Console.Printf("\c[red]Hexen Allies: \c[yellow]The Playerclass you play as doesn't have an Ally version!");
-						int randomclass = random[woc](0, HexenListName.Size()-1);
+						int randomclass = random[woc](0, HexenListName.Size());
 						PlayerClass = HexenListName[randomclass];
 					}
 			}
@@ -353,6 +401,7 @@ class HA_AllySpawner : CustomInventory
 
 			int TotalAlliesSpawned = 0;
 			int Chosen = 0;
+
 			if (Hub)
 			{
 				let HubInv = HA_AIHub(Hub);
@@ -380,7 +429,8 @@ class HA_AllySpawner : CustomInventory
 				}
 
 				// Randomize the Ally's class on spawn
-				Chosen = randompick[choseone](AvailableClass[0], AvailableClass.Size());
+				int chsn = random[choose](0, AvailableClass.Size()-1);
+				Chosen = AvailableClass[chsn];
 
 				// The idea here is that until the Player has 2 allies do not spawn an Ally class identical to the Player's
 				if (Hub && TotalAlliesSpawned > 0)
@@ -401,6 +451,13 @@ class HA_AllySpawner : CustomInventory
 				Chosen = random[tas](0, HexenSpawnList.Size());
 			}
 
+			int UnlockableWeapons = 1;
+			if (Hub)
+			{
+				let HubInv = HA_AIHub(Hub);
+				if (HubInv) UnlockableWeapons = HubInv.UnlockWeaponry;
+			}
+
 			actor SpawnAI = spawn(HexenSpawnList[Chosen], MyPlayer.pos, ALLOW_REPLACE);
 			if (SpawnAI)
 			{
@@ -410,6 +467,7 @@ class HA_AllySpawner : CustomInventory
 					SpawnedAI.MyPlayer = MyPlayer;
 					SpawnedAI.HexenType = HexenAllyList[Chosen];
 					SpawnedAI.gotType = true;
+					SpawnedAI.WeaponCapability = UnlockableWeapons;
 					SpawnedAI.SetStateLabel("See");
 					// Say hooray for Color randomization!
 					int rndColor = random[clr](0, HexenColors.Size()-1);
