@@ -4,9 +4,8 @@ class HA_Fighter : HA_CoreAI
 	const AXERANGE = (2.25 * DEFMELEERANGE);
 	const HAMMER_RANGE = 1.5 * DEFMELEERANGE;
 
-	override void PostBeginPlay()
+	override void HA_PostBeginPlay()
 	{
-		Super.PostBeginPlay();
 		ActiveWeapon = "Fist";
 		IsMelee = true;
 		IsRanged = false;

@@ -24,8 +24,10 @@ class HA_CoreAI : Actor
 	bool Following;
 
 	int WeaponCapability;
-	int Mana;
+	int Mana, ManaPerSeconds;
 	
+	virtual void HA_PostBeginPlay() {}
+
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
@@ -38,6 +40,8 @@ class HA_CoreAI : Actor
 
 		spawn("Teleportfog",pos);
 		Following = true;
+		Mana = 0;
+		ManaPerSeconds = 70;
 
 		if (Multiplayer)
 		{
@@ -51,6 +55,8 @@ class HA_CoreAI : Actor
 				}
 			}
 		}
+
+		HA_PostBeginPlay();
 	}
 	
 	virtual void A_MovementChase(actor targ)
@@ -440,10 +446,26 @@ class HA_CoreAI : Actor
 		return String.Format("%s's %s", MyPlayer.player.GetUserName(), HexenType);
 	}
 	
-	virtual void HA_Tick()
+	virtual void HA_Tick() {}
+	
+	override void Tick()
 	{
+		Super.Tick();
+		
 		if (!bKILLED)
+		{
 			A_AllyDodge();
+
+			if (level.time % ManaPerSeconds == 0)
+			{
+				if (Mana < 200)
+				{
+					Mana += 1;
+				}
+
+				Console.Printf("Mage Mana: %d", Mana);
+			}
+		}
 		
 		// Monsters are more likely to get stuck if they spawn in-air
 		if (!(pos.z ~== floorz))
@@ -490,21 +512,6 @@ class HA_CoreAI : Actor
 			}
 		}
 
-		/*
-		if (bKILLED && MyPlayer && CountdownToDeath != 0 && level.time > CountdownToDeath)
-		{
-			spawn("TeleportFog",pos);
-			Console.Printf("A dead follower has been teleported into it's dimension back...");
-			Destroy();
-		}
-		*/
-		
-	}
-	
-	override void Tick()
-	{
-		Super.Tick();
-		
 		HA_Tick();
 	}
 

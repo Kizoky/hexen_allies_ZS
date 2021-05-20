@@ -17,18 +17,17 @@ class HA_Mage : HA_CoreAI
 		Blood
 	}
 
-	override void PostBeginPlay()
+	override void HA_PostBeginPlay()
 	{
-		Super.PostBeginPlay();
 		ActiveWeapon = "Wand";
 		IsMelee = false;
+		IsRanged = true;
+		//Mana = 999;
+		//WeaponCapability = 3;
 	}
 
-	override void Tick()
+	override void HA_Tick()
 	{
-		Super.Tick();
-		HA_Tick();
-
 		if (ActiveWeapon ~== "Lightning")
 		{
 			if (random[LightningReady]() > 250)
@@ -37,9 +36,106 @@ class HA_Mage : HA_CoreAI
 				A_StartSound ("MageLightningReady", CHAN_WEAPON);
 			}
 		}
+
+		//if (level.time % 35 == 0)
+		//{
+		//	Console.Printf("Mage Mana: %d", Mana);
+		//}
 	}
 
-	private void MStaffSpawn (double angle, Actor alttarget)
+	bool MAGE_Wand()
+	{
+		if (random[chanceshoot]() < 75)
+		{
+			Actor proj = A_SpawnProjectile("MageWandMissile", 55);
+			if (proj)
+			{
+				proj.bMTHRUSPECIES = true;
+				vel.xy = (0,0);
+				SetStateLabel("Missile");
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool MAGE_Frost()
+	{
+		if (random[chanceshoot]() > 175)
+		{
+			bool success = false;
+
+			bool conedone=false;
+			FTranslatedLineTarget t;
+			A_StartSound ("MageShardsFire", CHAN_BODY);
+			int damage = random[MageCone](90, 105);
+			for (int i = 0; i < 16; i++)
+			{
+				double ang = angle + i*(45./16);
+				double slope = AimLineAttack (ang, DEFMELEERANGE, t, 0., ALF_CHECK3D);
+				if (t.linetarget)
+				{
+					t.linetarget.DamageMobj (self, self, damage, 'Ice', DMG_USEANGLE, t.angleFromSource);
+					conedone = true;
+					vel.xy = (0,0);
+					SetStateLabel("Missile");
+					success = true;
+					break;
+				}
+			}
+			// didn't find any creatures, so fire projectiles
+			if (!conedone)
+			{
+				Actor mo = SpawnPlayerMissile ("FrostMissile");
+				if (mo)
+				{
+					mo.special1 = FrostMissile.SHARDSPAWN_LEFT|FrostMissile.SHARDSPAWN_DOWN|FrostMissile.SHARDSPAWN_UP|FrostMissile.SHARDSPAWN_RIGHT;
+					mo.special2 = 3; // Set sperm count (levels of reproductivity)
+					mo.target = self;
+					mo.args[0] = 3;		// Mark Initial shard as super damage
+				}
+				vel.xy = (0,0);
+				SetStateLabel("Missile");
+				success = true;
+			}
+
+			return success;
+		}
+
+		return false;
+	}
+
+	bool MAGE_Lightning()
+	{
+		if (random[chanceshoot]() > 225)
+		{
+			class<Actor> floor = "LightningFloor";
+			class<Actor> ceiling = "LightningCeiling";
+			LightningFloor fmo = LightningFloor(SpawnPlayerMissile (floor));
+			LightningCeiling cmo = LightningCeiling(SpawnPlayerMissile (ceiling));
+			if (fmo)
+			{
+				fmo.special1 = 0;
+				fmo.lastenemy = cmo;
+				fmo.A_LightningZap();
+			}
+			if (cmo)
+			{
+				cmo.tracer = NULL;
+				cmo.lastenemy = fmo;
+				cmo.A_LightningZap();
+			}
+			A_StartSound ("MageLightningFire", CHAN_BODY);
+			vel.xy = (0,0);
+			SetStateLabel("Missile");
+			return true;
+		}
+
+		return false;
+	}
+
+	private void Blood_MStaffSpawn (double angle, Actor alttarget)
 	{
 		FTranslatedLineTarget t;
 
@@ -54,13 +150,44 @@ class HA_Mage : HA_CoreAI
 		}
 	}
 
+	bool MAGE_Blood()
+	{
+		if (random[chanceshoot]() > 225)
+		{
+			FTranslatedLineTarget t;
+			// [RH] Let's try and actually track what the player aimed at
+			AimLineAttack (angle, PLAYERMISSILERANGE, t, 32.);
+			if (t.linetarget == NULL)
+			{
+				t.linetarget = RoughMonsterSearch(10, true, true);
+			}
+			Blood_MStaffSpawn (angle, t.linetarget);
+			Blood_MStaffSpawn (angle-5, t.linetarget);
+			Blood_MStaffSpawn (angle+5, t.linetarget);
+			A_StartSound ("MageStaffFire", CHAN_BODY);
+			vel.xy = (0,0);
+			SetStateLabel("Missile");
+			return true;
+		}
+		return false;
+	}
+
 	// Mage cannot do melee attack
 	override void HA_MeleeShoot() {}
 
 	override void HA_RangeShoot()
 	{
-		int asd = random[asd](0, WeaponList.Size()-1);
-		ActiveWeapon = WeaponList[asd];
+		//int asd = random[asd](0, WeaponList.Size()-1);
+		//ActiveWeapon = WeaponList[asd];
+
+		switch (WeaponCapability)
+		{
+			ActiveWeapon = "Wand";
+
+			case Frost: 	if (Mana >= 100) ActiveWeapon = "Frost"; break;
+			case Lightning: if (Mana >= 150) ActiveWeapon = "Lightning"; break;
+			case Blood: 	if (Mana >= 200) ActiveWeapon = "Blood"; break;
+		}
 
 		angle = AngleTo(target, true);
 		if (!CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0)) return;
@@ -69,109 +196,36 @@ class HA_Mage : HA_CoreAI
 		// ================================= Wand
 		if (ActiveWeapon ~== "Wand")
 		{
-			if (random[chanceshoot]() < 75)
+			if (MAGE_Wand())
 			{
-				Actor proj = A_SpawnProjectile("MageWandMissile", 55);
-				if (proj)
-				{
-					proj.bMTHRUSPECIES = true;
-					vel.xy = (0,0);
-					SetStateLabel("Missile");
-				}
+				Mana += 1;
 			}
 		}
 
 		// ================================= Frost Cone 
 		if (ActiveWeapon ~== "Frost")
 		{
-			if (random[chanceshoot]() > 175)
+			if (MAGE_Frost())
 			{
-				bool conedone=false;
-				FTranslatedLineTarget t;
-
-				A_StartSound ("MageShardsFire", CHAN_BODY);
-
-				int damage = random[MageCone](90, 105);
-				for (int i = 0; i < 16; i++)
-				{
-					double ang = angle + i*(45./16);
-					double slope = AimLineAttack (ang, DEFMELEERANGE, t, 0., ALF_CHECK3D);
-					if (t.linetarget)
-					{
-						t.linetarget.DamageMobj (self, self, damage, 'Ice', DMG_USEANGLE, t.angleFromSource);
-						conedone = true;
-						vel.xy = (0,0);
-						SetStateLabel("Missile");
-						break;
-					}
-				}
-
-				// didn't find any creatures, so fire projectiles
-				if (!conedone)
-				{
-					Actor mo = SpawnPlayerMissile ("FrostMissile");
-					if (mo)
-					{
-						mo.special1 = FrostMissile.SHARDSPAWN_LEFT|FrostMissile.SHARDSPAWN_DOWN|FrostMissile.SHARDSPAWN_UP|FrostMissile.SHARDSPAWN_RIGHT;
-						mo.special2 = 3; // Set sperm count (levels of reproductivity)
-						mo.target = self;
-						mo.args[0] = 3;		// Mark Initial shard as super damage
-					}
-					vel.xy = (0,0);
-					SetStateLabel("Missile");
-				}
+				Mana -= 3;
 			}
 		}
 
 		// ================================= Lightning Arc of Death
 		if (ActiveWeapon ~== "Lightning")
 		{
-			if (random[chanceshoot]() > 225)
+			if (MAGE_Lightning())
 			{
-				class<Actor> floor = "LightningFloor";
-				class<Actor> ceiling = "LightningCeiling";
-
-				LightningFloor fmo = LightningFloor(SpawnPlayerMissile (floor));
-				LightningCeiling cmo = LightningCeiling(SpawnPlayerMissile (ceiling));
-				if (fmo)
-				{
-					fmo.special1 = 0;
-					fmo.lastenemy = cmo;
-					fmo.A_LightningZap();
-				}
-				if (cmo)
-				{
-					cmo.tracer = NULL;
-					cmo.lastenemy = fmo;
-					cmo.A_LightningZap();
-				}
-				A_StartSound ("MageLightningFire", CHAN_BODY);
-
-				vel.xy = (0,0);
-				SetStateLabel("Missile");
+				Mana -= 5;
 			}
 		}
 
 		// ================================= Bloodscourge
 		if (ActiveWeapon ~== "Blood")
 		{
-			if (random[chanceshoot]() > 225)
+			if (MAGE_Blood())
 			{
-				FTranslatedLineTarget t;
-
-				// [RH] Let's try and actually track what the player aimed at
-				AimLineAttack (angle, PLAYERMISSILERANGE, t, 32.);
-				if (t.linetarget == NULL)
-				{
-					t.linetarget = RoughMonsterSearch(10, true, true);
-				}
-				MStaffSpawn (angle, t.linetarget);
-				MStaffSpawn (angle-5, t.linetarget);
-				MStaffSpawn (angle+5, t.linetarget);
-				A_StartSound ("MageStaffFire", CHAN_BODY);
-
-				vel.xy = (0,0);
-				SetStateLabel("Missile");
+				Mana -= 15;
 			}
 		}
 	}
