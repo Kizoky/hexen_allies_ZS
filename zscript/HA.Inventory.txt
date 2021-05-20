@@ -615,6 +615,17 @@ class HA_AllySlot : CustomInventory
 				MyPlayer.A_StartSound("DoorLocked", CHAN_BODY);
 				return;
 			}
+			else
+			{
+				MyPlayer.A_GiveInventory("HA_AllySlot", 1);
+				MyPlayer.A_TakeInventory("HA_Soul", Cost);
+				MyPlayer.A_StartSound("MysticIncant", CHAN_BODY);
+				string msg = String.Format("\c[silver]You now have %d Ally Slots!", MyPlayer.CountInv("HA_AllySlot"));
+				if (MyPlayer.checkLocalView())
+				{
+					Console.MidPrint(NULL, msg);
+				}
+			}
 		}
 	}
 
@@ -634,7 +645,7 @@ class HA_AllySlot : CustomInventory
 		Inventory.PickupMessage "Picked up an Ally Slot Incrementor. Who's going to jail for this?";
 		Inventory.Amount 1;
 		Inventory.MaxAmount 9;
-		Tag "Total Ally Slots";
+		Tag "Ally Slots";
 	}
 	States
 	{
