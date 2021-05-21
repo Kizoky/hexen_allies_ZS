@@ -463,7 +463,7 @@ class HA_CoreAI : Actor
 					Mana += 1;
 				}
 
-				Console.Printf("Mage Mana: %d", Mana);
+				//Console.Printf("Mage Mana: %d", Mana);
 			}
 		}
 		

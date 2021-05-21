@@ -479,8 +479,8 @@ class HA_AllySpawner : CustomInventory
 			}
 			else
 			{
-				// Go amok, I guess!
-				Chosen = random[tas](0, HexenSpawnList.Size());
+				// todo: Should we leave this as totally random, or introduce a ruling?
+				Chosen = random[tas](0, HexenSpawnList.Size()-1);
 			}
 
 			int UnlockableWeapons = 1;
