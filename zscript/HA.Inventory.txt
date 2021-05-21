@@ -4,7 +4,9 @@
 class HA_AIHub : Inventory
 {
 	int TotalNum;
-	Array<int> AllyHealth;
+
+	// Todo: maybe Multidimensional arrays? This looks painful
+	Array<int> AllyHealth, AllyMana;
 	Array<string> AllyType, AllyColor, AllyWeapon, AllyColorChat;
 	Array<Actor> Allies;
 
@@ -19,6 +21,7 @@ class HA_AIHub : Inventory
 		actor MyPlayer = owner;
 		if (MyPlayer)
 		{
+			// Check every 2 seconds the Player's weapon to unlock the arsenal of all Allies
 			if (level.time % (35 * 2) == 0)
 			{
 				let wepP = MyPlayer.player.ReadyWeapon;
@@ -41,24 +44,20 @@ class HA_AIHub : Inventory
 						else 
 							PrintTip("Slots", slot, differ);
 
-						UnlockAllyWeaponry();
-					}
-				}
-			}
-		}
-	}
+						// Unlock weapon(s) for active allies on the level
+						for (uint i = 0; i < Allies.size(); i++)
+						{
+							if (Allies[i])
+							{
+								let Ally = HA_CoreAI(Allies[i]);
+								if (Ally)
+								{
+									Ally.WeaponCapability = UnlockWeaponry;
+								}
+							}
+						}
 
-	// Checks UnlockWeaponry variable and unlocks weapon for current allies on the level
-	void UnlockAllyWeaponry()
-	{
-		for (uint i = 0; i < Allies.size(); i++)
-		{
-			if (Allies[i])
-			{
-				let Ally = HA_CoreAI(Allies[i]);
-				if (Ally)
-				{
-					Ally.WeaponCapability = UnlockWeaponry;
+					}
 				}
 			}
 		}
@@ -129,9 +128,9 @@ class HA_AIHub : Inventory
 		UnlockWeaponry = 1;
 	}
 
-	// Add an Ally for restoration
+	// Add an Ally for future restoration
 	// Preserves everything, with the exception of Actor array, which needs to be refilled
-	// after a new level
+	// after a new level (See RestoreAlly below)
 	void AddAlly(string Type, string Color, string Weapon, int Health, actor Ally, string ChatColor)
 	{
 		TotalNum++;
@@ -143,6 +142,7 @@ class HA_AIHub : Inventory
 		}
 
 		AllyHealth.Push(Health);
+		AllyMana.Push(0); // When they are added they'll have 0 mana anyway
 		AllyType.Push(Type);
 		AllyColor.Push(Color);
 		AllyWeapon.Push(Weapon);
@@ -152,7 +152,7 @@ class HA_AIHub : Inventory
 
 	// Update information on the allies before destroying them, and changing onto the next level
 	// i.e. They should not have more Health if they were hurt previously
-	// Look into HA.EventHandler.txt, WorldUnloaded func
+	// Look inside HA.EventHandler.txt, WorldUnloaded function
 	void UpdateAlly()
 	{
 		for (uint i = 0; i < Allies.size(); i++)
@@ -163,6 +163,7 @@ class HA_AIHub : Inventory
 				if (Ally)
 				{
 					AllyHealth[i] = Ally.Health;
+					AllyMana[i] = Ally.Mana;
 					AllyWeapon[i] = Ally.ActiveWeapon;
 				}
 			}
@@ -179,6 +180,7 @@ class HA_AIHub : Inventory
 			if (Allies[i] && Whom && Allies[i] == Whom)
 			{
 				AllyHealth.Delete(i);
+				AllyMana.Delete(i);
 				AllyType.Delete(i);
 				AllyColor.Delete(i);
 				AllyWeapon.Delete(i);
@@ -191,7 +193,7 @@ class HA_AIHub : Inventory
 
 	void RestoreAlly()
 	{
-		// Clear this array because the pointers will become garbage after a level change
+		// Clear the Allies actor array because the pointers will become garbage after a level change
 		Allies.Clear();
 
 		for (uint i = 0; i < AllyType.Size(); ++i)
@@ -213,6 +215,7 @@ class HA_AIHub : Inventory
 					
 					//HAlly.Health = AllyHealth[i];
 					HAlly.A_SetHealth(AllyHealth[i]);
+					HAlly.Mana = AllyMana[i];
 					HAlly.MyPlayer = owner;
 					HAlly.HexenType = AllyType[i];
 					HAlly.gotType = true;
@@ -240,7 +243,7 @@ class HA_AIHub : Inventory
 						HAlly.A_SetInventory(Level, 1);
 					}
 
-					// Push the new pointer to the array
+					// Push the new actor pointer into the array
 					Allies.Push(HAlly);
 				}
 			}
@@ -344,10 +347,10 @@ class HA_AllySpawner : CustomInventory
 			
 			if (!MyPlayer) return;
 
-			Console.Printf("Souls: %d | Spawner: %d", MyPlayer.CountInv("HA_Soul"), MyPlayer.CountInv("HA_AllySpawner"));
+			//Console.Printf("Souls: %d | Spawner: %d", MyPlayer.CountInv("HA_Soul"), MyPlayer.CountInv("HA_AllySpawner"));
 
-			// Only 2 Active Ally
-			// todo: Add a cvar for disabling this
+			// Check if we have enough slots to spawn a new Ally
+			// Also if we already have Allies spawned
 			let Hub = MyPlayer.FindInventory("HA_AIHub");
 			if (Hub)
 			{
@@ -356,7 +359,7 @@ class HA_AllySpawner : CustomInventory
 				{
 					if (HubInv.TotalNum >= MyPlayer.CountInv("HA_AllySlot"))
 					{
-						string Req = String.Format("\c[red]You reached the maximum limit for Ally spawning (%d)", MyPlayer.CountInv("HA_AllySlot"));
+						string Req = String.Format("\c[red]You can only have %d Allies spawned!\n\c[white]Upgrade your Slot!", MyPlayer.CountInv("HA_AllySlot"));
 						if (MyPlayer.checkLocalView())
 						{
 							Console.MidPrint(NULL, Req);
@@ -615,12 +618,29 @@ class HA_AllySlot : CustomInventory
 				MyPlayer.A_StartSound("DoorLocked", CHAN_BODY);
 				return;
 			}
-			else
+			else if (MyPlayer.CountInv("HA_Soul") >= Cost)
 			{
+				// Make sure we haven't reached maximum slots yet
+				let AllySlot = MyPlayer.FindInventory("HA_AllySlot");
+				if (AllySlot)
+				{
+					if (MyPlayer.CountInv("HA_AllySlot") == AllySlot.MaxAmount)
+					{
+						string msg = String.Format("\c[silver]Maximum slots have already been reached", MyPlayer.CountInv("HA_AllySlot"));
+						if (MyPlayer.checkLocalView())
+						{
+							Console.MidPrint(NULL, msg);
+						}
+						MyPlayer.A_StartSound("DoorLocked", CHAN_BODY);
+						return;
+					}
+				}
+
 				MyPlayer.A_GiveInventory("HA_AllySlot", 1);
 				MyPlayer.A_TakeInventory("HA_Soul", Cost);
 				MyPlayer.A_StartSound("MysticIncant", CHAN_BODY);
 				string msg = String.Format("\c[silver]You now have %d Ally Slots!", MyPlayer.CountInv("HA_AllySlot"));
+				Console.Printf("\c[white]%s\c* is now able to have %d Allies total!", MyPlayer.player.GetUserName(), MyPlayer.CountInv("HA_AllySlot"));
 				if (MyPlayer.checkLocalView())
 				{
 					Console.MidPrint(NULL, msg);

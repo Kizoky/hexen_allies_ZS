@@ -40,8 +40,8 @@ class HA_CoreAI : Actor
 
 		spawn("Teleportfog",pos);
 		Following = true;
-		Mana = 0;
-		ManaPerSeconds = 70;
+		//Mana = 0;
+		ManaPerSeconds = 80;
 
 		if (Multiplayer)
 		{
@@ -463,7 +463,7 @@ class HA_CoreAI : Actor
 					Mana += 1;
 				}
 
-				//Console.Printf("Mage Mana: %d", Mana);
+				//Console.Printf("Mana: %d", Mana);
 			}
 		}
 		
