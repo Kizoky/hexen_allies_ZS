@@ -24,7 +24,6 @@ class HA_CoreAI : Actor
 	bool Following;
 
 	int WeaponCapability;
-	int Mana, ManaPerSeconds;
 	
 	virtual void HA_PostBeginPlay() {}
 
@@ -40,8 +39,6 @@ class HA_CoreAI : Actor
 
 		spawn("Teleportfog",pos);
 		Following = true;
-		//Mana = 0;
-		ManaPerSeconds = 80;
 
 		if (Multiplayer)
 		{
@@ -455,16 +452,6 @@ class HA_CoreAI : Actor
 		if (!bKILLED)
 		{
 			A_AllyDodge();
-
-			if (level.time % ManaPerSeconds == 0)
-			{
-				if (Mana < 200)
-				{
-					Mana += 1;
-				}
-
-				//Console.Printf("Mana: %d", Mana);
-			}
 		}
 		
 		// Monsters are more likely to get stuck if they spawn in-air

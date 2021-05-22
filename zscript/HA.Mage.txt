@@ -184,9 +184,9 @@ class HA_Mage : HA_CoreAI
 		{
 			ActiveWeapon = "Wand";
 
-			case Frost: 	if (Mana >= 100) ActiveWeapon = "Frost"; break;
-			case Lightning: if (Mana >= 150) ActiveWeapon = "Lightning"; break;
-			case Blood: 	if (Mana >= 200) ActiveWeapon = "Blood"; break;
+			case Frost: 	ActiveWeapon = "Frost"; break;
+			case Lightning: ActiveWeapon = "Lightning"; break;
+			case Blood: 	ActiveWeapon = "Blood"; break;
 		}
 
 		angle = AngleTo(target, true);
@@ -198,7 +198,7 @@ class HA_Mage : HA_CoreAI
 		{
 			if (MAGE_Wand())
 			{
-				Mana += 1;
+				//Mana += 1;
 			}
 		}
 
@@ -207,7 +207,7 @@ class HA_Mage : HA_CoreAI
 		{
 			if (MAGE_Frost())
 			{
-				Mana -= 3;
+				//Mana -= 3;
 			}
 		}
 
@@ -216,7 +216,7 @@ class HA_Mage : HA_CoreAI
 		{
 			if (MAGE_Lightning())
 			{
-				Mana -= 5;
+				//Mana -= 5;
 			}
 		}
 
@@ -225,7 +225,7 @@ class HA_Mage : HA_CoreAI
 		{
 			if (MAGE_Blood())
 			{
-				Mana -= 15;
+				//Mana -= 15;
 			}
 		}
 	}

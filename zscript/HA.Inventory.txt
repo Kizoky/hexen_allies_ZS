@@ -6,7 +6,7 @@ class HA_AIHub : Inventory
 	int TotalNum;
 
 	// Todo: maybe Multidimensional arrays? This looks painful
-	Array<int> AllyHealth, AllyMana;
+	Array<int> AllyHealth;
 	Array<string> AllyType, AllyColor, AllyWeapon, AllyColorChat;
 	Array<Actor> Allies;
 
@@ -142,7 +142,6 @@ class HA_AIHub : Inventory
 		}
 
 		AllyHealth.Push(Health);
-		AllyMana.Push(0); // When they are added they'll have 0 mana anyway
 		AllyType.Push(Type);
 		AllyColor.Push(Color);
 		AllyWeapon.Push(Weapon);
@@ -163,7 +162,6 @@ class HA_AIHub : Inventory
 				if (Ally)
 				{
 					AllyHealth[i] = Ally.Health;
-					AllyMana[i] = Ally.Mana;
 					AllyWeapon[i] = Ally.ActiveWeapon;
 				}
 			}
@@ -180,7 +178,6 @@ class HA_AIHub : Inventory
 			if (Allies[i] && Whom && Allies[i] == Whom)
 			{
 				AllyHealth.Delete(i);
-				AllyMana.Delete(i);
 				AllyType.Delete(i);
 				AllyColor.Delete(i);
 				AllyWeapon.Delete(i);
@@ -215,7 +212,6 @@ class HA_AIHub : Inventory
 					
 					//HAlly.Health = AllyHealth[i];
 					HAlly.A_SetHealth(AllyHealth[i]);
-					HAlly.Mana = AllyMana[i];
 					HAlly.MyPlayer = owner;
 					HAlly.HexenType = AllyType[i];
 					HAlly.gotType = true;
