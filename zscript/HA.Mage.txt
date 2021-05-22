@@ -258,11 +258,6 @@ class HA_Mage : HA_CoreAI
 		MAGE G 4 A_Pain;
 		Goto See;
 	Death:
-		TNT1 A 0
-		{
-			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
-		}
 		MAGE H 6;
 		MAGE I 6 A_Scream;
 		MAGE JK 6;
@@ -271,11 +266,6 @@ class HA_Mage : HA_CoreAI
 		MAGE N -1;
 		Stop;		
 	XDeath:
-		TNT1 A 0
-		{
-			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
-		}
 		MAGE O 5 A_Scream;
 		MAGE P 5;
 		MAGE R 5 A_NoBlocking;
@@ -283,12 +273,10 @@ class HA_Mage : HA_CoreAI
 		MAGE X -1;
 		Stop;
 	Ice:
-		TNT1 A 0 AllyDied();
 		MAGE Y 5 A_FreezeDeath;
 		MAGE Y 1 A_FreezeDeathChunks;
 		Wait;
 	Burn:
-		TNT1 A 0 AllyDied();
 		FDTH E 5 BRIGHT A_StartSound("*burndeath");
 		FDTH F 4 BRIGHT;
 		FDTH G 5 BRIGHT;

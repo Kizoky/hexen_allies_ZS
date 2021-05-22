@@ -173,11 +173,6 @@ class HA_Cleric : HA_CoreAI
 		CLER H 4 A_Pain;
 		Goto See;
 	Death:
-		TNT1 A 0
-		{
-			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
-		}
 		CLER I 6;
 		CLER J 6 A_Scream;
 		CLER KL 6;
@@ -186,11 +181,6 @@ class HA_Cleric : HA_CoreAI
 		CLER Q -1;
 		Stop;		
 	XDeath:
-		TNT1 A 0
-		{
-			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
-		}
 		CLER R 5 A_Scream;
 		CLER S 5;
 		CLER T 5 A_NoBlocking;
@@ -198,12 +188,10 @@ class HA_Cleric : HA_CoreAI
 		CLER [ -1;
 		Stop;
 	Ice:
-		TNT1 A 0 AllyDied();
 		CLER \ 5 A_FreezeDeath;
 		CLER \ 1 A_FreezeDeathChunks;
 		Wait;
 	Burn:
-		TNT1 A 0 AllyDied();
 		FDTH A 5 BRIGHT A_StartSound("*burndeath");
 		FDTH B 4 BRIGHT;
 		FDTH G 5 BRIGHT;

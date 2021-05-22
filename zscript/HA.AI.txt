@@ -7,11 +7,15 @@ class HA_CoreAI : Actor
 
 	// Hexen Allies variables
 	actor MyPlayer, attacker, GuardSpot;
-	string HexenType, HexenColorTrnsl, HexenColor;
-	bool gotType, Restored;
+
+	// Class the AI is (Fighter, Cleric, Mage)
+	string HexenType;
+
+	// To avoid any confusion, this does indeed match the AI's color
+	// This string is combined with a translation name (check TRNSLATE.txt: CM for Cleric and Mage; F for Fighter)
+	string ChatColor;
+
 	int SpawnSlot;
-	
-	int CountdownToDeath;
 	
 	bool IsMelee, IsRanged;
 	bool CDtoTele;
@@ -392,38 +396,41 @@ class HA_CoreAI : Actor
 		return Super.DamageMobj(inflictor,source,damage,mod,flags,angle);
 	}
 
+	// Colorized Ally name
+	// Not to be confused with AllyName()
+	string AllyNameColorized()
+	{
+		if (ChatColor ~== "Green") 
+			return String.Format("\c[green]%s", HexenType);
+		if (ChatColor ~== "Red")
+			return String.Format("\c[red]%s", HexenType);
+		if (ChatColor ~== "Blue")
+			return String.Format("\c[blue]%s", HexenType);
+		if (ChatColor ~== "Silver")
+			return String.Format("\c[white]%s", HexenType);
+		if (ChatColor ~== "Yellow")
+			return String.Format("\c[yellow]%s", HexenType);
+
+		return String.Format("\c[white]%s", HexenType);
+	}
+
+	// Owner's name AND Colorized Ally's name included
+	string AllyNameColorizedPlus()
+	{
+		return String.Format("%s's %s", MyPlayer.player.GetUserName(), AllyNameColorized());
+	}
+
 	// For the chat
 	void AllySay(string msg)
 	{
-		if (HexenColor ~== "Green") 
-			Console.Printf("\c[white]%s's \c[green]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
-		if (HexenColor ~== "Red")
-			Console.Printf("\c[white]%s's \c[red]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
-		if (HexenColor ~== "Blue")
-			Console.Printf("\c[white]%s's \c[blue]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
-		if (HexenColor ~== "Silver")
-			Console.Printf("\c[white]%s's \c[white]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
-		if (HexenColor ~== "Yellow")
-			Console.Printf("\c[white]%s's \c[yellow]%s\c*: %s", MyPlayer.player.GetUserName(), HexenType, msg);
-
+		Console.Printf("%s\c*: %s", AllyNameColorizedPlus(), msg);
 		A_StartSound("misc/chat", CHAN_7, attenuation:ATTN_NONE);
 	}
 	
 	// Prints out Obituary (as if they were a Player) to the chat
-	void AllyDied()
+	void AllyObituary()
 	{
-		string AIname = "Ally Death: Failed to get Ally's Color! (HexenColor variable)";
-
-		if (HexenColor ~== "Green") 
-			AIname = String.Format("\c[white]%s's \c[green]%s", MyPlayer.player.GetUserName(), HexenType);
-		if (HexenColor ~== "Red")
-			AIname = String.Format("\c[white]%s's \c[red]%s", MyPlayer.player.GetUserName(), HexenType);
-		if (HexenColor ~== "Blue")
-			AIname = String.Format("\c[white]%s's \c[blue]%s", MyPlayer.player.GetUserName(), HexenType);
-		if (HexenColor ~== "Silver")
-			AIname = String.Format("\c[white]%s's \c[white]%s", MyPlayer.player.GetUserName(), HexenType);
-		if (HexenColor ~== "Yellow")
-			AIname = String.Format("\c[white]%s's \c[yellow]%s", MyPlayer.player.GetUserName(), HexenType);
+		string AIname = AllyNameColorizedPlus();
 
 		if (attacker)
 		{
@@ -435,9 +442,10 @@ class HA_CoreAI : Actor
 		}
 		// Died to World
 		else
-			Console.Printf("%s has died.", AIname);
+			Console.Printf("%s \c[yellow]has died.", AIname);
 	}
 
+	// For Tags or other things that are displaying the Actor name
 	string AllyName()
 	{
 		return String.Format("%s's %s", MyPlayer.player.GetUserName(), HexenType);
@@ -455,7 +463,7 @@ class HA_CoreAI : Actor
 		}
 		
 		// Monsters are more likely to get stuck if they spawn in-air
-		if (!(pos.z ~== floorz))
+		if (!(pos.z <= floorz))
 			bTHRUSPECIES = true;
 		else
 			bTHRUSPECIES = false;
@@ -474,7 +482,7 @@ class HA_CoreAI : Actor
 					LastAirZ = pos.z;
 				}
 			}
-			else if (pos.z ~== floorz)
+			else if (pos.z <= floorz)
 			{
 				if (IsInAir)
 				{

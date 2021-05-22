@@ -184,11 +184,6 @@ class HA_Fighter : HA_CoreAI
 		PLAY G 4 A_Pain;
 		Goto See;
 	Death:
-		TNT1 A 0
-		{
-			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
-		}
 		PLAY H 6;
 		PLAY I 6 A_Scream;
 		PLAY JK 6;
@@ -197,11 +192,6 @@ class HA_Fighter : HA_CoreAI
 		PLAY N -1;
 		Stop;		
 	XDeath:
-		TNT1 A 0
-		{
-			CountdownToDeath = level.time + 35 * 5;
-			AllyDied();
-		}
 		PLAY O 5 A_Scream;
 		PLAY P 5 A_SkullPop("BloodyFighterSkull");
 		PLAY R 5 A_NoBlocking;
@@ -209,12 +199,10 @@ class HA_Fighter : HA_CoreAI
 		PLAY W -1;
 		Stop;
 	Ice:
-		TNT1 A 0 AllyDied();
 		PLAY X 5 A_FreezeDeath;
 		PLAY X 1 A_FreezeDeathChunks;
 		Wait;
 	Burn:
-		TNT1 A 0 AllyDied();
 		FDTH A 5 BRIGHT A_StartSound("*burndeath");
 		FDTH B 4 BRIGHT;
 		FDTH G 5 BRIGHT;
