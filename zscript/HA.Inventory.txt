@@ -1,3 +1,13 @@
+class AllyInfo play
+{
+	int Health;
+	string Type;
+	string Color; 
+	string Weapon; 
+	string ColorChat;
+	actor pAlly;
+}
+
 // todo: Maybe we could squash these Inventory items as one? Atleast the most important ones
 
 // Stores information about the Player's allies, then spawns them into the level accordingly
@@ -5,10 +15,7 @@ class HA_AIHub : Inventory
 {
 	int TotalNum;
 
-	// Todo: maybe Multidimensional arrays? This looks painful
-	Array<int> AllyHealth;
-	Array<string> AllyType, AllyColor, AllyWeapon, AllyColorChat;
-	Array<Actor> Allies;
+	Array<AllyInfo> AIinfo;
 
 	int UnlockWeaponry;
 
@@ -45,11 +52,11 @@ class HA_AIHub : Inventory
 							PrintTip("Slots", slot, differ);
 
 						// Unlock weapon(s) for active allies on the level
-						for (uint i = 0; i < Allies.size(); i++)
+						for (uint i = 0; i < AIinfo.size(); i++)
 						{
-							if (Allies[i])
+							if (AIinfo[i].pAlly)
 							{
-								let Ally = HA_CoreAI(Allies[i]);
+								let Ally = HA_CoreAI(AIinfo[i].pAlly);
 								if (Ally)
 								{
 									Ally.WeaponCapability = UnlockWeaponry;
@@ -141,12 +148,15 @@ class HA_AIHub : Inventory
 			AA.SpawnSlot = TotalNum;
 		}
 
-		AllyHealth.Push(Health);
-		AllyType.Push(Type);
-		AllyColor.Push(Color);
-		AllyWeapon.Push(Weapon);
-		Allies.Push(Ally);
-		AllyColorChat.Push(ChatColor);
+		let NewAlly = new("AllyInfo");
+		NewAlly.Health = Health;
+		NewAlly.Type = Type;
+		NewAlly.Color = Color;
+		NewAlly.Weapon = Weapon;
+		NewAlly.ColorChat = ChatColor;
+		NewAlly.pAlly = Ally;
+
+		AIinfo.Push(NewAlly);
 	}
 
 	// Update information on the allies before destroying them, and changing onto the next level
@@ -154,15 +164,15 @@ class HA_AIHub : Inventory
 	// Look inside HA.EventHandler.txt, WorldUnloaded function
 	void UpdateAlly()
 	{
-		for (uint i = 0; i < Allies.size(); i++)
+		for (uint i = 0; i < AIinfo.size(); i++)
 		{
-			if (Allies[i])
+			if (AIinfo[i].pAlly)
 			{
-				let Ally = HA_CoreAI(Allies[i]);
+				let Ally = HA_CoreAI(AIinfo[i].pAlly);
 				if (Ally)
 				{
-					AllyHealth[i] = Ally.Health;
-					AllyWeapon[i] = Ally.ActiveWeapon;
+					AIinfo[i].Health = Ally.Health;
+					AIinfo[i].Weapon = Ally.ActiveWeapon;
 				}
 			}
 		}
@@ -173,16 +183,11 @@ class HA_AIHub : Inventory
 	// Look also in HA.EventHandler how actors are getting removed on each level reset
 	void RemoveAlly(actor Whom)
 	{	
-		for (uint i = 0; i < Allies.size(); i++)
+		for (uint i = 0; i < AIinfo.size(); i++)
 		{
-			if (Allies[i] && Whom && Allies[i] == Whom)
+			if (AIinfo[i].pAlly && Whom && AIinfo[i].pAlly == Whom)
 			{
-				AllyHealth.Delete(i);
-				AllyType.Delete(i);
-				AllyColor.Delete(i);
-				AllyWeapon.Delete(i);
-				Allies.Delete(i);
-				AllyColorChat.Delete(i);
+				AIinfo.Delete(i);
 				TotalNum--;
 			}
 		}
@@ -190,16 +195,13 @@ class HA_AIHub : Inventory
 
 	void RestoreAlly()
 	{
-		// Clear the Allies actor array because the pointers will become garbage after a level change
-		Allies.Clear();
-
-		for (uint i = 0; i < AllyType.Size(); ++i)
+		for (uint i = 0; i < AIinfo.Size(); ++i)
 		{
 			class<Actor> AllySpawn = null;
 
-			if (AllyType[i] ~== "Fighter") AllySpawn = "HA_Fighter";
-			if (AllyType[i] ~== "Cleric") AllySpawn = "HA_Cleric";
-			if (AllyType[i] ~== "Mage") AllySpawn = "HA_Mage";
+			if (AIinfo[i].Type ~== "Fighter") AllySpawn = "HA_Fighter";
+			if (AIinfo[i].Type ~== "Cleric") AllySpawn = "HA_Cleric";
+			if (AIinfo[i].Type ~== "Mage") AllySpawn = "HA_Mage";
 
 			actor Ally = spawn(AllySpawn, owner.pos, ALLOW_REPLACE);
 			if (Ally)
@@ -207,16 +209,15 @@ class HA_AIHub : Inventory
 				let HAlly = HA_CoreAI(Ally);
 				if (HAlly)
 				{
-					if (AllyColor[i] != "default")
-						HAlly.A_SetTranslation(AllyColor[i]);
+					if (AIinfo[i].Color != "default")
+						HAlly.A_SetTranslation(AIinfo[i].Color);
 					
-					//HAlly.Health = AllyHealth[i];
-					HAlly.A_SetHealth(AllyHealth[i]);
+					HAlly.A_SetHealth(AIinfo[i].Health);
 					HAlly.MyPlayer = owner;
-					HAlly.HexenType = AllyType[i];
+					HAlly.HexenType = AIinfo[i].Type;
 					HAlly.gotType = true;
 					HAlly.Restored = true;
-					HAlly.HexenColor = AllyColorChat[i];
+					HAlly.HexenColor = AIinfo[i].ColorChat;
 					HAlly.WeaponCapability = UnlockWeaponry;
 					HAlly.SetStateLabel("See");
 
@@ -239,8 +240,8 @@ class HA_AIHub : Inventory
 						HAlly.A_SetInventory(Level, 1);
 					}
 
-					// Push the new actor pointer into the array
-					Allies.Push(HAlly);
+					// Actor pointers will become garbage after a level change, so we kinda "reset" them
+					AIinfo[i].pAlly = HAlly;
 				}
 			}
 		}
@@ -254,11 +255,11 @@ class HA_AIHub : Inventory
 
 		if (TotalNum != 0)
 		{
-			for (uint i = 0; i < Allies.size(); i++)
+			for (uint i = 0; i < AIinfo.size(); i++)
 			{
-				if (Allies[i])
+				if (AIinfo[i].pAlly)
 				{
-					let Ally = HA_CoreAI(Allies[i]);
+					let Ally = HA_CoreAI(AIinfo[i].pAlly);
 					if (Ally)
 					{
 						for (uint j = 0; j < HA_AllySpawner.HexenAllyList.Size(); j++)
