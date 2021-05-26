@@ -99,15 +99,6 @@ class HexenAlliesCoreHandler : EventHandler
 
 	override bool InputProcess(InputEvent e)
     {
-		/*
-        int Key1, Key2;
-        [Key1, Key2] = Bindings.GetKeysForCommand("1"); // [Ace] I am not sure about this.
-        if (e.KeyScan == Key1 || e.KeyScan == Key2)
-        {
-            SendNetworkEvent("ToggleUseHold", e.Type == e.Type_KeyDown);
-        }
-		*/
-
 		bool Deciding = false;
 		let Player = players[consoleplayer].mo;
 		if (Player)
@@ -125,7 +116,7 @@ class HexenAlliesCoreHandler : EventHandler
 
 		if (e.KeyScan == Key_One || e.KeyScan == Key_Two)
 		{
-			SendNetworkEvent("ToggleAllyGuardOption", e.KeyScan, e.Type == e.Type_KeyDown); //e.Type == e.Type_KeyDown);
+			SendNetworkEvent("ToggleAllyGuardOption", e.KeyScan, e.Type == e.Type_KeyDown);
 			return Deciding;
 		}
 
