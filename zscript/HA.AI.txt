@@ -62,6 +62,21 @@ class HA_CoreAI : Actor
 		HA_PostBeginPlay();
 	}
 	
+	bool CheckPath(Actor targ) 
+	{
+        if (!targ)
+            return false;
+
+        int stepCount = Distance2d(targ)/radius + 1;
+        for (int i = 0; i < stepCount; ++i) 
+		{
+            if (CheckBlock(CBF_NOACTORS | CBF_ABSOLUTEANGLE, AAPTR_DEFAULT, i*radius, 0, 0, AngleTo(targ)))
+                return false;
+        }
+
+        return true;
+    }
+
 	virtual void A_MovementChase(actor targ)
 	{
 		if (targ)
@@ -178,10 +193,45 @@ class HA_CoreAI : Actor
 		if (!target)
 		{
 			LookForEnemies(false);
+
+			if (!IsRanged)
+			{
+				if (!CheckPath(target) || !(IsVisible (target, true)))
+				{
+					target = null;
+					return;
+				}
+			}
+			else
+			{
+				if (!CheckPath(target) && !(IsVisible (target, true)))
+				{
+					target = null;
+					return;
+				}
+			}
 			
 			// Acquired a new target
 			if (target)
 			{
+				// Target not reachable
+				if (!IsRanged)
+				{
+					if (!CheckPath(target) || !(IsVisible (target, true)))
+					{
+						target = null;
+						return;
+					}
+				}
+				else
+				{
+					if (!CheckPath(target) && !(IsVisible (target, true)))
+					{
+						target = null;
+						return;
+					}
+				}
+
 				// Target is too far away
 				if (Distance3D(target) > 750)
 					target = null; return;
@@ -216,17 +266,6 @@ class HA_CoreAI : Actor
 				else
 					CDtoTele = false;
 			}
-			
-			// target is not in line of sight, look for a new target
-			// (so they won't mindlessly attack walls)
-			/*
-			if (!(IsVisible (target, true)))
-			{
-				target = null;
-				Console.Printf("Out of sight");
-				return;
-			}
-			*/
 			
 			A_MovementChase(target);
 			
@@ -589,7 +628,7 @@ class HA_CoreAI : Actor
 		Health 100;
 		Radius 16;
 		Height 64;
-		Mass 100;
+		Mass 200;
 		PainChance 255;
 		MaxStepHeight 50;
 		MONSTER;
