@@ -21,6 +21,9 @@ class HA_AIHub : Inventory
 	// Can Allies use higher tier weapons according to Weapon slot? (Default is 1)
 	int UnlockWeaponry;
 
+	bool OptionDecide;
+	actor OptAllyDecide;
+
 	// Compatibility with other mods
 	// Wrath of Cronos
 	bool WoCMod;
@@ -217,6 +220,12 @@ class HA_AIHub : Inventory
 			if (AIinfo[i].Type ~== "Cleric") AllySpawn = "HA_Cleric";
 			if (AIinfo[i].Type ~== "Mage") AllySpawn = "HA_Mage";
 
+			if (!AllySpawn)
+			{
+				Console.Printf("Hexen Allies: Unknown Ally Type found! (%s)", AIinfo[i].Type);
+				return;
+			}
+
 			actor Ally = spawn(AllySpawn, owner.pos, ALLOW_REPLACE);
 			if (Ally)
 			{
@@ -231,6 +240,7 @@ class HA_AIHub : Inventory
 					HAlly.HexenType = AIinfo[i].Type;
 					HAlly.ChatColor = AIinfo[i].ColorChat;
 					HAlly.WeaponCapability = UnlockWeaponry;
+					HAlly.SpawnSlot = i+1;
 					HAlly.SetStateLabel("See");
 
 					// Set the name properly for the Ally

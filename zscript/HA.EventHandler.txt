@@ -5,22 +5,142 @@ class HexenAlliesCoreHandler : EventHandler
 	/*
 	override void WorldTick()
 	{
-		//let player = players[consoleplayer].mo;
-	}
+		PlayerPawn Player = PlayerPawn(players[e.Player].mo);
+		if (Player)
+		{
 
-	override void NetworkProcess (ConsoleEvent e)
-	{
-		//
+		}
 	}
-   */
+	*/
+
+	/* No, I'm too lazy for this
+	override void RenderOverlay(RenderEvent e)
+	{
+		HUDFont MainFont = HUDFont.Create("CONFONT");
+
+		int OriginalWidth = StatusBar.HorizontalResolution;
+		int OriginalHeight = StatusBar.VerticalResolution;
+
+		StatusBar.BeginHUD(1.0, true);
+		StatusBar.SetSize(StatusBar.RelTop, 640, 480);
+
+		StatusBar.DrawString(MainFont, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",(0, 0), StatusBarCore.DI_SCREEN_CENTER);// | StatusBarCore.DI_FORCESCALE);
+
+		StatusBar.BeginHUD(1.0, false);
+		StatusBar.SetSize(StatusBar.RelTop, OriginalWidth, OriginalHeight);
+	}
+	*/
+
+	const Key_One = 2;
+	const Key_Two = 3;
+			
+	override void NetworkProcess(ConsoleEvent e)
+    {
+        if (e.Name ~== "ToggleAllyGuardOption")
+        {
+			//PlayerInfo player = players [e.Player];
+			bool Pressing = e.Args[1];
+			PlayerPawn Player = PlayerPawn(players[e.Player].mo);
+			if (Player)
+			{
+				if (!Pressing)
+				{
+					bool PressedSpace = false;
+					actor AllyToConf = null;
+					let Hub = Player.FindInventory("HA_AIHub");
+					if (Hub)
+					{
+						let VHub = HA_AIHub(Hub);
+						if (VHub)
+						{
+							PressedSpace = VHub.OptionDecide;
+							AllyToConf = VHub.OptAllyDecide;
+						}
+					}
+
+					if (PressedSpace)
+					{
+						if (e.Args[0] == Key_One)
+						{
+							let HA_Ally = HA_CoreAI(AllyToConf);
+							if (HA_Ally)
+							{
+								if (HA_Ally.CommandOrb)
+									HA_Ally.CommandOrb.Destroy();
+
+								HA_Ally.AllySay("Okay, I will stay here!");
+								if (Hub)
+								{
+									let VHub = HA_AIHub(Hub);
+									if (VHub)
+									{
+										VHub.OptionDecide = false;
+										VHub.OptAllyDecide = null;
+									}
+								}
+
+								if (Player.checkLocalView())
+								{
+									if (HA_Ally.MultiIndicator)
+										HA_Ally.MultiIndicator.sprite = HA_Ally.MultiIndicator.GetSpriteIndex("HXNA");
+								}
+							}
+						}
+						else
+						{
+							Console.Printf("Pressed Two!");
+						}
+					}
+
+				}
+			}
+        }
+    }
+
+	override bool InputProcess(InputEvent e)
+    {
+		/*
+        int Key1, Key2;
+        [Key1, Key2] = Bindings.GetKeysForCommand("1"); // [Ace] I am not sure about this.
+        if (e.KeyScan == Key1 || e.KeyScan == Key2)
+        {
+            SendNetworkEvent("ToggleUseHold", e.Type == e.Type_KeyDown);
+        }
+		*/
+
+		bool Deciding = false;
+		let Player = players[consoleplayer].mo;
+		if (Player)
+		{
+			let Hub = Player.FindInventory("HA_AIHub");
+			if (Hub)
+			{
+				let VHub = HA_AIHub(Hub);
+				if (VHub)
+				{
+					Deciding = VHub.OptionDecide;
+				}
+			}
+		}
+
+		if (e.KeyScan == Key_One || e.KeyScan == Key_Two)
+		{
+			SendNetworkEvent("ToggleAllyGuardOption", e.KeyScan, e.Type == e.Type_KeyDown); //e.Type == e.Type_KeyDown);
+			return Deciding;
+		}
+
+        return false;
+    }
 
 	override void PlayerEntered (PlayerEvent e)
 	{
 		PlayerPawn n = PlayerPawn(players[e.PlayerNumber].mo);
 		if (n)
 		{
+			// Core
 			n.A_GiveInventory("HA_AIHub", 1);
 			
+			// Usable Inventory items
 			n.A_GiveInventory("HA_AllySpawner", 1);
 			n.A_GiveInventory("HA_AllySlot", 2);
 		}
@@ -116,6 +236,7 @@ class HexenAlliesCoreHandler : EventHandler
 			}
 
 			// Make sure we have a player in-game..
+			/*
 			actor Player = null;
 			for (uint i = 0; i < MAXPLAYERS; i++)
 			{
@@ -125,11 +246,15 @@ class HexenAlliesCoreHandler : EventHandler
 					break;
 				}
 			}
+			*/
 
-			if (!(e.Thing is "PlayerPawn") && !e.Thing.bFRIENDLY && !(e.Thing is "HA_CoreAI") && e.Thing.bIsMonster)
+			if (!(e.Thing is "PlayerPawn") && 
+				!e.Thing.bFRIENDLY && 
+				!(e.Thing is "HA_CoreAI") && 
+				e.Thing.bIsMonster)
 			{
-				if (Player)
-					Player.spawn("HA_Soul", e.thing.pos+(0,0,35));
+				
+				e.Thing.spawn("HA_Soul", e.thing.pos+(0,0,35));
 			}
 		}
 		

@@ -6,7 +6,8 @@ class HA_CoreAI : Actor
 	bool WoC;
 
 	// Hexen Allies variables
-	actor MyPlayer, attacker, GuardSpot;
+	actor MyPlayer, attacker, GuardSpot, CommandOrb;
+	actor MultiIndicator;
 
 	// Class the AI is (Fighter, Cleric, Mage)
 	string HexenType;
@@ -53,6 +54,7 @@ class HA_CoreAI : Actor
 				if (identify)
 				{
 					identify.Ally = self;
+					MultiIndicator = identify;
 				}
 			}
 		}
@@ -514,18 +516,62 @@ class HA_CoreAI : Actor
 	{
 		if (activator && MyPlayer && activator == MyPlayer)
 		{
+			bool LOptionDecide = false;
+			let Hub = MyPlayer.FindInventory("HA_AIHub");
+			if (Hub)
+			{
+				let VHub = HA_AIHub(Hub);
+				if (VHub)
+				{
+					LOptionDecide = VHub.OptionDecide;
+				}
+			}
+
 			if (Following)
 			{
 				GuardSpot = spawn("HA_GuardSpot", pos, ALLOW_REPLACE);
+				CommandOrb = spawn("HA_CommandOrb", pos+(0,0,56), ALLOW_REPLACE);
 
+				if (CommandOrb)
+				{
+					let CmdOrb = HA_CommandOrb(CommandOrb);
+					if (CmdOrb)
+					{
+						CmdOrb.Ally = self;
+					}
+				}
 				if (GuardSpot)
 				{
-					AllySay("Okay, I will stay here!");
+					GuardSpot.sprite = GetSpriteIndex("TNT1");
+					if (MyPlayer.checkLocalView())
+					{
+						CommandOrb.sprite = GetSpriteIndex("CMMD");
+						CommandOrb.Scale.X = 0.40;
+						CommandOrb.Scale.Y = 0.40;
+
+						if (MultiIndicator)
+							MultiIndicator.sprite = GetSpriteIndex("TNT1");
+					}
+					//AllySay("Okay, I will stay here!");
 					Following = false;
+
+					let Hub = MyPlayer.FindInventory("HA_AIHub");
+					if (Hub)
+					{
+						let VHub = HA_AIHub(Hub);
+						if (VHub)
+						{
+							VHub.OptionDecide = true;
+							VHub.OptAllyDecide = self;
+						}
+					}
 				}
 			}
-			else if (!Following)
+			else if (!Following && !LOptionDecide)
 			{
+				if (MultiIndicator)
+					MultiIndicator.sprite = GetSpriteIndex("HXNA");
+				
 				Following = true;
 				GuardSpot.Destroy();
 				AllySay("Okay, I'm following you!");
@@ -533,13 +579,7 @@ class HA_CoreAI : Actor
 		}
 	}
 	
-	override void Deactivate(Actor activator)
-	{
-		if (activator)
-		{
-			activate(activator);
-		}
-	}
+	override void Deactivate(Actor activator) { if (activator) activate(activator); }
 
 	Default
 	{
@@ -581,7 +621,7 @@ class HA_CoreAI : Actor
 	}
 }
 
-class HA_GuardSpot : Actor
+class HA_EmptyActor : Actor
 {
 	Default
 	{
@@ -596,12 +636,17 @@ class HA_GuardSpot : Actor
 	States
 	{
 		Spawn:
-			TNT1 A 1;
+			#### A 1 Bright;
+			Loop;
+		Empty:
+			CMMD A 0;
 			Loop;
 	}
 }
 
-class HA_AllyIdentifier : HA_GuardSpot
+class HA_GuardSpot : HA_EmptyActor {}
+
+class HA_AllyIdentifier : HA_EmptyActor
 {
 	Default
 	{
@@ -627,6 +672,22 @@ class HA_AllyIdentifier : HA_GuardSpot
 	{
 		Spawn:
 			HXNA A 1 Bright;
+			Loop;
+	}
+}
+
+class HA_CommandOrb : HA_AllyIdentifier
+{
+	Default
+	{
+		Scale 1;
+		RenderStyle "Normal";
+		Alpha 1;
+	}
+	States
+	{
+		Spawn:
+			#### A 1 Bright;
 			Loop;
 	}
 }
