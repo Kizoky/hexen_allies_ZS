@@ -1,17 +1,53 @@
 class HexenAlliesCoreHandler : EventHandler 
 {
 	Array<Actor> Allies;
+	Array<Actor> Bosses;
+	bool BossSpawn;
 
-	/*
+	void BossSay(string msg, actor Boss)
+	{
+		string BossName = Boss.GetTag();
+
+		Console.Printf("%s\c*: %s", BossName, msg);
+		Boss.A_StartSound("misc/chat", CHAN_7, attenuation:ATTN_NONE);
+	}
+
 	override void WorldTick()
 	{
-		PlayerPawn Player = PlayerPawn(players[e.Player].mo);
-		if (Player)
+		Super.WorldTick();
+		if (level.time > 35 * 7 && BossSpawn)
 		{
+			// Based on current Total Allies
+			int TotalAllies = 0;
+			for (uint i = 0; i < MAXPLAYERS; i++)
+			{
+				if (Players[i].mo)
+				{
+					let HubStuff = Players[i].mo.FindInventory("HA_AIHub");
+					if (HubStuff)
+					{
+						let Inven = HA_AIHub(HubStuff);
+						if (Inven)
+						{
+							TotalAllies += Inven.TotalNum;
+						}
+					}
+				}
+			}
 
+			for (uint i = 0; i < Bosses.size(); i++)
+			{
+				if (Bosses[i] && !Bosses[i].bKILLED)
+				{
+					Bosses[i].Health += TotalAllies * 100;
+					Bosses[i].PainChance -= TotalAllies * 4;
+					BossSay("The Game Master has blessed me powers!", Bosses[i]);
+				}
+			}
+
+			BossSpawn = false;
 		}
 	}
-	*/
 
 	/* No, I'm too lazy for this
 	override void RenderOverlay(RenderEvent e)
@@ -141,9 +177,20 @@ class HexenAlliesCoreHandler : EventHandler
 	{
 		// Store every Ally on the level to remove them later when the World is unloaded
 		let SpawnedThing = e.Thing;
-		if (SpawnedThing && SpawnedThing is "HA_CoreAI")
+		if (SpawnedThing)
 		{
-			Allies.Push(SpawnedThing);
+			if (SpawnedThing is "HA_CoreAI")
+			{
+				Allies.Push(SpawnedThing);
+			}
+			
+			// Challenge the Player by reducing the Bosses' Pain Chance and increasing Health
+			if (SpawnedThing.bBOSS)
+			{
+				if (!BossSpawn) BossSpawn = true;
+				
+				Bosses.Push(SpawnedThing);
+			}
 		}
 	}
 	
