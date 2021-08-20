@@ -226,45 +226,41 @@ class HA_AIHub : Inventory
 				return;
 			}
 
-			actor Ally = spawn(AllySpawn, owner.pos, ALLOW_REPLACE);
-			if (Ally)
+			actor HAlly = HA_CoreAI(spawn(AllySpawn, owner.pos, ALLOW_REPLACE));
+			if (HAlly)
 			{
-				let HAlly = HA_CoreAI(Ally);
-				if (HAlly)
+				if (AIinfo[i].Color != "default")
+					HAlly.A_SetTranslation(AIinfo[i].Color);
+				
+				HAlly.A_SetHealth(AIinfo[i].Health);
+				HAlly.MyPlayer = owner;
+				HAlly.HexenType = AIinfo[i].Type;
+				HAlly.ChatColor = AIinfo[i].ColorChat;
+				HAlly.WeaponCapability = UnlockWeaponry;
+				HAlly.SpawnSlot = i+1;
+				HAlly.SetStateLabel("See");
+
+				// Set the name properly for the Ally
+				HAlly.SetTag(HAlly.AllyName());
+
+				if (WoCMod)
 				{
-					if (AIinfo[i].Color != "default")
-						HAlly.A_SetTranslation(AIinfo[i].Color);
+					// No experience for now, will have to save that too into an array
+					HAlly.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
+					HAlly.WoC = true;
 					
-					HAlly.A_SetHealth(AIinfo[i].Health);
-					HAlly.MyPlayer = owner;
-					HAlly.HexenType = AIinfo[i].Type;
-					HAlly.ChatColor = AIinfo[i].ColorChat;
-					HAlly.WeaponCapability = UnlockWeaponry;
-					HAlly.SpawnSlot = i+1;
-					HAlly.SetStateLabel("See");
-
-					// Set the name properly for the Ally
-					HAlly.SetTag(HAlly.AllyName());
-
-					if (WoCMod)
-					{
-						// No experience for now, will have to save that too into an array
-						HAlly.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
-						HAlly.WoC = true;
-						
-						string WoCItem1 = "CurrentMaxHealth";
-						string WoCItem2 = "Level";
-						class<Inventory> CurrentMaxHealth = WoCItem1;
-						class<Inventory> Level = WoCItem2;
-						
-						// Fix bug with the HUD
-						HAlly.A_SetInventory(CurrentMaxHealth, 100);
-						HAlly.A_SetInventory(Level, 1);
-					}
-
-					// Actor pointers will become garbage after a level change, so we kinda "reset" them
-					AIinfo[i].pAlly = HAlly;
+					string WoCItem1 = "CurrentMaxHealth";
+					string WoCItem2 = "Level";
+					class<Inventory> CurrentMaxHealth = WoCItem1;
+					class<Inventory> Level = WoCItem2;
+					
+					// Fix bug with the HUD
+					HAlly.A_SetInventory(CurrentMaxHealth, 100);
+					HAlly.A_SetInventory(Level, 1);
 				}
+
+				// Actor pointers will become garbage after a level change, so we kinda "reset" them
+				AIinfo[i].pAlly = HAlly;
 			}
 		}
 	}
@@ -370,30 +366,26 @@ class HA_AllySpawner : CustomInventory
 
 			// Check if we have enough slots to spawn a new Ally
 			// Also if we already have Allies spawned
-			let Hub = MyPlayer.FindInventory("HA_AIHub");
-			if (Hub)
+			let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
+			if (HubInv)
 			{
-				let HubInv = HA_AIHub(Hub);
-				if (HubInv)
+				if (HubInv.TotalNum >= MyPlayer.CountInv("HA_AllySlot"))
 				{
-					if (HubInv.TotalNum >= MyPlayer.CountInv("HA_AllySlot"))
+					string Req = String.Format("\c[red]You can only have %d Allies spawned!\n\c[white]Upgrade your Slot!", MyPlayer.CountInv("HA_AllySlot"));
+					let AllySlot = MyPlayer.FindInventory("HA_AllySlot");
+					if (AllySlot)
 					{
-						string Req = String.Format("\c[red]You can only have %d Allies spawned!\n\c[white]Upgrade your Slot!", MyPlayer.CountInv("HA_AllySlot"));
-						let AllySlot = MyPlayer.FindInventory("HA_AllySlot");
-						if (AllySlot)
+						if (MyPlayer.CountInv("HA_AllySlot") == AllySlot.MaxAmount)
 						{
-							if (MyPlayer.CountInv("HA_AllySlot") == AllySlot.MaxAmount)
-							{
-								Req = String.Format("\c[red]You can no longer spawn any Ally\nas you have hit the maximum amount possible!");
-							}
+							Req = String.Format("\c[red]You can no longer spawn any Ally\nas you have hit the maximum amount possible!");
 						}
-
-						if (MyPlayer.checkLocalView())
-						{
-							Console.MidPrint(NULL, Req);
-						}
-						return;
 					}
+
+					if (MyPlayer.checkLocalView())
+					{
+						Console.MidPrint(NULL, Req);
+					}
+					return;
 				}
 			}
 
@@ -431,13 +423,9 @@ class HA_AllySpawner : CustomInventory
 				isWoCLoaded = true;
 				
 				// Make the Hub inventory item aware of WoC
-				if (Hub)
+				if (HubInv)
 				{
-					let HubInv = HA_AIHub(Hub);
-					if (HubInv)
-					{
-						HubInv.WoCMod = true;
-					}
+					HubInv.WoCMod = true;
 				}
 			}
 
@@ -465,13 +453,9 @@ class HA_AllySpawner : CustomInventory
 			int TotalAlliesSpawned = 0;
 			int Chosen = 0;
 
-			if (Hub)
+			if (HubInv)
 			{
-				let HubInv = HA_AIHub(Hub);
-				if (HubInv)
-				{
-					TotalAlliesSpawned = HubInv.TotalNum;
-				}
+				TotalAlliesSpawned = HubInv.TotalNum;
 			}
 
 			if (TotalAlliesSpawned <= 2)
@@ -496,10 +480,9 @@ class HA_AllySpawner : CustomInventory
 				Chosen = AvailableClass[chsn];
 
 				// The idea here is that until the Player has 2 allies do not spawn an Ally class identical to the Player's
-				if (Hub && TotalAlliesSpawned > 0)
+				if (HubInv && TotalAlliesSpawned > 0)
 				{
-					let HubInv = HA_AIHub(Hub);
-					if (HubInv) Chosen = HubInv.NonDuplicateClass(ActiveClass);
+					Chosen = HubInv.NonDuplicateClass(ActiveClass);
 				}
 
 				// We can just assume the Third Ally's class will always be the same like the Player's
@@ -515,80 +498,69 @@ class HA_AllySpawner : CustomInventory
 			}
 
 			int UnlockableWeapons = 1;
-			if (Hub)
+			if (HubInv)
 			{
-				let HubInv = HA_AIHub(Hub);
-				if (HubInv) UnlockableWeapons = HubInv.UnlockWeaponry;
+				UnlockableWeapons = HubInv.UnlockWeaponry;
 			}
 
-			actor SpawnAI = spawn(HexenSpawnList[Chosen], MyPlayer.pos, ALLOW_REPLACE);
-			if (SpawnAI)
+			actor SpawnedAI = HA_CoreAI(spawn(HexenSpawnList[Chosen], MyPlayer.pos, ALLOW_REPLACE));
+			if (SpawnedAI)
 			{
-				let SpawnedAI = HA_CoreAI(SpawnAI);
-				if (SpawnedAI)
+				SpawnedAI.MyPlayer = MyPlayer;
+				SpawnedAI.HexenType = HexenAllyList[Chosen];
+				SpawnedAI.WeaponCapability = UnlockableWeapons;
+				SpawnedAI.SetStateLabel("See");
+				// Say hooray for Color randomization!
+				int rndColor = random[clr](0, HexenColors.Size()-1);
+				string AIcolor = "n/a";
+				if (SpawnedAI.HexenType ~== "Cleric" || 
+					SpawnedAI.HexenType ~== "Mage")
 				{
-					SpawnedAI.MyPlayer = MyPlayer;
-					SpawnedAI.HexenType = HexenAllyList[Chosen];
-					SpawnedAI.WeaponCapability = UnlockableWeapons;
-					SpawnedAI.SetStateLabel("See");
-					// Say hooray for Color randomization!
-					int rndColor = random[clr](0, HexenColors.Size()-1);
-					string AIcolor = "n/a";
-					if (SpawnedAI.HexenType ~== "Cleric" || 
-						SpawnedAI.HexenType ~== "Mage")
-					{
-						AIcolor = String.Format("CM%s", HexenColors[rndColor]);
-						// Cleric and Mage is blue by default, so we don't need to set it
-						if (rndColor != HA_BLUE)
-							SpawnedAI.A_SetTranslation(AIcolor);
-						else AIcolor = "default";
-					}
-					else if (SpawnedAI.HexenType ~== "Fighter")
-					{
-						AIcolor = String.Format("F%s", HexenColors[rndColor]);
-						// Fighter is Silver by default
-						if (rndColor != HA_SILVER)
-							SpawnedAI.A_SetTranslation(AIcolor);
-						else AIcolor = "default";
-					}
+					AIcolor = String.Format("CM%s", HexenColors[rndColor]);
+					// Cleric and Mage is blue by default, so we don't need to set it
+					if (rndColor != HA_BLUE)
+						SpawnedAI.A_SetTranslation(AIcolor);
+					else AIcolor = "default";
+				}
+				else if (SpawnedAI.HexenType ~== "Fighter")
+				{
+					AIcolor = String.Format("F%s", HexenColors[rndColor]);
+					// Fighter is Silver by default
+					if (rndColor != HA_SILVER)
+						SpawnedAI.A_SetTranslation(AIcolor);
+					else AIcolor = "default";
+				}
 
-					// Needed for chat coloring
-					SpawnedAI.ChatColor = HexenColors[rndColor];
+				// Needed for chat coloring
+				SpawnedAI.ChatColor = HexenColors[rndColor];
 
-					// Execute function from Player's inventory
-					let HubStuff = MyPlayer.FindInventory("HA_AIHub");
-					if (HubStuff)
-					{
-						let Inven = HA_AIHub(HubStuff);
-						if (Inven)
-						{
-							// Store Ally information
-							Inven.AddAlly(SpawnedAI, SpawnedAI.HexenType, AIcolor, SpawnedAI.ChatColor);
-						}
-					}
+				// Execute function from Player's inventory
+				if (HubInv)
+				{
+					// Store Ally information
+					HubInv.AddAlly(SpawnedAI, SpawnedAI.HexenType, AIcolor, SpawnedAI.ChatColor);
+				}
 
-					SpawnedAI.AllySay("Ready for action!");
-					SpawnedAI.Following = true;
+				SpawnedAI.AllySay("Ready for action!");
+				SpawnedAI.Following = true;
 
-					SpawnedAI.SetTag(SpawnedAI.AllyName());
+				SpawnedAI.SetTag(SpawnedAI.AllyName());
 
-					// Settings for AI after WoC is detected
-					if (isWoCLoaded)
-					{
-						// No experience for now, will have to save that too into an array
-						SpawnedAI.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
-						SpawnedAI.WoC = true;
-						
-						string WoCItem1 = "CurrentMaxHealth";
-						string WoCItem2 = "Level";
-						class<Inventory> CurrentMaxHealth = WoCItem1;
-						class<Inventory> Level = WoCItem2;
-						
-						// Force set this for now
-						SpawnedAI.A_SetInventory(CurrentMaxHealth, 100);
-						SpawnedAI.A_SetInventory(Level, 1);
-					}
-
+				// Settings for AI after WoC is detected
+				if (isWoCLoaded)
+				{
+					// No experience for now, will have to save that too into an array
+					SpawnedAI.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
+					SpawnedAI.WoC = true;
+					
+					string WoCItem1 = "CurrentMaxHealth";
+					string WoCItem2 = "Level";
+					class<Inventory> CurrentMaxHealth = WoCItem1;
+					class<Inventory> Level = WoCItem2;
+					
+					// Force set this for now
+					SpawnedAI.A_SetInventory(CurrentMaxHealth, 100);
+					SpawnedAI.A_SetInventory(Level, 1);
 				}
 			}
 		}

@@ -47,15 +47,11 @@ class HA_CoreAI : Actor
 
 		if (Multiplayer)
 		{
-			let identifier = spawn("HA_AllyIdentifier", pos);
+			let identifier = HA_AllyIdentifier(spawn("HA_AllyIdentifier", pos));
 			if (identifier)
 			{
-				let identify = HA_AllyIdentifier(identifier);
-				if (identify)
-				{
-					identify.Ally = self;
-					MultiIndicator = identify;
-				}
+				identifier.Ally = self;
+				MultiIndicator = identifier;
 			}
 		}
 
@@ -555,30 +551,25 @@ class HA_CoreAI : Actor
 	{
 		if (activator && MyPlayer && activator == MyPlayer)
 		{
-			bool LOptionDecide = false;
-			let Hub = MyPlayer.FindInventory("HA_AIHub");
-			if (Hub)
+			bool LocalOptionDecide = false;
+			
+			let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
+			if (HubInv)
 			{
-				let VHub = HA_AIHub(Hub);
-				if (VHub)
-				{
-					LOptionDecide = VHub.OptionDecide;
-				}
+				LocalOptionDecide = HubInv.OptionDecide;
 			}
 
 			if (Following)
 			{
 				GuardSpot = spawn("HA_GuardSpot", pos, ALLOW_REPLACE);
 				CommandOrb = spawn("HA_CommandOrb", pos+(0,0,56), ALLOW_REPLACE);
-
 				if (CommandOrb)
 				{
-					let CmdOrb = HA_CommandOrb(CommandOrb);
-					if (CmdOrb)
-					{
-						CmdOrb.Ally = self;
-					}
+					let CommandOrbVar = HA_CommandOrb(CommandOrb);
+					if (CommandOrbVar)
+						CommandOrbVar.Ally = self;
 				}
+				
 				if (GuardSpot)
 				{
 					GuardSpot.sprite = GetSpriteIndex("TNT1");
@@ -594,19 +585,14 @@ class HA_CoreAI : Actor
 					//AllySay("Okay, I will stay here!");
 					Following = false;
 
-					let Hub = MyPlayer.FindInventory("HA_AIHub");
-					if (Hub)
+					if (HubInv)
 					{
-						let VHub = HA_AIHub(Hub);
-						if (VHub)
-						{
-							VHub.OptionDecide = true;
-							VHub.OptAllyDecide = self;
-						}
+						HubInv.OptionDecide = true;
+						HubInv.OptAllyDecide = self;
 					}
 				}
 			}
-			else if (!Following && !LOptionDecide)
+			else if (!Following && !LocalOptionDecide)
 			{
 				if (MultiIndicator)
 					MultiIndicator.sprite = GetSpriteIndex("HXNA");

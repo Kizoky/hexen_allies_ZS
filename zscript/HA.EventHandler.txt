@@ -3,7 +3,7 @@ class HexenAlliesCoreHandler : EventHandler
 	Array<Actor> Allies;
 	Array<Actor> Bosses;
 	bool BossSpawn;
-
+	
 	void BossSay(string msg, actor Boss)
 	{
 		string BossName = Boss.GetTag();
@@ -23,14 +23,10 @@ class HexenAlliesCoreHandler : EventHandler
 			{
 				if (Players[i].mo)
 				{
-					let HubStuff = Players[i].mo.FindInventory("HA_AIHub");
-					if (HubStuff)
+					let HubInv = HA_AIHub(Players[i].mo.FindInventory("HA_AIHub"));
+					if (HubInv)
 					{
-						let Inven = HA_AIHub(HubStuff);
-						if (Inven)
-						{
-							TotalAllies += Inven.TotalNum;
-						}
+						TotalAllies += HubInv.TotalNum;
 					}
 				}
 			}
@@ -83,15 +79,11 @@ class HexenAlliesCoreHandler : EventHandler
 				{
 					bool PressedSpace = false;
 					actor AllyToConf = null;
-					let Hub = Player.FindInventory("HA_AIHub");
-					if (Hub)
+					let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
+					if (HubInv)
 					{
-						let VHub = HA_AIHub(Hub);
-						if (VHub)
-						{
-							PressedSpace = VHub.OptionDecide;
-							AllyToConf = VHub.OptAllyDecide;
-						}
+						PressedSpace = HubInv.OptionDecide;
+						AllyToConf = HubInv.OptAllyDecide;
 					}
 
 					if (PressedSpace)
@@ -105,14 +97,10 @@ class HexenAlliesCoreHandler : EventHandler
 									HA_Ally.CommandOrb.Destroy();
 
 								HA_Ally.AllySay("Okay, I will stay here!");
-								if (Hub)
+								if (HubInv)
 								{
-									let VHub = HA_AIHub(Hub);
-									if (VHub)
-									{
-										VHub.OptionDecide = false;
-										VHub.OptAllyDecide = null;
-									}
+									HubInv.OptionDecide = false;
+									HubInv.OptAllyDecide = null;
 								}
 
 								if (Player.checkLocalView())
@@ -139,14 +127,10 @@ class HexenAlliesCoreHandler : EventHandler
 		let Player = players[consoleplayer].mo;
 		if (Player)
 		{
-			let Hub = Player.FindInventory("HA_AIHub");
-			if (Hub)
+			let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
+			if (HubInv)
 			{
-				let VHub = HA_AIHub(Hub);
-				if (VHub)
-				{
-					Deciding = VHub.OptionDecide;
-				}
+				Deciding = HubInv.OptionDecide;
 			}
 		}
 
@@ -202,14 +186,10 @@ class HexenAlliesCoreHandler : EventHandler
 		{
 			if (Players[i].mo)
 			{
-				let HubStuff = Players[i].mo.FindInventory("HA_AIHub");
-				if (HubStuff)
+				let HubInv = HA_AIHub(Players[i].mo.FindInventory("HA_AIHub"));
+				if (HubInv)
 				{
-					let Inven = HA_AIHub(HubStuff);
-					if (Inven)
-					{
-						Inven.UpdateAlly();
-					}
+					HubInv.UpdateAlly();
 				}
 			}
 		}
@@ -232,14 +212,10 @@ class HexenAlliesCoreHandler : EventHandler
 		{
 			if (Players[i].mo)
 			{
-				let HubStuff = Players[i].mo.FindInventory("HA_AIHub");
-				if (HubStuff)
+				let HubInv = HA_AIHub(Players[i].mo.FindInventory("HA_AIHub"));
+				if (HubInv)
 				{
-					let Inven = HA_AIHub(HubStuff);
-					if (Inven)
-					{
-						Inven.RestoreAlly();
-					}
+					HubInv.RestoreAlly();
 				}
 			}
 		}
@@ -260,14 +236,10 @@ class HexenAlliesCoreHandler : EventHandler
 					{
 						Ally.AllyObituary();
 						
-						let HubStuff = Ally.MyPlayer.FindInventory("HA_AIHub");
-						if (HubStuff)
+						let HubInv = HA_AIHub(Ally.MyPlayer.FindInventory("HA_AIHub"));
+						if (HubInv)
 						{
-							let Inven = HA_AIHub(HubStuff);
-							if (Inven)
-							{
-								Inven.RemoveAlly(Ally);
-							}
+							HubInv.RemoveAlly(Ally);
 						}
 					}
 				}
@@ -291,7 +263,6 @@ class HexenAlliesCoreHandler : EventHandler
 				!(e.Thing is "HA_CoreAI") && 
 				e.Thing.bIsMonster)
 			{
-				
 				e.Thing.spawn("HA_Soul", e.thing.pos+(0,0,35));
 			}
 		}
