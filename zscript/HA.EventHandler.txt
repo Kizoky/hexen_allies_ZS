@@ -1,3 +1,5 @@
+class HA_Blessed : Inventory { }
+
 class HexenAlliesCoreHandler : EventHandler 
 {
 	Array<Actor> Allies;
@@ -33,10 +35,11 @@ class HexenAlliesCoreHandler : EventHandler
 
 			for (uint i = 0; i < Bosses.size(); i++)
 			{
-				if (Bosses[i] && !Bosses[i].bKILLED)
+				if (Bosses[i] && !Bosses[i].bKILLED && !Bosses[i].FindInventory("HA_Blessed"))
 				{
 					Bosses[i].Health += TotalAllies * 100;
 					Bosses[i].PainChance -= TotalAllies * 4;
+					Bosses[i].A_GiveInventory("HA_Blessed", 1);
 					BossSay("The Game Master has blessed me powers!", Bosses[i]);
 				}
 			}
