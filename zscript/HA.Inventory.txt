@@ -226,7 +226,7 @@ class HA_AIHub : Inventory
 				return;
 			}
 
-			actor HAlly = HA_CoreAI(spawn(AllySpawn, owner.pos, ALLOW_REPLACE));
+			HA_CoreAI HAlly = HA_CoreAI(spawn(AllySpawn, owner.pos, ALLOW_REPLACE));
 			if (HAlly)
 			{
 				if (AIinfo[i].Color != "default")
@@ -503,7 +503,7 @@ class HA_AllySpawner : CustomInventory
 				UnlockableWeapons = HubInv.UnlockWeaponry;
 			}
 
-			actor SpawnedAI = HA_CoreAI(spawn(HexenSpawnList[Chosen], MyPlayer.pos, ALLOW_REPLACE));
+			HA_CoreAI SpawnedAI = HA_CoreAI(spawn(HexenSpawnList[Chosen], MyPlayer.pos, ALLOW_REPLACE));
 			if (SpawnedAI)
 			{
 				SpawnedAI.MyPlayer = MyPlayer;
