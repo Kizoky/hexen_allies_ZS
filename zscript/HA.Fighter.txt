@@ -9,6 +9,7 @@ class HA_Fighter : HA_CoreAI
 		ActiveWeapon = "Fist";
 		IsMelee = true;
 		IsRanged = false;
+		Pronoun = "He";
 	}
 
 	override void HA_MeleeShoot()

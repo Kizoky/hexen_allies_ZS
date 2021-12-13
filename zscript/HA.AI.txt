@@ -33,6 +33,10 @@ class HA_CoreAI : Actor
 
 	int WeaponCapability;
 	
+	// Pronouns for allies
+	// "He" "She" "Them"
+	string Pronoun;
+	
 	virtual void HA_PostBeginPlay() {}
 
 	override void PostBeginPlay()
@@ -515,6 +519,17 @@ class HA_CoreAI : Actor
 			string ob = attacker.GetObituary(self, attacker, "none", false);
 			ob = StringTable.Localize (ob);
 			ob.Replace("%o ", "");
+			
+			// Detect pronouns in the obituary
+			string localPronoun;
+			if (Pronoun ~== "He")
+				localPronoun = "his";
+			if (Pronoun ~== "She")
+				localPronoun = "her";
+			if (Pronoun ~== "Them")
+				localPronoun = "their";
+			
+			ob.Replace("%p", localPronoun);
 
 			Console.Printf("%s \c[yellow]%s", AIname, ob);
 		}
