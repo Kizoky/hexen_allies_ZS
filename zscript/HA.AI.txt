@@ -2,6 +2,9 @@
 // spawns the correspending AI (HA_Figher, HA_Cleric, HA_Mage)
 class HA_CoreAI : Actor
 {
+	// Ignore targets for a couple of seconds
+	Array<actor> IgnoreTarget;
+	
 	// cross-mod specific variables
 	bool WoC;
 
@@ -125,7 +128,7 @@ class HA_CoreAI : Actor
 		if (Distance3D(MyPlayer) > 100)
 		{
 			vector2 PlayerPos = (MyPlayer.pos.x,MyPlayer.pos.y);
-			if (CheckSight (MyPlayer, SF_SeePastShootableLines) && CheckMove(PlayerPos, flags: PCM_NOLINES))
+			if (IsVisible (MyPlayer, true) && CheckMove(PlayerPos, flags: PCM_NOLINES))
 			{
 				A_MovementChase(MyPlayer);
 				Angle = AngleTo(MyPlayer);
@@ -141,6 +144,12 @@ class HA_CoreAI : Actor
 				}
 				else if (level.time > TimeProbablyGotStuck)
 				{
+					if (IsVisible (MyPlayer, true))
+					{
+						TimeProbablyGotStuck = level.time + 35 * 15;
+						return;
+					}
+					
 					spawn("teleportfog", pos);
 					SetOrigin(MyPlayer.pos+(0,0,50), TRUE);
 					spawn("teleportfog", pos);
@@ -167,7 +176,7 @@ class HA_CoreAI : Actor
 		}
 	}
 
-	int TimeBeforeRandomTurn, TimeProbablyGotStuck;
+	int TimeBeforeRandomTurn, TimeProbablyGotStuck, TimeResetIgnoreTargets;
 	virtual void A_FollowerChase()
 	{
 		if ((target && target.bKILLED) || (target && target is "PlayerPawn"))
@@ -190,6 +199,15 @@ class HA_CoreAI : Actor
 		{
 			LookForEnemies(false);
 
+			for (uint i = 0; i < IgnoreTarget.size(); i++)
+			{
+				if (IgnoreTarget[i] == target)
+				{
+					target = null;
+					break;
+				}
+			}
+			
 			if (!IsRanged)
 			{
 				if (!CheckPath(target) || !(IsVisible (target, true)))
@@ -240,11 +258,12 @@ class HA_CoreAI : Actor
 		{
 			if (MyPlayer)
 			{
-				if (Distance3D(MyPlayer) > 425)
+				if (Distance3D(MyPlayer) > 645 && !(CheckSight (MyPlayer, SF_IGNOREVISIBILITY | SF_SEEPASTSHOOTABLELINES | SF_SEEPASTBLOCKEVERYTHING | SF_IGNOREWATERBOUNDARY)) )
 				{
 					if (!CDtoTele)
 					{
 						TimeProbablyGotStuck = level.time + 35 * 6;
+						Console.Printf("Initiating teleporting...\n");
 						CDtoTele = true;
 					}
 						
@@ -269,7 +288,7 @@ class HA_CoreAI : Actor
 			
 			// Closing in or closing out
 			
-			if (!IsMelee)
+			if (IsRanged)
 			{
 				if (target)
 				{
@@ -279,10 +298,32 @@ class HA_CoreAI : Actor
 						A_Recoil(1.75);
 				}
 			}
-			else
+			else if (IsMelee)
 			{
-				if (target && Distance3D(target) > 25)
-					A_Recoil(-1.75);
+				// Ignore targets we can't reach if they are flying
+				if (target)
+				{
+					bool alreadyignored = false;
+					for (uint i = 0; i < IgnoreTarget.size(); i++)
+					{
+						if (IgnoreTarget[i] == target)
+						{
+							alreadyignored = true;
+							break;
+						}
+					}
+					
+					if ((target.pos.z-pos.z) > 70 && !alreadyignored)
+					{
+						IgnoreTarget.Push(target);
+						TimeResetIgnoreTargets = level.time + 35 * 5;
+						target = null;
+						return;
+					}
+				
+					if (Distance3D(target) > 25)
+						A_Recoil(-1.75);
+				}
 			}
 			
 			
@@ -542,6 +583,15 @@ class HA_CoreAI : Actor
 					LastAirZ = 0;
 				}
 			}
+		}
+		
+		if (level.time > TimeResetIgnoreTargets)
+		{
+			for (uint i = 0; i < IgnoreTarget.size(); i++)
+			{
+				IgnoreTarget.Delete(i);
+			}
+			TimeResetIgnoreTargets = level.time + 35 * 5;
 		}
 
 		HA_Tick();
