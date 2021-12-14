@@ -21,7 +21,7 @@ class HA_CoreAI : Actor
 
 	int SpawnSlot;
 	
-	bool IsMelee, IsRanged;
+	bool IsMelee, IsRanged, CanShootProj;
 	bool CDtoTele;
 
 	string ActiveWeapon;
@@ -131,9 +131,10 @@ class HA_CoreAI : Actor
 	{
 		if (Distance3D(MyPlayer) > 100)
 		{
-			vector2 PlayerPos = (MyPlayer.pos.x,MyPlayer.pos.y);
-			if (IsVisible (MyPlayer, true) && CheckMove(PlayerPos, flags: PCM_NOLINES))
+			vector2 PlayerPos = (MyPlayer.pos.x,MyPlayer.pos.y);			
+			if (IsVisible (MyPlayer, true) && CheckMove(PlayerPos, flags: PCM_NOLINES | PCM_NOACTORS))
 			{
+				// We can see the Player so just angle towards them
 				A_MovementChase(MyPlayer);
 				Angle = AngleTo(MyPlayer);
 				A_Recoil(-1.75);
@@ -304,7 +305,6 @@ class HA_CoreAI : Actor
 			}
 			else if (IsMelee)
 			{
-				// Ignore targets we can't reach if they are flying
 				if (target)
 				{
 					bool alreadyignored = false;
@@ -317,12 +317,25 @@ class HA_CoreAI : Actor
 						}
 					}
 					
+					// Ignore flying targets we can't reach
 					if ((target.pos.z-pos.z) > 70 && !alreadyignored)
 					{
-						IgnoreTarget.Push(target);
-						TimeResetIgnoreTargets = level.time + 35 * 5;
-						target = null;
-						return;
+						vector2 NMEPos = (target.pos.x,target.pos.y);
+						if (target.bFLOAT || target.bNOGRAVITY)
+						{
+							IgnoreTarget.Push(target);
+							TimeResetIgnoreTargets = level.time + 35 * 5;
+							target = null;
+							return;
+						}
+						else if (!CheckMove(NMEPos, flags: PCM_NOLINES | PCM_NOACTORS))
+						{
+							Console.Printf("HA: Can't reach non-flying enemy");
+							IgnoreTarget.Push(target);
+							TimeResetIgnoreTargets = level.time + 35 * 5;
+							target = null;
+							return;
+						}
 					}
 				
 					if (Distance3D(target) > 25)

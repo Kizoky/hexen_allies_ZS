@@ -21,6 +21,8 @@ class HA_Fighter : HA_CoreAI
 		// ================================= Fist
 		if (ActiveWeapon ~== "Fist")
 		{
+			CanShootProj = false;
+			
 			int damage = random[FighterAtk](40, 55);
 			FTranslatedLineTarget t;
 
@@ -42,6 +44,8 @@ class HA_Fighter : HA_CoreAI
 		// ================================= Timon's Axe
 		if (ActiveWeapon ~== "Axe")
 		{
+			CanShootProj = false;
+			
 			FTranslatedLineTarget t;
 
 			int damage = random[AxeAtk](40, 55);
@@ -96,6 +100,8 @@ class HA_Fighter : HA_CoreAI
 		// ================================= Hammer of Retribution
 		if (ActiveWeapon ~== "Hammer")
 		{
+			CanShootProj = true;
+			
 			FTranslatedLineTarget t;
 
 			int damage = random[HammerAtk](60, 123);
@@ -140,6 +146,8 @@ class HA_Fighter : HA_CoreAI
 		// ================================= Quietus
 		if (ActiveWeapon ~== "Quietus")
 		{
+			CanShootProj = true;
+			
 			if (random[chanceshoot]() > 225 && 
 				!(InStateSequence(CurState, ResolveState("Missile"))) && 
 				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )

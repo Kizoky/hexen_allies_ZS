@@ -20,6 +20,8 @@ class HA_Cleric : HA_CoreAI
 		// ================================= Mace of Contrition
 		if (ActiveWeapon ~== "Mace")
 		{
+			CanShootProj = false;
+			
 			FTranslatedLineTarget t;
 
 			int damage = random[MaceAtk](25, 40);
@@ -53,6 +55,8 @@ class HA_Cleric : HA_CoreAI
 		// ================================= Serpent Staff
 		if (ActiveWeapon ~== "Staff")
 		{
+			CanShootProj = true;
+			
 			FTranslatedLineTarget t;
 
 			int damage = random[StaffCheck](20, 35);
@@ -112,6 +116,8 @@ class HA_Cleric : HA_CoreAI
 		// ================================= Firestorm
 		if (ActiveWeapon ~== "Flame")
 		{
+			CanShootProj = true;
+			
 			if (random[chanceshoot]() > 215 && 
 				!(InStateSequence(CurState, ResolveState("Missile"))) && 
 				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
@@ -127,6 +133,8 @@ class HA_Cleric : HA_CoreAI
 		// ================================= Wraithverge
 		if (ActiveWeapon ~== "Wraith")
 		{
+			CanShootProj = true;
+			
 			if (random[chanceshoot]() > 215 && 
 				!(InStateSequence(CurState, ResolveState("Missile"))) && 
 				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
