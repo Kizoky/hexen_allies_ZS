@@ -1,4 +1,14 @@
-class HA_Blessed : Inventory { }
+class HA_Blessed : Inventory 
+{
+	Actor LastAttacker;
+	override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
+    {
+        if (owner && source)
+		{
+			LastAttacker = source;
+		}
+    }
+}
 
 class HexenAlliesCoreHandler : EventHandler 
 {
@@ -172,7 +182,7 @@ class HexenAlliesCoreHandler : EventHandler
 			}
 			
 			// Challenge the Player by reducing the Bosses' Pain Chance and increasing Health
-			if (SpawnedThing.bBOSS)
+			if (SpawnedThing.bBOSS || IsHexenBoss(SpawnedThing))
 			{
 				if (!BossSpawn) BossSpawn = true;
 				
@@ -224,6 +234,38 @@ class HexenAlliesCoreHandler : EventHandler
 		}
 	}
 
+	static const string HexenBossList[] =
+	{
+		"korax",
+		"heresiarch",
+		"death wywern",
+		"boss",
+		"traductus",
+		"menelkir",
+		"zedek"
+	};
+
+	bool IsHexenBoss(actor Whom)
+	{
+		bool IsBoss = false;
+		if (Whom && Whom.bISMONSTER)
+		{
+			string BossName = Whom.GetTag();
+			BossName = BossName.MakeLower();
+			
+			for (uint i = 0; i < HexenBossList.Size(); i++)
+			{
+				if (BossName.IndexOf(HexenBossList[i]) >= 0)
+				{
+					IsBoss = true;
+					break;
+				}
+			}
+		}
+		
+		return IsBoss;
+	}
+
 	override void WorldThingDied(WorldEvent e)
 	{	
 		if (e.Thing)
@@ -248,6 +290,25 @@ class HexenAlliesCoreHandler : EventHandler
 				}
 			}
 
+			if (e.Thing.bBOSS || IsHexenBoss(e.Thing))
+			{
+				let Blessed = HA_Blessed(e.Thing.FindInventory("HA_Blessed"));
+				if (Blessed)
+				{
+					if (Blessed.LastAttacker is 'HA_CoreAI')
+					{
+						let Ally = HA_CoreAI(Blessed.LastAttacker);
+						if (Ally)
+						{
+							string BossName = e.Thing.GetTag();
+							string AllyName = Ally.AllyNameColorizedPlus();
+							
+							Console.Printf("%s \c[yellow]has been slain by \c[white]%s", BossName, AllyName);
+						}
+					}
+				}
+			}
+			
 			// Make sure we have a player in-game..
 			/*
 			actor Player = null;
