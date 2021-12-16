@@ -494,11 +494,17 @@ class HA_AllySpawner : CustomInventory
 				{
 					Chosen = ActiveClass;
 				}
+				
+				// Todo: Force spawn a class if desired
+				//Chosen = 2;
 			}
 			else
 			{
 				// todo: Should we leave this as totally random, or introduce a ruling?
 				Chosen = random[tas](0, HexenSpawnList.Size()-1);
+				
+				// Todo: Force spawn a class if desired
+				//Chosen = 2;
 			}
 
 			int UnlockableWeapons = 1;
@@ -665,7 +671,7 @@ class HA_AllySlot : CustomInventory
 		Inventory.PickupSound "misc/p_pkup";
 		Inventory.PickupMessage "Picked up an Ally Slot Incrementor. Who's going to jail for this?";
 		Inventory.Amount 1;
-		Inventory.MaxAmount 9;
+		Inventory.MaxAmount 5;
 		Tag "Ally Slots";
 	}
 	States
