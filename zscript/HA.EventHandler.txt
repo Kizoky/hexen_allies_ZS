@@ -327,7 +327,24 @@ class HexenAlliesCoreHandler : EventHandler
 				!(e.Thing is "HA_CoreAI") && 
 				e.Thing.bIsMonster)
 			{
-				e.Thing.spawn("HA_Soul", e.thing.pos+(0,0,35));
+				if (!IsHexenBoss(e.Thing))
+				{
+					int x = random[xsoul](-30,30);
+					int y = random[ysoul](-30,30);
+					e.Thing.spawn("HA_Soul", e.thing.pos+(x,y,35));
+				}
+				else
+				{
+					// Bosses should spawn more Souls
+					int MaxSouls = random(7,14);
+					for (uint i = 0; i < MaxSouls; i++)
+					{
+						int x = random[xboss](-25,25);
+						int y = random[yboss](-25,25);
+						int z = random[zboss](1,45);
+						e.Thing.spawn("HA_Soul", e.thing.pos+(x,y,z));
+					}
+				}
 			}
 		}
 		
