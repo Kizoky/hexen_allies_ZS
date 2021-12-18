@@ -37,6 +37,8 @@ class HA_CoreAI : Actor
 	// "He" "She" "Them"
 	string Pronoun;
 	
+	string LastDamageType;
+	
 	virtual void HA_PostBeginPlay() {}
 
 	override void PostBeginPlay()
@@ -477,6 +479,7 @@ class HA_CoreAI : Actor
 
 			if (!source.bIsMonster)
 			{
+				LastDamageType = mod;
 				attacker = null;
 				return Super.DamageMobj(inflictor,source,damage,mod,flags,angle);
 			}
@@ -488,6 +491,7 @@ class HA_CoreAI : Actor
 		else
 			attacker = null;
 		
+		LastDamageType = mod;
 		return Super.DamageMobj(inflictor,source,damage,mod,flags,angle);
 	}
 
@@ -546,9 +550,32 @@ class HA_CoreAI : Actor
 
 			Console.Printf("%s \c[yellow]%s", AIname, ob);
 		}
-		// Died to World
+		// Died to World (no target)
 		else
-			Console.Printf("%s \c[yellow]has died.", AIname);
+		{
+			if (LastDamageType ~== "Fire")
+				Console.Printf("%s \c[yellow]has melted.", AIname);
+			else if (LastDamageType ~== "Ice")
+				Console.Printf("%s \c[yellow]was frozen solid.", AIname);
+			else if (LastDamageType ~== "Electric")
+				Console.Printf("%s \c[yellow]was zapped.", AIname);
+			else if (LastDamageType ~== "Drowning")
+				Console.Printf("%s \c[yellow]couldn't swim.", AIname);
+			else if (LastDamageType ~== "Slime")
+				Console.Printf("%s \c[yellow]mutated.", AIname);
+			else if (LastDamageType ~== "Crush")
+				Console.Printf("%s \c[yellow]was squished.", AIname);
+			else if (LastDamageType ~== "Telefrag")
+				Console.Printf("%s \c[yellow]was telefragged.", AIname);
+			else if (LastDamageType ~== "Falling")
+				Console.Printf("%s \c[yellow]fell too far.", AIname);
+			else if (LastDamageType ~== "Poison")
+				Console.Printf("%s \c[yellow]was poisoned.", AIname);
+			else if (LastDamageType ~== "Massacre")
+				Console.Printf("%s \c[yellow]fell victim to the kill monsters cheat.", AIname);
+			else
+				Console.Printf("%s \c[yellow]has died.", AIname);
+		}
 	}
 
 	// For Tags or other things that are displaying the Actor name
@@ -559,6 +586,7 @@ class HA_CoreAI : Actor
 	
 	virtual void HA_Tick() {}
 	
+	int SectorDMGInterval, SectorDMGAmount, SectorDMGTime;
 	override void Tick()
 	{
 		Super.Tick();
@@ -566,6 +594,46 @@ class HA_CoreAI : Actor
 		if (!bKILLED)
 		{
 			A_AllyDodge();
+			
+			TextureID Fire1 = texman.CheckForTexture("X_001");
+			// Special sector damage flags
+			bool DamagingSector = ((cursector.Flags & cursector.SECF_DAMAGEFLAGS) || cursector.damageamount > 0);
+			if (DamagingSector)
+			{
+				if (SectorDMGInterval != cursector.damageinterval ||
+					SectorDMGAmount != cursector.damageamount)
+				{
+					SectorDMGInterval = cursector.damageinterval;
+					SectorDMGAmount = cursector.damageamount;
+				}
+				
+				if (level.time > SectorDMGTime)
+				{
+					//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);	
+					Console.Printf("Damage Type: %s", cursector.damagetype);
+					int dd = DamageMobj(self, NULL, SectorDMGAmount, cursector.damagetype);
+					SectorDMGTime = level.time + SectorDMGInterval;
+				}
+			}
+			// Check if current floor texture is Fire (even without flags it damages the Player, so it should the allies too)
+			else if ((cursector.GetTexture(cursector.floor)) == Fire1)
+			{
+				if (SectorDMGInterval != 32 || SectorDMGAmount != 5)
+				{
+					SectorDMGInterval = 32;
+					SectorDMGAmount = 5;
+				}
+				
+				if (level.time > SectorDMGTime)
+				{
+					//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);
+					int dd = DamageMobj(self, NULL, SectorDMGAmount, "Fire");
+					A_StartSound("LavaSizzle", CHAN_BODY);
+					SectorDMGTime = level.time + SectorDMGInterval;
+				}
+				
+				//Console.Printf("Texture floor: %d", cursector.GetTexture(cursector.floor));
+			}
 		}
 		
 		// Monsters are more likely to get stuck if they spawn in-air

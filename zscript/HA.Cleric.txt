@@ -201,8 +201,8 @@ class HA_Cleric : HA_CoreAI
 		CLER \ 1 A_FreezeDeathChunks;
 		Wait;
 	Burn:
-		FDTH A 5 BRIGHT A_StartSound("*burndeath");
-		FDTH B 4 BRIGHT;
+		FDTH C 5 BRIGHT A_StartSound("*burndeath");
+		FDTH D 4 BRIGHT;
 		FDTH G 5 BRIGHT;
 		FDTH H 4 BRIGHT A_Scream;
 		FDTH I 5 BRIGHT;
