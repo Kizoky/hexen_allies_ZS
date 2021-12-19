@@ -345,22 +345,22 @@ class HA_CoreAI : Actor
 				}
 			}
 			
-			
 			A_AllyShoot();
 		
 		}
 	}
 	
+	int TimeUntilDodge;
 	virtual void A_AllyDodge()
 	{
-		if (!target) return;
+		if (!target || TimeUntilDodge > level.time) return;
 		
-		if (!(level.time % 1 == 0)) return;
+		//if (!(level.time % 1 == 0)) return;
 
 		// Special handling for WoC, possibly fixes issues with other mods too
 		// todo WoC: Check the base monster actor and check for specific states
 		bool dodge = false;
-		if (WoC)
+		if (WoC || !WoC)
 		{
 			if (!target.InStateSequence(target.CurState, target.ResolveState("Spawn")) &&
 				!target.InStateSequence(target.CurState, target.ResolveState("Pain")) &&
@@ -369,12 +369,14 @@ class HA_CoreAI : Actor
 				!target.InStateSequence(target.CurState, target.ResolveState("See")))
 			{
 				dodge = true;
+				Console.Printf("Dodging");
 			}
 		}
 		
 		FLineTraceData lineData;
-		double ThrustValue = 3;
+		double ThrustValue = 15;
 		
+		/*
 		if (!WoC)
 		{
 			if (target.InStateSequence(target.CurState, target.ResolveState("Missile")) || 
@@ -383,6 +385,7 @@ class HA_CoreAI : Actor
 				dodge = true;
 			}
 		}
+		*/
 		
 		// Let's check if we can move right or left, is there a better way to do this?
 		if (dodge)
@@ -397,6 +400,7 @@ class HA_CoreAI : Actor
 				angle = AngleTo(target);
 				Thrust(ThrustValue, Angle - 90);
 				HitWall1 = true;
+				TimeUntilDodge = level.time + 35;
 			}
 			
 			LineTrace(angle-90,150,0, offsetz: 5, data: LineData);
@@ -406,6 +410,7 @@ class HA_CoreAI : Actor
 				angle = AngleTo(target);
 				Thrust(ThrustValue, Angle + 90);
 				HitWall2 = true;
+				TimeUntilDodge = level.time + 35;
 			}
 			
 			// Not fool proof, they will still sometimes run into a projectile unfortunately
@@ -433,7 +438,7 @@ class HA_CoreAI : Actor
 						
 						return;
 					}
-					
+					TimeUntilDodge = level.time + 35;
 					A_Recoil(1.25);
 				}
 			}
@@ -584,6 +589,7 @@ class HA_CoreAI : Actor
 		return String.Format("%s's %s", MyPlayer.player.GetUserName(), HexenType);
 	}
 	
+	// Extend this in your Ally class
 	virtual void HA_Tick() {}
 	
 	int SectorDMGInterval, SectorDMGAmount, SectorDMGTime;
@@ -593,13 +599,14 @@ class HA_CoreAI : Actor
 		
 		HA_Tick();
 		
-		if (!bKILLED)
+		if (bKILLED)
 			return;
 		
 		A_AllyDodge();
 		
 		TextureID Fire = texman.CheckForTexture("X_001");
 		// Special sector damage flags
+		// Sometimes a sector doesn't have a flag set, but could still do damage
 		bool DamagingSector = ((cursector.Flags & cursector.SECF_DAMAGEFLAGS) || cursector.damageamount > 0);
 		if (DamagingSector)
 		{
