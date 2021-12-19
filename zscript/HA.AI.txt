@@ -591,49 +591,55 @@ class HA_CoreAI : Actor
 	{
 		Super.Tick();
 		
+		HA_Tick();
+		
 		if (!bKILLED)
+			return;
+		
+		A_AllyDodge();
+		
+		TextureID Fire = texman.CheckForTexture("X_001");
+		// Special sector damage flags
+		bool DamagingSector = ((cursector.Flags & cursector.SECF_DAMAGEFLAGS) || cursector.damageamount > 0);
+		if (DamagingSector)
 		{
-			A_AllyDodge();
+			if (SectorDMGInterval != cursector.damageinterval ||
+				SectorDMGAmount != cursector.damageamount)
+			{
+				SectorDMGInterval = cursector.damageinterval;
+				SectorDMGAmount = cursector.damageamount;
+			}
 			
-			TextureID Fire1 = texman.CheckForTexture("X_001");
-			// Special sector damage flags
-			bool DamagingSector = ((cursector.Flags & cursector.SECF_DAMAGEFLAGS) || cursector.damageamount > 0);
-			if (DamagingSector)
+			if (level.time > SectorDMGTime)
 			{
-				if (SectorDMGInterval != cursector.damageinterval ||
-					SectorDMGAmount != cursector.damageamount)
-				{
-					SectorDMGInterval = cursector.damageinterval;
-					SectorDMGAmount = cursector.damageamount;
-				}
+				//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);	
+				Console.Printf("Damage Type: %s", cursector.damagetype);
+				int dd = DamageMobj(self, NULL, SectorDMGAmount, cursector.damagetype);
+				SectorDMGTime = level.time + SectorDMGInterval;
 				
-				if (level.time > SectorDMGTime)
-				{
-					//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);	
-					Console.Printf("Damage Type: %s", cursector.damagetype);
-					int dd = DamageMobj(self, NULL, SectorDMGAmount, cursector.damagetype);
-					SectorDMGTime = level.time + SectorDMGInterval;
-				}
-			}
-			// Check if current floor texture is Fire (even without flags it damages the Player, so it should the allies too)
-			else if ((cursector.GetTexture(cursector.floor)) == Fire1)
-			{
-				if (SectorDMGInterval != 32 || SectorDMGAmount != 5)
-				{
-					SectorDMGInterval = 32;
-					SectorDMGAmount = 5;
-				}
-				
-				if (level.time > SectorDMGTime)
-				{
-					//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);
-					int dd = DamageMobj(self, NULL, SectorDMGAmount, "Fire");
+				// Play Lava sizzling sound
+				if ((cursector.GetTexture(cursector.floor)) == Fire)
 					A_StartSound("LavaSizzle", CHAN_BODY);
-					SectorDMGTime = level.time + SectorDMGInterval;
-				}
-				
-				//Console.Printf("Texture floor: %d", cursector.GetTexture(cursector.floor));
 			}
+		}
+		// Check if current floor texture is Fire (even without flags it damages the Player, so it should the allies too)
+		else if ((cursector.GetTexture(cursector.floor)) == Fire)
+		{
+			if (SectorDMGInterval != 32 || SectorDMGAmount != 5)
+			{
+				SectorDMGInterval = 32;
+				SectorDMGAmount = 5;
+			}
+			
+			if (level.time > SectorDMGTime)
+			{
+				//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);
+				int dd = DamageMobj(self, NULL, SectorDMGAmount, "Fire");
+				A_StartSound("LavaSizzle", CHAN_BODY);
+				SectorDMGTime = level.time + SectorDMGInterval;
+			}
+			
+			//Console.Printf("Texture floor: %d", cursector.GetTexture(cursector.floor));
 		}
 		
 		// Monsters are more likely to get stuck if they spawn in-air
@@ -646,38 +652,35 @@ class HA_CoreAI : Actor
 		// Note: in Doom games it's based on the velocity Z (falling speed)
 		// not the difference between last position Z and floor Z
 		// But because I believe it's unreliable with non-Players this should do the job plenty
-		if (!bKILLED)
+		if (pos.z > floorz)
 		{
-			if (pos.z > floorz)
+			IsInAir = true;
+			if (LastAirZ == 0)
 			{
-				IsInAir = true;
-				if (LastAirZ == 0)
-				{
-					LastAirZ = pos.z;
-				}
+				LastAirZ = pos.z;
 			}
-			else if (pos.z <= floorz)
+		}
+		else if (pos.z <= floorz)
+		{
+			if (IsInAir)
 			{
-				if (IsInAir)
+				if (IsActorPlayingSound(CHAN_VOICE)) return;
+
+				double Diff = floorz-LastAirZ;
+
+				if (-Diff > 40 && -Diff < 69)
 				{
-					if (IsActorPlayingSound(CHAN_VOICE)) return;
-
-					double Diff = floorz-LastAirZ;
-
-					if (-Diff > 40 && -Diff < 69)
-					{
-						A_StartSound("PlayerLand", CHAN_VOICE);
-					}
-
-					if (-Diff > 69)
-					{
-						string Sound = String.Format("Player%sGrunt", HexenType);
-						A_StartSound(Sound, CHAN_VOICE);
-					}
-
-					IsInAir = false;
-					LastAirZ = 0;
+					A_StartSound("PlayerLand", CHAN_VOICE);
 				}
+
+				if (-Diff > 69)
+				{
+					string Sound = String.Format("Player%sGrunt", HexenType);
+					A_StartSound(Sound, CHAN_VOICE);
+				}
+
+				IsInAir = false;
+				LastAirZ = 0;
 			}
 		}
 		
@@ -689,8 +692,6 @@ class HA_CoreAI : Actor
 			}
 			TimeResetIgnoreTargets = level.time + 35 * 5;
 		}
-
-		HA_Tick();
 	}
 
 	override void Activate(Actor activator)
