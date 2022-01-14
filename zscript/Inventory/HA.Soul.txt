@@ -41,7 +41,7 @@ class HA_Soul : Ammo
 			tracer = target;
 			A_Tracer2(TracerAng);
 			
-			Vel.Z = (target.pos.Z + target.Height/2 - pos.Z) / DistanceBySpeed(target, 1);
+			Vel.Z = (target.pos.Z + target.Height/2 - pos.Z) / DistanceBySpeed(target, 2);
 		}
 	}
 
@@ -61,6 +61,11 @@ class HA_Soul : Ammo
 				{
 					bNOCLIP = true;
 					Angle = AngleTo(target);
+
+					bool ShouldPlay = random[soulsnd](0,1);
+
+					if (ShouldPlay)
+						A_StartSound("hxawhisper", CHAN_BODY);
 				}
 			}
 
