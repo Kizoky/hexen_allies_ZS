@@ -2,12 +2,12 @@ class HA_Blessed : Inventory
 {
 	Actor LastAttacker;
 	override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
-    {
-        if (owner && source)
+	{
+		if (owner && source)
 		{
 			LastAttacker = source;
 		}
-    }
+	}
 }
 
 class HexenAlliesCoreHandler : EventHandler 
@@ -81,8 +81,8 @@ class HexenAlliesCoreHandler : EventHandler
 			
 	override void NetworkProcess(ConsoleEvent e)
     {
-        if (e.Name ~== "ToggleAllyGuardOption")
-        {
+		if (e.Name ~== "ToggleAllyGuardOption")
+		{
 			//PlayerInfo player = players [e.Player];
 			bool Pressing = e.Args[1];
 			PlayerPawn Player = PlayerPawn(players[e.Player].mo);
@@ -131,11 +131,11 @@ class HexenAlliesCoreHandler : EventHandler
 
 				}
 			}
-        }
-    }
+		}
+	}
 
 	override bool InputProcess(InputEvent e)
-    {
+	{
 		bool Deciding = false;
 		let Player = players[consoleplayer].mo;
 		if (Player)
@@ -154,7 +154,7 @@ class HexenAlliesCoreHandler : EventHandler
 		}
 
         return false;
-    }
+	}
 
 	override void PlayerEntered (PlayerEvent e)
 	{

@@ -1,0 +1,81 @@
+// Increases the amount of Allies you can spawn with collected souls
+// 'Inventory.MaxAmount' acts as the total maximum possible available allies
+class HA_AllySlot : CustomInventory
+{
+	private void TryIncrementing()
+	{		
+		if (owner)
+		{
+			actor MyPlayer = owner;
+			int Cost = 21;
+
+			if (MyPlayer.CountInv("HA_Soul") < Cost)
+			{
+				int Req = Cost - MyPlayer.CountInv("HA_Soul");
+				string Requ = String.Format("\c[red]Not enough souls to add a slot!\n\c[silver]You need %d more", Req);
+				if (MyPlayer.checkLocalView())
+				{
+					Console.MidPrint(NULL, Requ);
+				}
+				MyPlayer.A_StartSound("DoorLocked", CHAN_BODY);
+				return;
+			}
+			else if (MyPlayer.CountInv("HA_Soul") >= Cost)
+			{
+				// Make sure we haven't reached maximum slots yet
+				let AllySlot = MyPlayer.FindInventory("HA_AllySlot");
+				if (AllySlot)
+				{
+					if (MyPlayer.CountInv("HA_AllySlot") == AllySlot.MaxAmount)
+					{
+						string msg = String.Format("\c[silver]Maximum slots have already been reached", MyPlayer.CountInv("HA_AllySlot"));
+						if (MyPlayer.checkLocalView())
+						{
+							Console.MidPrint(NULL, msg);
+						}
+						MyPlayer.A_StartSound("DoorLocked", CHAN_BODY);
+						return;
+					}
+				}
+
+				MyPlayer.A_GiveInventory("HA_AllySlot", 1);
+				MyPlayer.A_TakeInventory("HA_Soul", Cost);
+				MyPlayer.A_StartSound("MysticIncant", CHAN_BODY);
+				string msg = String.Format("\c[silver]You now have %d Ally Slots!", MyPlayer.CountInv("HA_AllySlot"));
+				Console.Printf("\c[white]%s\c* is now able to have %d Allies total!", MyPlayer.player.GetUserName(), MyPlayer.CountInv("HA_AllySlot"));
+				if (MyPlayer.checkLocalView())
+				{
+					Console.MidPrint(NULL, msg);
+				}
+			}
+		}
+	}
+
+	Default
+	{
+		+COUNTITEM
+		+FLOATBOB
+		+INVENTORY.INVBAR
+		+INVENTORY.UNDROPPABLE;
+		+INVENTORY.UNTOSSABLE;
+		+INVENTORY.PERSISTENTPOWER;
+		+INVENTORY.KEEPDEPLETED;
+		Inventory.PickupFlash "PickupFlash";
+		+INVENTORY.FANCYPICKUPSOUND
+		Inventory.Icon "HAINCRE";
+		Inventory.PickupSound "misc/p_pkup";
+		Inventory.PickupMessage "Picked up an Ally Slot Incrementor. Who's going to jail for this?";
+		Inventory.Amount 1;
+		Inventory.MaxAmount 5;
+		Tag "Ally Slots";
+	}
+	States
+	{
+	Spawn:
+		EGGC ABCB 6;
+		Loop;
+	Use:
+		TNT1 A 0 { invoker.TryIncrementing(); }
+		Fail;
+	}
+}

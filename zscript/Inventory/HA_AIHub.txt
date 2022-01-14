@@ -1,0 +1,317 @@
+class AllyInfo play
+{
+	int Health;
+	string Type; 		// The Class type of the Ally (Fighter, Cleric, Mage ...)
+	string Color; 		// The translation color of the Ally
+	string Weapon; 		// Currently Active Weapon (todo later: probably not needed)
+	string ColorChat; 	// Needed for the Ally's name coloring in chat
+	actor pAlly; 		// The Pointer that holds the Ally
+}
+
+// Stores information about the Player's allies, then spawns them into the level accordingly
+// Core inventory item, without this the mod won't work properly
+class HA_AIHub : Inventory
+{
+	// The total amount of active/spawned Allies
+	int TotalNum;
+
+	Array<AllyInfo> AIinfo;
+
+	// Can Allies use higher tier weapons according to Weapon slot? (Default is 1)
+	int UnlockWeaponry;
+
+	bool OptionDecide;
+	actor OptAllyDecide;
+
+	// Compatibility with other mods
+	// Wrath of Cronos
+	bool WoCMod;
+
+	// Debug
+	int developer;
+
+	override void Tick()
+	{
+		Super.Tick();
+
+		actor MyPlayer = owner;
+		if (MyPlayer)
+		{
+			// Check every 2 seconds the Player's weapon to unlock the arsenal of all Allies
+			if (level.time % (35 * 2) == 0)
+			{
+				let wepP = MyPlayer.player.ReadyWeapon;
+				if (wepP)
+				{
+					class<weapon> weapon = MyPlayer.player.ReadyWeapon.GetClassName();
+
+					bool _; int slot;
+					[_, slot] = MyPlayer.player.weapons.locateWeapon(weapon);
+
+					if (slot > UnlockWeaponry)
+					{
+						int differ = slot - UnlockWeaponry;
+
+						// Player might just never equip the previous slot weapon, so big brain time
+						UnlockWeaponry += slot - UnlockWeaponry;
+
+						if (differ == 1)
+							PrintTip("Slots", slot);
+						else 
+							PrintTip("Slots", slot, differ);
+
+						// Unlock weapon(s) for active allies on the level
+						for (uint i = 0; i < AIinfo.size(); i++)
+						{
+							if (AIinfo[i].pAlly)
+							{
+								let Ally = HA_CoreAI(AIinfo[i].pAlly);
+								if (Ally)
+								{
+									Ally.WeaponCapability = UnlockWeaponry;
+									
+									// Can they shoot projectiles?
+									if (Ally.IsMelee)
+										Ally.HA_MeleeShoot();
+								}
+							}
+						}
+
+					}
+				}
+			}
+		}
+	}
+
+	void PrintTip(string Tip, int param1 = 0, double param2 = -1)
+	{
+		actor MyPlayer = owner;
+		if (Tip ~== "Slots")
+		{
+			if (MyPlayer)
+			{
+				if (MyPlayer.checkLocalView())
+				{
+					string Display = "n/a";
+					string number = "n/a";
+
+					if (param2 < 0)
+					{
+						switch (param1)
+						{
+							case 1: number = "First"; break;
+							case 2: number = "Second"; break;
+							case 3: number = "Third"; break;
+						}
+
+						if (param1 != 4)
+							Display = string.Format("\c*Your allies are now able to use their %s weapon!", number);
+						else
+							Display = string.Format("\c*Your allies are now able to use all weapons!");
+
+						Console.MidPrint(NULL, Display);
+					}
+					else
+					{
+						// For some reason... the player skipped a weapon slot, we don't know why, and we'll never know why
+
+						// Slot 3, but the difference is 2 (Player equipped Slot 1 -> Slot 3)
+						if (param1 == 3 && param2 == 2)
+						{
+							Display = string.Format("\c*Your allies are now able to use their Second and Third weapons!");
+						}
+
+						// We don't care, it's Slot 4
+						if (param1 == 4)
+						{
+							Display = string.Format("\c*Your allies are now able to use all weapons!");
+						}
+
+						Console.MidPrint(NULL, Display);
+					}
+				}
+			}
+		}
+	}
+
+	override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
+	{
+		if (owner && source is "HA_CoreAI")
+		{
+			newdamage = 0;
+		}
+	}
+
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		TotalNum = 0;
+		UnlockWeaponry = 1;
+
+		cvar developercvar = cvar.findcvar('developer');
+		int developerc = (developercvar != null && developercvar.GetInt ());
+		if (developerc == 2)
+			developer = true;
+	}
+
+	// Add an Ally for future restoration
+	// Preserves everything, with the exception of Actor array, which needs to be refilled
+	// after a new level (See RestoreAlly below)
+	void AddAlly(actor Ally, string Type, string Color, string ChatColor, int Health = 100, string Weapon = "null")
+	{
+		TotalNum++;
+		//Console.Printf("TotalNum: %d", TotalNum);
+		let AA = HA_CoreAI(Ally);
+		if (AA)
+		{
+			AA.SpawnSlot = TotalNum;
+		}
+
+		let NewAlly = new("AllyInfo");
+		NewAlly.pAlly = Ally;
+		NewAlly.Type = Type;
+		NewAlly.Color = Color;
+		NewAlly.ColorChat = ChatColor;
+		NewAlly.Health = Health;
+		NewAlly.Weapon = Weapon;
+
+		AIinfo.Push(NewAlly);
+	}
+
+	// Update information on the allies before destroying them, and changing onto the next level
+	// i.e. They should not have more Health if they were hurt previously
+	// Look inside HA.EventHandler.txt, WorldUnloaded function
+	void UpdateAlly()
+	{
+		for (uint i = 0; i < AIinfo.size(); i++)
+		{
+			if (AIinfo[i].pAlly)
+			{
+				let Ally = HA_CoreAI(AIinfo[i].pAlly);
+				if (Ally)
+				{
+					AIinfo[i].Health = Ally.Health;
+					AIinfo[i].Weapon = Ally.ActiveWeapon;
+				}
+			}
+		}
+	}
+
+	// Remove an Ally from restoration
+	// Mainly because they died
+	// Look also in HA.EventHandler how actors are getting removed on each level reset
+	void RemoveAlly(actor Whom)
+	{	
+		for (uint i = 0; i < AIinfo.size(); i++)
+		{
+			if (AIinfo[i].pAlly && Whom && AIinfo[i].pAlly == Whom)
+			{
+				AIinfo.Delete(i);
+				TotalNum--;
+				break;
+			}
+		}
+	}
+
+	void RestoreAlly()
+	{
+		for (uint i = 0; i < AIinfo.Size(); ++i)
+		{
+			class<Actor> AllySpawn = null;
+
+			if (AIinfo[i].Type ~== "Fighter") AllySpawn = "HA_Fighter";
+			if (AIinfo[i].Type ~== "Cleric") AllySpawn = "HA_Cleric";
+			if (AIinfo[i].Type ~== "Mage") AllySpawn = "HA_Mage";
+
+			if (!AllySpawn)
+			{
+				Console.Printf("Hexen Allies: Unknown Ally Type found! (%s)", AIinfo[i].Type);
+				return;
+			}
+
+			HA_CoreAI HAlly = HA_CoreAI(spawn(AllySpawn, owner.pos, ALLOW_REPLACE));
+			if (HAlly)
+			{
+				if (AIinfo[i].Color != "default")
+					HAlly.A_SetTranslation(AIinfo[i].Color);
+				
+				HAlly.A_SetHealth(AIinfo[i].Health);
+				HAlly.MyPlayer = owner;
+				HAlly.HexenType = AIinfo[i].Type;
+				HAlly.ChatColor = AIinfo[i].ColorChat;
+				HAlly.WeaponCapability = UnlockWeaponry;
+				HAlly.SpawnSlot = i+1;
+				HAlly.SetStateLabel("See");
+
+				// Set the name properly for the Ally
+				HAlly.SetTag(HAlly.AllyName());
+
+				if (WoCMod)
+				{
+					// No experience for now, will have to save that too into an array
+					HAlly.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
+					HAlly.WoC = true;
+					
+					string WoCItem1 = "CurrentMaxHealth";
+					string WoCItem2 = "Level";
+					class<Inventory> CurrentMaxHealth = WoCItem1;
+					class<Inventory> Level = WoCItem2;
+					
+					// Fix bug with the HUD
+					HAlly.A_SetInventory(CurrentMaxHealth, 100);
+					HAlly.A_SetInventory(Level, 1);
+				}
+
+				// Actor pointers will become garbage after a level change, so we kinda "reset" them
+				AIinfo[i].pAlly = HAlly;
+			}
+		}
+	}
+
+	// If one Ally has been spawned already, check for the other class that's not a duplicate
+	// and isn't the Player's doppelganger
+	int NonDuplicateClass(int ActiveClass)
+	{
+		Array<int> NonDuplicateClasses;
+
+		if (TotalNum != 0)
+		{
+			for (uint i = 0; i < AIinfo.size(); i++)
+			{
+				if (AIinfo[i].pAlly)
+				{
+					let Ally = HA_CoreAI(AIinfo[i].pAlly);
+					if (Ally)
+					{
+						for (uint j = 0; j < HA_AllySpawner.HexenAllyList.Size(); j++)
+						{
+							if (!(Ally.HexenType ~== HA_AllySpawner.HexenAllyList[j]))
+							{
+								if (j != ActiveClass)
+								{
+									NonDuplicateClasses.Push(j);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			Console.Printf("Hexen Allies: Warning, tried to use NonDuplicateClass without a single Ally spawned (TotalNum variable)");
+			Console.Printf("Hexen Allies: This causes an array out of bounds.");
+		}
+
+		int rng = random[cls](0, NonDuplicateClasses.Size()-1);
+		return NonDuplicateClasses[rng];
+	}
+
+	Default
+	{
+		+INVENTORY.UNDROPPABLE;
+		+INVENTORY.UNTOSSABLE;
+		+INVENTORY.PERSISTENTPOWER;
+		inventory.maxamount 1;
+	}
+}

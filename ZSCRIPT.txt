@@ -1,11 +1,16 @@
 version "4.3"
 
-#include "zscript/HA.EventHandler.txt"
-#include "zscript/HA.AI.txt"
-#include "zscript/HA.Inventory.txt"
+#include "zscript/Inventory/HA.AIHub.txt"
+#include "zscript/Inventory/HA.AllySlot.txt"
+#include "zscript/Inventory/HA.AllySpawner.txt"
+#include "zscript/Inventory/HA.Soul.txt"
 
-#include "zscript/HA.Fighter.txt"
-#include "zscript/HA.Cleric.txt"
-#include "zscript/HA.Mage.txt"
+#include "zscript/HA.EventHandler.txt"
+
+#include "zscript/HA.AI.txt"
+
+#include "zscript/Allies/Hexen/HA.Fighter.txt"
+#include "zscript/Allies/Hexen/HA.Cleric.txt"
+#include "zscript/Allies/Hexen/HA.Mage.txt"
 
 #include "zscript/RadiusDebug/RadiusDebug.zc"

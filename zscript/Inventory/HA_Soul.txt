@@ -1,0 +1,54 @@
+// Soul
+class HA_Soul : Ammo
+{
+	void SoulToAmount(bool FirstPickup = false)
+	{
+		int Souls = owner.CountInv("HA_Soul");
+		if (!FirstPickup) Souls += 1;
+		
+		owner.A_SetInventory("HA_AllySpawner", Souls);
+	}
+
+	override bool HandlePickup (Inventory item)
+	{
+		if (item.GetClass() == "HA_Soul")
+		{
+			if (owner)
+			{
+				SoultoAmount();
+			}
+		}
+		return Super.HandlePickup (item);
+	}
+
+	override void AttachToOwner (actor other)
+	{
+		Super.AttachToOwner(other);
+		if (owner)
+		{
+			SoulToAmount(true);
+		}
+	}
+
+	Default
+	{
+		Inventory.PickupMessage "Picked up a soul.";
+		Inventory.Amount 1;
+		Inventory.MaxAmount 999;
+		Ammo.BackpackAmount 1;
+		Ammo.BackpackMaxAmount 999;
+		Inventory.Icon "EMOMA0";
+		Tag "Renewable Soul";
+		Scale 1.65;
+		RenderStyle "Translucent";
+		Alpha 0.65;
+		+FLOATBOB
+		+NOGRAVITY
+	}
+	States
+	{
+	Spawn:
+		XQXQ A -1;
+		Stop;
+	}
+}

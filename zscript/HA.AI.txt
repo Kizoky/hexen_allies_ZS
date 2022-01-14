@@ -69,18 +69,18 @@ class HA_CoreAI : Actor
 	
 	bool CheckPath(Actor targ) 
 	{
-        if (!targ)
-            return false;
+		if (!targ)
+			return false;
 
-        int stepCount = Distance2d(targ)/radius + 1;
-        for (int i = 0; i < stepCount; ++i) 
+		int stepCount = Distance2d(targ)/radius + 1;
+		for (int i = 0; i < stepCount; ++i) 
 		{
-            if (CheckBlock(CBF_NOACTORS | CBF_ABSOLUTEANGLE, AAPTR_DEFAULT, i*radius, 0, 0, AngleTo(targ)))
-                return false;
-        }
+			if (CheckBlock(CBF_NOACTORS | CBF_ABSOLUTEANGLE, AAPTR_DEFAULT, i*radius, 0, 0, AngleTo(targ)))
+				return false;
+		}
 
-        return true;
-    }
+		return true;
+	}
 
 	virtual void A_MovementChase(actor targ)
 	{
