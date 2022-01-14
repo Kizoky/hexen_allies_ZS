@@ -1,5 +1,4 @@
-// HA_CoreAI spawns first, then according to what kind of class the Player is playing as 
-// spawns the correspending AI (HA_Figher, HA_Cleric, HA_Mage)
+// HA_CoreAI is the core actor of all Allies
 class HA_CoreAI : Actor
 {
 	// Ignore targets for a couple of seconds
