@@ -1,4 +1,6 @@
 // Soul
+// Every monster will drop this with the exception of Allies
+// After a couple of seconds it will start seeking for Players to be picked up
 class HA_Soul : Ammo
 {
 	void SoulToAmount(bool FirstPickup = false)
@@ -30,6 +32,7 @@ class HA_Soul : Ammo
 		}
 	}
 
+	int TracerAng;
 	void Attract()
 	{
 		if (target)
@@ -38,32 +41,30 @@ class HA_Soul : Ammo
 			tracer = target;
 			A_Tracer2(TracerAng);
 			
-			Vel.Z = (target.pos.Z + target.Height/2 - pos.Z) / DistanceBySpeed(target, 3);
+			Vel.Z = (target.pos.Z + target.Height/2 - pos.Z) / DistanceBySpeed(target, 1);
 		}
 	}
 
 	bool Attraction;
-	int TracerAng;
 	override void Tick()
 	{
 		Super.Tick();
 		if (owner)
 			return;
 
-		if (GetAge() > (35 * 5))
+		// Start seeking after 10 seconds
+		if (GetAge() > (35 * 10))
 		{
 			if (!target)
 			{
 				if (LookForPlayers(true))
 				{
-					//bFLOATBOB = false;
 					bNOCLIP = true;
-					Attraction = true;
 					Angle = AngleTo(target);
 				}
 			}
 
-			if (target && Attraction)
+			if (target)
 			{
 				Attract();
 
