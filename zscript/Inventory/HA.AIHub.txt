@@ -68,11 +68,7 @@ class HA_AIHub : Inventory
 								let Ally = HA_CoreAI(AIinfo[i].pAlly);
 								if (Ally)
 								{
-									Ally.WeaponCapability = UnlockWeaponry;
-									
-									// Can they shoot projectiles?
-									if (Ally.IsMelee)
-										Ally.HA_MeleeShoot();
+									Ally.SetCapability(UnlockWeaponry);
 								}
 							}
 						}

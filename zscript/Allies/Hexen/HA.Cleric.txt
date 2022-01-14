@@ -1,6 +1,36 @@
 // Cleric AI
 class HA_Cleric : HA_CoreAI
 {
+	enum UnlockedWep
+	{
+		Mace = 1,
+		Staff,
+		Flame,
+		Wraith
+	}
+
+	override void SetActiveWeapon()
+	{
+		switch (WeaponCapability)
+		{
+			// Default (1)
+			ActiveWeapon = "Mace";
+			CanShootProj = false;
+
+			case Staff: 	ActiveWeapon = "Staff";		CanShootProj = true;	break;
+			case Flame: 	ActiveWeapon = "Flame";		CanShootProj = true;	break;
+			case Wraith: 	ActiveWeapon = "Wraith";	CanShootProj = true; 	break;
+		}
+	}
+
+	static const string WeaponList[] =
+	{
+		"Mace",
+		"Staff",
+		"Flame",
+		"Wraith"
+	};
+
 	override void HA_PostBeginPlay()
 	{
 		ActiveWeapon = "Mace";
@@ -20,8 +50,6 @@ class HA_Cleric : HA_CoreAI
 		// ================================= Mace of Contrition
 		if (ActiveWeapon ~== "Mace")
 		{
-			CanShootProj = false;
-			
 			FTranslatedLineTarget t;
 
 			int damage = random[MaceAtk](25, 40);
@@ -55,8 +83,6 @@ class HA_Cleric : HA_CoreAI
 		// ================================= Serpent Staff
 		if (ActiveWeapon ~== "Staff")
 		{
-			CanShootProj = true;
-			
 			FTranslatedLineTarget t;
 
 			int damage = random[StaffCheck](20, 35);
@@ -116,8 +142,6 @@ class HA_Cleric : HA_CoreAI
 		// ================================= Firestorm
 		if (ActiveWeapon ~== "Flame")
 		{
-			CanShootProj = true;
-			
 			if (random[chanceshoot]() > 215 && 
 				!(InStateSequence(CurState, ResolveState("Missile"))) && 
 				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
@@ -133,8 +157,6 @@ class HA_Cleric : HA_CoreAI
 		// ================================= Wraithverge
 		if (ActiveWeapon ~== "Wraith")
 		{
-			CanShootProj = true;
-			
 			if (random[chanceshoot]() > 215 && 
 				!(InStateSequence(CurState, ResolveState("Missile"))) && 
 				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )

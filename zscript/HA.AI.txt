@@ -40,6 +40,18 @@ class HA_CoreAI : Actor
 	
 	virtual void HA_PostBeginPlay() {}
 
+	virtual void SetActiveWeapon() {}
+
+	void SetCapability (int Weapon2Unlock)
+	{
+		WeaponCapability = Weapon2Unlock;
+
+		SetActiveWeapon();
+
+		// Check if Ally can also do Ranged and Melee attack
+		//RangeAttackCheck();
+	}
+
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
@@ -81,7 +93,7 @@ class HA_CoreAI : Actor
 		return true;
 	}
 
-	virtual void A_MovementChase(actor targ)
+	protected void A_MovementChase(actor targ)
 	{
 		if (targ)
 		{
@@ -350,7 +362,7 @@ class HA_CoreAI : Actor
 	}
 	
 	int TimeUntilDodge;
-	virtual void A_AllyDodge()
+	protected void A_AllyDodge()
 	{
 		if (!target || TimeUntilDodge > level.time) return;
 		
@@ -464,7 +476,7 @@ class HA_CoreAI : Actor
 		*/
 	}
 
-	virtual void A_AllyShoot()
+	protected void A_AllyShoot()
 	{
 		if (!target) return;
 		

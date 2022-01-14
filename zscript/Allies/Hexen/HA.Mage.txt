@@ -1,14 +1,6 @@
 // Mage AI
 class HA_Mage : HA_CoreAI
 {
-	static const string WeaponList[] =
-	{
-		"Wand",
-		"Frost",
-		"Lightning",
-		"Blood"
-	};
-
 	enum UnlockedWep
 	{
 		Wand = 1,
@@ -16,6 +8,29 @@ class HA_Mage : HA_CoreAI
 		Lightning,
 		Blood
 	}
+
+	override void SetActiveWeapon()
+	{
+		switch (WeaponCapability)
+		{
+			// Default (1)
+			ActiveWeapon = "Wand";
+			// He can always shoot
+			CanShootProj = true;
+
+			case Frost: 	ActiveWeapon = "Frost"; 	break;
+			case Lightning: ActiveWeapon = "Lightning"; break;
+			case Blood: 	ActiveWeapon = "Blood"; 	break;
+		}
+	}
+
+	static const string WeaponList[] =
+	{
+		"Wand",
+		"Frost",
+		"Lightning",
+		"Blood"
+	};
 
 	override void HA_PostBeginPlay()
 	{
@@ -180,15 +195,6 @@ class HA_Mage : HA_CoreAI
 	{
 		//int asd = random[asd](0, WeaponList.Size()-1);
 		//ActiveWeapon = WeaponList[asd];
-
-		switch (WeaponCapability)
-		{
-			ActiveWeapon = "Wand";
-
-			case Frost: 	ActiveWeapon = "Frost"; break;
-			case Lightning: ActiveWeapon = "Lightning"; break;
-			case Blood: 	ActiveWeapon = "Blood"; break;
-		}
 
 		angle = AngleTo(target, true);
 		if (!CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0)) return;

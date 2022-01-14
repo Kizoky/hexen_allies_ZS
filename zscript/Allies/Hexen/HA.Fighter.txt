@@ -4,6 +4,36 @@ class HA_Fighter : HA_CoreAI
 	const AXERANGE = (2.25 * DEFMELEERANGE);
 	const HAMMER_RANGE = 1.5 * DEFMELEERANGE;
 
+	enum UnlockedWep
+	{
+		Fist = 1,
+		Axe,
+		Hammer,
+		Quietus
+	}
+
+	override void SetActiveWeapon()
+	{
+		switch (WeaponCapability)
+		{
+			// Default (1)
+			ActiveWeapon = "Fist";
+			CanShootProj = false;
+
+			case Axe: 		ActiveWeapon = "Axe"; 		CanShootProj = false;	break;
+			case Hammer: 	ActiveWeapon = "Hammer"; 	CanShootProj = true;	break;
+			case Quietus: 	ActiveWeapon = "Quietus"; 	CanShootProj = true; 	break;
+		}
+	}
+
+	static const string WeaponList[] =
+	{
+		"Fist",
+		"Axe",
+		"Hammer",
+		"Quietus"
+	};
+
 	override void HA_PostBeginPlay()
 	{
 		ActiveWeapon = "Fist";
@@ -21,8 +51,6 @@ class HA_Fighter : HA_CoreAI
 		// ================================= Fist
 		if (ActiveWeapon ~== "Fist")
 		{
-			CanShootProj = false;
-			
 			int damage = random[FighterAtk](40, 55);
 			FTranslatedLineTarget t;
 
@@ -43,9 +71,7 @@ class HA_Fighter : HA_CoreAI
 
 		// ================================= Timon's Axe
 		if (ActiveWeapon ~== "Axe")
-		{
-			CanShootProj = false;
-			
+		{	
 			FTranslatedLineTarget t;
 
 			int damage = random[AxeAtk](40, 55);
@@ -99,9 +125,7 @@ class HA_Fighter : HA_CoreAI
 
 		// ================================= Hammer of Retribution
 		if (ActiveWeapon ~== "Hammer")
-		{
-			CanShootProj = true;
-			
+		{	
 			FTranslatedLineTarget t;
 
 			int damage = random[HammerAtk](60, 123);
@@ -146,8 +170,6 @@ class HA_Fighter : HA_CoreAI
 		// ================================= Quietus
 		if (ActiveWeapon ~== "Quietus")
 		{
-			CanShootProj = true;
-			
 			if (random[chanceshoot]() > 225 && 
 				!(InStateSequence(CurState, ResolveState("Missile"))) && 
 				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
