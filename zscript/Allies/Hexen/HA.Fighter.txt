@@ -20,7 +20,7 @@ class HA_Fighter : HA_CoreAI
 			ActiveWeapon = "Fist";
 			CanShootProj = false;
 
-			case Axe: 		ActiveWeapon = "Axe"; 		CanShootProj = false;	break;
+			case Axe:		ActiveWeapon = "Axe";		CanShootProj = false;	break;
 			case Hammer: 	ActiveWeapon = "Hammer"; 	CanShootProj = true;	break;
 			case Quietus: 	ActiveWeapon = "Quietus"; 	CanShootProj = true; 	break;
 		}

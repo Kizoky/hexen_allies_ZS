@@ -18,9 +18,9 @@ class HA_Mage : HA_CoreAI
 			// He can always shoot
 			CanShootProj = true;
 
-			case Frost: 	ActiveWeapon = "Frost"; 	break;
-			case Lightning: ActiveWeapon = "Lightning"; break;
-			case Blood: 	ActiveWeapon = "Blood"; 	break;
+			case Frost: 	ActiveWeapon = "Frost";			break;
+			case Lightning: ActiveWeapon = "Lightning";		break;
+			case Blood: 	ActiveWeapon = "Blood";			break;
 		}
 	}
 
