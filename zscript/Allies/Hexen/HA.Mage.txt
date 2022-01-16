@@ -59,6 +59,7 @@ class HA_Mage : HA_CoreAI
 		//}
 	}
 
+	// Using bools making sure it was a success shoot
 	bool MAGE_Wand()
 	{
 		if (random[chanceshoot]() < 75)

@@ -42,6 +42,151 @@ class HA_Fighter : HA_CoreAI
 		Pronoun = "He";
 	}
 
+	bool FIGHTER_Fist()
+	{
+		int damage = random[FighterAtk](40, 55);
+		FTranslatedLineTarget t;
+
+		double slope = AimLineAttack (angle, 2*DEFMELEERANGE, t, 0, ALF_CHECK3D);
+		if (t.linetarget != null)
+		{
+			Actor puff = LineAttack (angle, 2*DEFMELEERANGE, slope, damage, "FriendlyFire", "PunchPuff", LAF_TARGETISSOURCE, t);
+			if (t.linetarget != null && t.linetarget != MyPlayer)
+			{
+				if (!t.linetarget.bDontThrust)
+					t.linetarget.Thrust(2, t.attackAngleFromSource);
+
+				//vel.xy = (0,0);
+				SetStateLabel("Missile");
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool FIGHTER_Axe()
+	{
+		FTranslatedLineTarget t;
+
+		int damage = random[AxeAtk](40, 55);
+		damage += random[AxeAtk](0, 7);
+		int power = 0;
+		class<Actor> pufftype;
+
+		// Todo: Mana, glow, extra damage
+		bool Glow = random[glw](0,1);
+		if (Glow)
+		{
+			damage <<= 1;
+			power = 6;
+			pufftype = "AxePuffGlow";
+		}
+		else
+		{
+			pufftype = "AxePuff";
+		}
+
+		for (int i = 0; i < 16; i++)
+		{
+			for (int j = 1; j >= -1; j -= 2)
+			{
+				double ang = angle + j*i*(45. / 16);
+				double slope = AimLineAttack(ang, AXERANGE, t, 0., ALF_CHECK3D);
+				if (t.linetarget)
+				{
+					LineAttack(ang, AXERANGE, slope, damage, 'Melee', pufftype, true, t);
+					if (t.linetarget != null)
+					{
+						if (t.linetarget.bIsMonster || t.linetarget.player)
+						{
+							t.linetarget.Thrust(power, t.attackAngleFromSource);
+						}
+						AdjustPlayerAngle(t);
+
+						//vel.xy = (0,0);
+						SetStateLabel("Missile");
+						return true;
+					}
+				}
+			}
+		}
+
+		// didn't find any creatures, so try to strike any walls
+		double slope = AimLineAttack (angle, DEFMELEERANGE, null, 0., ALF_CHECK3D);
+		LineAttack (angle, DEFMELEERANGE, slope, damage, 'Melee', pufftype, true);
+		//vel.xy = (0,0);
+		SetStateLabel("Missile");
+
+		return false;
+	}
+
+	bool FIGHTER_Hammer()
+	{
+		FTranslatedLineTarget t;
+
+		int damage = random[HammerAtk](60, 123);
+		for (int i = 0; i < 16; i++)
+		{
+			for (int j = 1; j >= -1; j -= 2)
+			{
+				double ang = angle + j*i*(45. / 32);
+				double slope = AimLineAttack(ang, HAMMER_RANGE, t, 0., ALF_CHECK3D);
+				if (t.linetarget != null)
+				{
+					LineAttack(ang, HAMMER_RANGE, slope, damage, 'Melee', "HammerPuff", true, t);
+					if (t.linetarget != null)
+					{
+						AdjustPlayerAngle(t);
+						if (t.linetarget.bIsMonster || t.linetarget.player)
+						{
+							t.linetarget.Thrust(10, t.attackAngleFromSource);
+						}
+						// Don't throw a hammer
+						//vel.xy = (0,0);
+						SetStateLabel("Missile");
+						return true;
+					}
+				}
+			}
+		}
+
+		// didn't find any targets in meleerange, so set to throw out a hammer
+		// Todo: don't spawn Hammer if there's not enough mana
+		if (random[chanceshoot]() > 225 && 
+			!(InStateSequence(CurState, ResolveState("Missile"))) && 
+			CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
+		{
+			double slope = AimLineAttack (angle, HAMMER_RANGE, null, 0., ALF_CHECK3D);
+			A_SpawnProjectile("HammerMissile", 55);
+			//vel.xy = (0,0);
+			SetStateLabel("Missile");
+			return true;
+		}
+
+		return false;
+	}
+
+	bool FIGHTER_Quietus()
+	{
+		if (random[chanceshoot]() > 225 && 
+			!(InStateSequence(CurState, ResolveState("Missile"))) && 
+			CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
+		{
+			SpawnPlayerMissile ("FSwordMissile", Angle + (45./4),0, 0, -10);
+			SpawnPlayerMissile ("FSwordMissile", Angle + (45./8),0, 0,  -5);
+			SpawnPlayerMissile ("FSwordMissile", Angle          ,0, 0,   0);
+			SpawnPlayerMissile ("FSwordMissile", Angle - (45./8),0, 0,   5);
+			SpawnPlayerMissile ("FSwordMissile", Angle - (45./4),0, 0,  10);
+			A_StartSound ("FighterSwordFire", CHAN_BODY);
+			//vel.xy = (0,0);
+			SetStateLabel("Missile");
+			return true;
+		}
+
+		return false;
+	}
+
 	override void HA_MeleeShoot()
 	{
 		if (!IsMelee) return;
@@ -51,137 +196,36 @@ class HA_Fighter : HA_CoreAI
 		// ================================= Fist
 		if (ActiveWeapon ~== "Fist")
 		{
-			int damage = random[FighterAtk](40, 55);
-			FTranslatedLineTarget t;
-
-			double slope = AimLineAttack (angle, 2*DEFMELEERANGE, t, 0, ALF_CHECK3D);
-			if (t.linetarget != null)
+			if (FIGHTER_Fist())
 			{
-				Actor puff = LineAttack (angle, 2*DEFMELEERANGE, slope, damage, "FriendlyFire", "PunchPuff", LAF_TARGETISSOURCE, t);
-				if (t.linetarget != null && t.linetarget != MyPlayer)
-				{
-					if (!t.linetarget.bDontThrust)
-						t.linetarget.Thrust(2, t.attackAngleFromSource);
-
-					//vel.xy = (0,0);
-					SetStateLabel("Missile");
-				}
+				// nothing
 			}
 		}
 
 		// ================================= Timon's Axe
 		if (ActiveWeapon ~== "Axe")
-		{	
-			FTranslatedLineTarget t;
-
-			int damage = random[AxeAtk](40, 55);
-			damage += random[AxeAtk](0, 7);
-			int power = 0;
-			class<Actor> pufftype;
-
-			bool Glow = random[glw](0,1);
-			if (Glow)
+		{
+			if (FIGHTER_Axe())
 			{
-				damage <<= 1;
-				power = 6;
-				pufftype = "AxePuffGlow";
+				// Mana -= 3;
 			}
-			else
-			{
-				pufftype = "AxePuff";
-			}
-
-			for (int i = 0; i < 16; i++)
-			{
-				for (int j = 1; j >= -1; j -= 2)
-				{
-					double ang = angle + j*i*(45. / 16);
-					double slope = AimLineAttack(ang, AXERANGE, t, 0., ALF_CHECK3D);
-					if (t.linetarget)
-					{
-						LineAttack(ang, AXERANGE, slope, damage, 'Melee', pufftype, true, t);
-						if (t.linetarget != null)
-						{
-							if (t.linetarget.bIsMonster || t.linetarget.player)
-							{
-								t.linetarget.Thrust(power, t.attackAngleFromSource);
-							}
-							AdjustPlayerAngle(t);
-
-							//vel.xy = (0,0);
-							SetStateLabel("Missile");
-							return;
-						}
-					}
-				}
-			}
-
-			// didn't find any creatures, so try to strike any walls
-			double slope = AimLineAttack (angle, DEFMELEERANGE, null, 0., ALF_CHECK3D);
-			LineAttack (angle, DEFMELEERANGE, slope, damage, 'Melee', pufftype, true);
-			//vel.xy = (0,0);
-			SetStateLabel("Missile");
 		}
 
 		// ================================= Hammer of Retribution
 		if (ActiveWeapon ~== "Hammer")
 		{	
-			FTranslatedLineTarget t;
-
-			int damage = random[HammerAtk](60, 123);
-			for (int i = 0; i < 16; i++)
+			if (FIGHTER_Hammer())
 			{
-				for (int j = 1; j >= -1; j -= 2)
-				{
-					double ang = angle + j*i*(45. / 32);
-					double slope = AimLineAttack(ang, HAMMER_RANGE, t, 0., ALF_CHECK3D);
-					if (t.linetarget != null)
-					{
-						LineAttack(ang, HAMMER_RANGE, slope, damage, 'Melee', "HammerPuff", true, t);
-						if (t.linetarget != null)
-						{
-							AdjustPlayerAngle(t);
-							if (t.linetarget.bIsMonster || t.linetarget.player)
-							{
-								t.linetarget.Thrust(10, t.attackAngleFromSource);
-							}
-							// Don't throw a hammer
-							//vel.xy = (0,0);
-							SetStateLabel("Missile");
-							return;
-						}
-					}
-				}
+				// Mana -= 5;
 			}
-
-			// didn't find any targets in meleerange, so set to throw out a hammer
-			if (random[chanceshoot]() > 225 && 
-				!(InStateSequence(CurState, ResolveState("Missile"))) && 
-				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
-			{
-				double slope = AimLineAttack (angle, HAMMER_RANGE, null, 0., ALF_CHECK3D);
-				A_SpawnProjectile("HammerMissile", 55);
-				//vel.xy = (0,0);
-				SetStateLabel("Missile");
-			}
-			// Don't spawn a hammer if the player doesn't have enough mana
 		}
 
 		// ================================= Quietus
 		if (ActiveWeapon ~== "Quietus")
 		{
-			if (random[chanceshoot]() > 225 && 
-				!(InStateSequence(CurState, ResolveState("Missile"))) && 
-				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
+			if (FIGHTER_Quietus())
 			{
-				SpawnPlayerMissile ("FSwordMissile", Angle + (45./4),0, 0, -10);
-				SpawnPlayerMissile ("FSwordMissile", Angle + (45./8),0, 0,  -5);
-				SpawnPlayerMissile ("FSwordMissile", Angle          ,0, 0,   0);
-				SpawnPlayerMissile ("FSwordMissile", Angle - (45./8),0, 0,   5);
-				SpawnPlayerMissile ("FSwordMissile", Angle - (45./4),0, 0,  10);
-				A_StartSound ("FighterSwordFire", CHAN_BODY);
-				//vel.xy = (0,0);
-				SetStateLabel("Missile");
+				// Mana -= 15;
 			}
 		}
 

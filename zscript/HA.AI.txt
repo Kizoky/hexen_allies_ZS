@@ -38,18 +38,19 @@ class HA_CoreAI : Actor
 	
 	string LastDamageType;
 	
+	// Override it in an actor inheriting from HA_CoreAI
 	virtual void HA_PostBeginPlay() {}
 
+	// Override it in an actor inheriting from HA_CoreAI
 	virtual void SetActiveWeapon() {}
 
+	// Set from HA_AIHub
+	// Sets highest possible weapon(s) for Ally
 	void SetCapability (int Weapon2Unlock)
 	{
 		WeaponCapability = Weapon2Unlock;
 
 		SetActiveWeapon();
-
-		// Check if Ally can also do Ranged and Melee attack
-		//RangeAttackCheck();
 	}
 
 	override void PostBeginPlay()
@@ -456,6 +457,7 @@ class HA_CoreAI : Actor
 		}
 	}
 	
+	// Override it in an actor inheriting from HA_CoreAI
 	virtual void HA_RangeShoot()
 	{
 		/*
@@ -466,6 +468,7 @@ class HA_CoreAI : Actor
 		*/
 	}
 
+	// Override it in an actor inheriting from HA_CoreAI
 	virtual void HA_MeleeShoot()
 	{
 		/*
@@ -600,7 +603,7 @@ class HA_CoreAI : Actor
 		return String.Format("%s's %s", MyPlayer.player.GetUserName(), HexenType);
 	}
 	
-	// Extend this in your Ally class
+	// Override it in an actor inheriting from HA_CoreAI
 	virtual void HA_Tick() {}
 	
 	int SectorDMGInterval, SectorDMGAmount, SectorDMGTime;

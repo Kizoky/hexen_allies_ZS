@@ -39,6 +39,141 @@ class HA_Cleric : HA_CoreAI
 		Pronoun = "He";
 	}
 
+	bool CLERIC_Mace()
+	{
+		FTranslatedLineTarget t;
+
+		int damage = random[MaceAtk](25, 40);
+		for (int i = 0; i < 16; i++)
+		{
+			for (int j = 1; j >= -1; j -= 2)
+			{
+				double ang = angle + j*i*(45. / 16);
+				double slope = AimLineAttack(ang, 2 * DEFMELEERANGE, t, 0., ALF_CHECK3D);
+				if (t.linetarget)
+				{
+					LineAttack(ang, 2 * DEFMELEERANGE, slope, damage, 'Melee', "HammerPuff", true, t);
+					if (t.linetarget != null)
+					{
+						AdjustPlayerAngle(t);
+						SetStateLabel("Melee");
+						//vel.xy = (0,0);
+						return true;
+					}
+				}
+			}
+		}
+
+		// didn't find any creatures, so try to strike any walls
+		double slope = AimLineAttack (angle, DEFMELEERANGE, null, 0., ALF_CHECK3D);
+		LineAttack (angle, DEFMELEERANGE, slope, damage, 'Melee', "HammerPuff");
+		SetStateLabel("Melee");
+		return false;
+		//vel.xy = (0,0);
+	}
+
+	// todo: Lifesteal vs. missile mana consumption
+	bool CLERIC_Staff()
+	{
+		FTranslatedLineTarget t;
+
+		int damage = random[StaffCheck](20, 35);
+		int max = 100;
+		for (int i = 0; i < 3; i++)
+		{
+			for (int j = 1; j >= -1; j -= 2)
+			{
+				double ang = angle + j*i*(45. / 16);
+				double slope = AimLineAttack(ang, 1.5 * DEFMELEERANGE, t, 0., ALF_CHECK3D);
+				if (t.linetarget)
+				{
+					LineAttack(ang, 1.5 * DEFMELEERANGE, slope, damage, 'Melee', "CStaffPuff", false, t);
+					if (t.linetarget != null)
+					{
+						angle = t.angleFromSource;
+						if (t.linetarget.bIsMonster && (!t.linetarget.bDormant && !t.linetarget.bInvulnerable) &&
+						t.linetarget != MyPlayer && !t.linetarget.bFRIENDLY && !(t.linetarget is "HA_CoreAI"))
+						{
+							int newLife = health + (damage >> 3);
+							newLife = newLife > max ? max : newLife;
+							if (newLife > health)
+							{
+								health = health = newLife;
+							}
+						}
+					}
+					SetStateLabel("Melee");
+					//vel.xy = (0,0);
+					return true;
+				}
+			}
+		}
+
+		// didn't find any targets in meleerange, so set to throw out missile attack
+		if (random[chanceshoot]() > 160 && 
+			!(InStateSequence(CurState, ResolveState("Missile"))) && 
+			CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
+		{
+			Actor mo = SpawnPlayerMissile ("CStaffMissile", angle - 3.0);
+			if (mo)
+			{
+				mo.WeaveIndexXY = 32;
+			}
+			mo = SpawnPlayerMissile ("CStaffMissile", angle + 3.0);
+			if (mo)
+			{
+				mo.WeaveIndexXY = 0;
+			}
+			A_StartSound ("ClericCStaffFire", CHAN_BODY);
+
+			//vel.xy = (0,0);
+			SetStateLabel("Missile");
+			return true;
+		}
+
+		return false;
+	}
+
+	bool CLERIC_Flame()
+	{
+		if (random[chanceshoot]() > 215 && 
+			!(InStateSequence(CurState, ResolveState("Missile"))) && 
+			CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
+		{
+			SpawnPlayerMissile ("CFlameMissile");
+			A_StartSound ("ClericFlameFire", CHAN_BODY);
+
+			//vel.xy = (0,0);
+			SetStateLabel("Missile");
+			return true;
+		}
+
+		return false;
+	}
+
+	bool CLERIC_Wraith()
+	{
+		if (random[chanceshoot]() > 215 && 
+			!(InStateSequence(CurState, ResolveState("Missile"))) && 
+			CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
+		{
+			FTranslatedLineTarget t;
+
+			Actor missile = SpawnPlayerMissile ("HolyMissile", angle, pLineTarget:t);
+			if (missile != null && !t.unlinked)
+			{
+				missile.tracer = t.linetarget;
+			}
+
+			A_StartSound ("HolySymbolFire", CHAN_BODY);
+			//vel.xy = (0,0);
+			SetStateLabel("Missile");
+			return true;
+		}
+
+		return false;
+	}
+
 	override void HA_MeleeShoot()
 	{
 		if (!(ActiveWeapon ~== "Flame") && !(ActiveWeapon ~== "Wraith"))
@@ -50,128 +185,36 @@ class HA_Cleric : HA_CoreAI
 		// ================================= Mace of Contrition
 		if (ActiveWeapon ~== "Mace")
 		{
-			FTranslatedLineTarget t;
-
-			int damage = random[MaceAtk](25, 40);
-			for (int i = 0; i < 16; i++)
+			if (CLERIC_Mace())
 			{
-				for (int j = 1; j >= -1; j -= 2)
-				{
-					double ang = angle + j*i*(45. / 16);
-					double slope = AimLineAttack(ang, 2 * DEFMELEERANGE, t, 0., ALF_CHECK3D);
-					if (t.linetarget)
-					{
-						LineAttack(ang, 2 * DEFMELEERANGE, slope, damage, 'Melee', "HammerPuff", true, t);
-						if (t.linetarget != null)
-						{
-							AdjustPlayerAngle(t);
-							SetStateLabel("Melee");
-							//vel.xy = (0,0);
-							return;
-						}
-					}
-				}
+				// none
 			}
-
-			// didn't find any creatures, so try to strike any walls
-			double slope = AimLineAttack (angle, DEFMELEERANGE, null, 0., ALF_CHECK3D);
-			LineAttack (angle, DEFMELEERANGE, slope, damage, 'Melee', "HammerPuff");
-			SetStateLabel("Melee");
-			//vel.xy = (0,0);
 		}
 
 		// ================================= Serpent Staff
 		if (ActiveWeapon ~== "Staff")
 		{
-			FTranslatedLineTarget t;
-
-			int damage = random[StaffCheck](20, 35);
-			int max = 100;
-			for (int i = 0; i < 3; i++)
+			if (CLERIC_Staff())
 			{
-				for (int j = 1; j >= -1; j -= 2)
-				{
-					double ang = angle + j*i*(45. / 16);
-					double slope = AimLineAttack(ang, 1.5 * DEFMELEERANGE, t, 0., ALF_CHECK3D);
-					if (t.linetarget)
-					{
-						LineAttack(ang, 1.5 * DEFMELEERANGE, slope, damage, 'Melee', "CStaffPuff", false, t);
-						if (t.linetarget != null)
-						{
-							angle = t.angleFromSource;
-							if (t.linetarget.bIsMonster && (!t.linetarget.bDormant && !t.linetarget.bInvulnerable) &&
-							t.linetarget != MyPlayer && !t.linetarget.bFRIENDLY && !(t.linetarget is "HA_CoreAI"))
-							{
-								int newLife = health + (damage >> 3);
-								newLife = newLife > max ? max : newLife;
-								if (newLife > health)
-								{
-									health = health = newLife;
-								}
-							}
-						}
-						SetStateLabel("Melee");
-						//vel.xy = (0,0);
-						return;
-					}
-				}
-			}
-
-			// didn't find any targets in meleerange, so set to throw out missile attack
-			if (random[chanceshoot]() > 160 && 
-				!(InStateSequence(CurState, ResolveState("Missile"))) && 
-				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
-			{
-				Actor mo = SpawnPlayerMissile ("CStaffMissile", angle - 3.0);
-				if (mo)
-				{
-					mo.WeaveIndexXY = 32;
-				}
-				mo = SpawnPlayerMissile ("CStaffMissile", angle + 3.0);
-				if (mo)
-				{
-					mo.WeaveIndexXY = 0;
-				}
-				A_StartSound ("ClericCStaffFire", CHAN_BODY);
-
-				//vel.xy = (0,0);
-				SetStateLabel("Missile");
+				// Mana -= 3;
 			}
 		}
 
 		// ================================= Firestorm
 		if (ActiveWeapon ~== "Flame")
 		{
-			if (random[chanceshoot]() > 215 && 
-				!(InStateSequence(CurState, ResolveState("Missile"))) && 
-				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
+			if (CLERIC_Flame())
 			{
-				SpawnPlayerMissile ("CFlameMissile");
-				A_StartSound ("ClericFlameFire", CHAN_BODY);
-
-				//vel.xy = (0,0);
-				SetStateLabel("Missile");
+				// Mana -= 5;
 			}
 		}
 
 		// ================================= Wraithverge
 		if (ActiveWeapon ~== "Wraith")
 		{
-			if (random[chanceshoot]() > 215 && 
-				!(InStateSequence(CurState, ResolveState("Missile"))) && 
-				CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
+			if (CLERIC_Wraith())
 			{
-				FTranslatedLineTarget t;
-
-				Actor missile = SpawnPlayerMissile ("HolyMissile", angle, pLineTarget:t);
-				if (missile != null && !t.unlinked)
-				{
-					missile.tracer = t.linetarget;
-				}
-
-				A_StartSound ("HolySymbolFire", CHAN_BODY);
-				//vel.xy = (0,0);
-				SetStateLabel("Missile");
+				// Mana -= 15;
 			}
 		}
 	}
