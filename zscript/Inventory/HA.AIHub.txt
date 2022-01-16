@@ -235,7 +235,7 @@ class HA_AIHub : Inventory
 				HAlly.MyPlayer = owner;
 				HAlly.HexenType = AIinfo[i].Type;
 				HAlly.ChatColor = AIinfo[i].ColorChat;
-				HAlly.WeaponCapability = UnlockWeaponry;
+				HAlly.SetCapability(UnlockWeaponry);
 				HAlly.SpawnSlot = i+1;
 				HAlly.SetStateLabel("See");
 

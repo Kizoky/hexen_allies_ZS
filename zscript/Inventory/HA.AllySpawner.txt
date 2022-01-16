@@ -41,6 +41,7 @@ class HA_AllySpawner : CustomInventory
 		"Mage"
 	};
 
+	// Todo: further cleanup
 	private void SpawnAlly()
 	{		
 		if (owner)
@@ -231,7 +232,7 @@ class HA_AllySpawner : CustomInventory
 				if (HubInv)
 				{
 					// Store Ally information
-					HubInv.AddAlly(SpawnedAI, SpawnedAI.HexenType, AIcolor, SpawnedAI.ChatColor);
+					HubInv.AddAlly(SpawnedAI, SpawnedAI.HexenType, AIcolor, SpawnedAI.ChatColor, 100, SpawnedAI.ActiveWeapon);
 				}
 
 				SpawnedAI.AllySay("Ready for action!");
