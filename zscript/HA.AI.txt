@@ -715,63 +715,91 @@ class HA_CoreAI : Actor
 		}
 	}
 
+	int NoTouching;
 	override void Activate(Actor activator)
 	{
-		if (activator && MyPlayer && activator == MyPlayer)
+		if (activator && MyPlayer)
 		{
-			bool LocalOptionDecide = false;
-			
-			let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
-			if (HubInv)
+			if (activator == MyPlayer)
 			{
-				LocalOptionDecide = HubInv.OptionDecide;
-			}
+				bool LocalOptionDecide = false;
 
-			if (Following)
-			{
-				GuardSpot = spawn("HA_GuardSpot", pos, ALLOW_REPLACE);
-				CommandOrb = spawn("HA_CommandOrb", pos+(0,0,56), ALLOW_REPLACE);
-				if (CommandOrb)
+				let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
+				if (HubInv)
 				{
-					let CommandOrbVar = HA_CommandOrb(CommandOrb);
-					if (CommandOrbVar)
-						CommandOrbVar.Ally = self;
+					LocalOptionDecide = HubInv.OptionDecide;
 				}
-				
-				if (GuardSpot)
+
+				if (Following)
 				{
-					GuardSpot.sprite = GetSpriteIndex("TNT1");
-					if (MyPlayer.checkLocalView())
+					GuardSpot = spawn("HA_GuardSpot", pos, ALLOW_REPLACE);
+					CommandOrb = spawn("HA_CommandOrb", pos+(0,0,56), ALLOW_REPLACE);
+					if (CommandOrb)
 					{
-						CommandOrb.sprite = GetSpriteIndex("CMMD");
-						CommandOrb.Scale.X = 0.40;
-						CommandOrb.Scale.Y = 0.40;
-
-						if (MultiIndicator)
-							MultiIndicator.sprite = GetSpriteIndex("TNT1");
+						let CommandOrbVar = HA_CommandOrb(CommandOrb);
+						if (CommandOrbVar)
+							CommandOrbVar.Ally = self;
 					}
-					//AllySay("Okay, I will stay here!");
-					Following = false;
 
-					if (HubInv)
+					if (GuardSpot)
 					{
-						HubInv.OptionDecide = true;
-						HubInv.OptAllyDecide = self;
+						GuardSpot.sprite = GetSpriteIndex("TNT1");
+						if (MyPlayer.checkLocalView())
+						{
+							CommandOrb.sprite = GetSpriteIndex("CMMD");
+							CommandOrb.Scale.X = 0.40;
+							CommandOrb.Scale.Y = 0.40;
+
+							if (MultiIndicator)
+								MultiIndicator.sprite = GetSpriteIndex("TNT1");
+						}
+						//AllySay("Okay, I will stay here!");
+						Following = false;
+
+						if (HubInv)
+						{
+							HubInv.OptionDecide = true;
+							HubInv.OptAllyDecide = self;
+						}
 					}
+				}
+				else if (!Following && !LocalOptionDecide)
+				{
+					if (MultiIndicator)
+						MultiIndicator.sprite = GetSpriteIndex("HXNA");
+
+					Following = true;
+					GuardSpot.Destroy();
+					AllySay("Okay, I'm following you!");
 				}
 			}
-			else if (!Following && !LocalOptionDecide)
+			else
 			{
-				if (MultiIndicator)
-					MultiIndicator.sprite = GetSpriteIndex("HXNA");
-				
-				Following = true;
-				GuardSpot.Destroy();
-				AllySay("Okay, I'm following you!");
+				NoTouching++;
+				if (NoTouching > 14)
+				{
+					int notouchy = random[egtch](0, TouchyTouchyList.Size()-1);
+					AllySay(TouchyTouchyList[notouchy]);
+					NoTouching = 0;
+				}
 			}
 		}
 	}
 	
+	static const string TouchyTouchyList[] =
+	{
+		"Hey, stop touching me!",
+		"Knock it off, I'm not going to obey you!",
+		"If you don't stop, I'll shove you up to Korax's Chessboard.",
+		"I would appreciate it, If you would stop ordering me.",
+		"No, I won't switch sides, now stop touching me!",
+		"You can look, but no touching.",
+		"You heretic, you really are enjoying this, aren't you?",
+		"Next time you touch me, I'll personally send you to Switch Hunting.",
+		"I'm not an Artifact Vendor, stop touching me.",
+		"Stop nagging me, I won't buy anything from you."
+	};
+
 	override void Deactivate(Actor activator) { if (activator) activate(activator); }
 
 	Default
