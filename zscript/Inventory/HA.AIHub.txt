@@ -27,6 +27,8 @@ class HA_AIHub : Inventory
 	// Wrath of Cronos
 	bool WoCMod;
 
+	string MultiplayerActiveColor;
+
 	// Debug
 	int developer;
 
@@ -138,16 +140,46 @@ class HA_AIHub : Inventory
 		}
 	}
 
+	// Must be on par with from MENUDEF (HXAColorOption)
+	static const string MpLogoColors[] =
+	{
+		"White",
+		"Red",
+		"DarkRed",
+		"LightRed",
+		"Blue",
+		"DarkBlue",
+		"LightBlue",
+		"Green",
+		"DarkGreen",
+		"Yellow",
+		"DarkYellow",
+		"Gray",
+		"DarkGray",
+		"Pink",
+		"Silver",
+		"Black",
+		"Brown",
+		"Purple",
+		"Orange"
+	};
+
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
 		TotalNum = 0;
 		UnlockWeaponry = 1;
 
-		cvar developercvar = cvar.findcvar('developer');
-		int developerc = (developercvar != null && developercvar.GetInt ());
-		if (developerc == 2)
-			developer = true;
+		// Don't bother reading this unless if we are in Multiplayer
+		if (Multiplayer)
+		{
+			cvar logocolorcvar = cvar.findcvar('hxa_logocolor');
+			if (logocolorcvar)
+			{
+				int logocolorc = logocolorcvar.GetInt();
+				MultiplayerActiveColor = MpLogoColors[logocolorc];
+			}
+		}
 	}
 
 	// Add an Ally for future restoration

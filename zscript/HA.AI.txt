@@ -73,8 +73,29 @@ class HA_CoreAI : Actor
 			{
 				identifier.Ally = self;
 				MultiIndicator = identifier;
+				MultiIndicator.A_SetTics(-1);
+			}
+
+			// Grab active color setting from cvar (inside HA_AIHub)
+			string ActiveColor = "null";
+			let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
+			if (HubInv)
+			{
+				ActiveColor = HubInv.MultiplayerActiveColor;
+			}
+
+			string CActiveColor = String.Format("HXALogo%s", ActiveColor);
+
+			// Make the Logo glow on Allies you own in Multiplayer (hack)
+			// todo: does this desync MP in some way or another?
+			if (MyPlayer && MyPlayer.checkLocalView() && MultiIndicator)
+			{
+				MultiIndicator.frame = 1;
+				MultiIndicator.A_SetTranslation(CActiveColor);
 			}
 		}
+
+		
 
 		HA_PostBeginPlay();
 	}

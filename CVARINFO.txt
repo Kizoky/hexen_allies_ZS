@@ -1,10 +1,12 @@
 user String radiusDebug = "None";
 
-user bool friendlyfire = false;
-user bool seek = false;
-user bool allies = false;
-user bool spawning = false;
-user bool attacking = false;
-user bool colors = false;
-user bool chat = false;
-user bool interact = false;
+user bool hxa_friendlyfire = false;
+user bool hxa_seek = false;
+user bool hxa_allies = false;
+user bool hxa_spawning = false;
+user bool hxa_attacking = false;
+user bool hxa_colors = false;
+user bool hxa_chat = false;
+user bool hxa_interact = false;
+
+user int hxa_logocolor = 0;
