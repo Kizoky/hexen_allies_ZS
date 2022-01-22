@@ -170,14 +170,13 @@ class HA_AIHub : Inventory
 		TotalNum = 0;
 		UnlockWeaponry = 1;
 
-		// Don't bother reading this unless if we are in Multiplayer
+		// Grab color from cvar if we are in Multiplayer only once
 		if (Multiplayer)
 		{
 			cvar logocolorcvar = cvar.findcvar('hxa_logocolor');
 			if (logocolorcvar)
 			{
-				int logocolorc = logocolorcvar.GetInt();
-				MultiplayerActiveColor = MpLogoColors[logocolorc];
+				MultiplayerActiveColor = MpLogoColors[logocolorcvar.GetInt()];
 			}
 		}
 	}
