@@ -42,20 +42,20 @@ class HA_AllySpawner : CustomInventory
 	};
 
 	// Todo: further cleanup
-	private void SpawnAlly()
+	HA_CoreAI SpawnAlly(bool External)
 	{		
 		if (owner)
 		{
 			actor MyPlayer = owner;
 			
-			if (!MyPlayer) return;
+			if (!MyPlayer) return NULL;
 
 			//Console.Printf("Souls: %d | Spawner: %d", MyPlayer.CountInv("HA_Soul"), MyPlayer.CountInv("HA_AllySpawner"));
 
 			// Check if we have enough slots to spawn a new Ally
 			// Also if we already have Allies spawned
 			let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
-			if (HubInv)
+			if (HubInv && !External)
 			{
 				if (HubInv.TotalNum >= MyPlayer.CountInv("HA_AllySlot"))
 				{
@@ -73,12 +73,12 @@ class HA_AllySpawner : CustomInventory
 					{
 						Console.MidPrint(NULL, Req);
 					}
-					return;
+					return NULL;
 				}
 			}
 
 			int CostToSpawn = 5;
-			if (MyPlayer.CountInv("HA_Soul") < CostToSpawn)
+			if (MyPlayer.CountInv("HA_Soul") < CostToSpawn && !External)
 			{
 				int Req = CostToSpawn - MyPlayer.CountInv("HA_Soul");
 				string Requ = String.Format("\c[red]Not enough souls to spawn Ally!\n\c[silver]You need %d more", Req);
@@ -87,7 +87,7 @@ class HA_AllySpawner : CustomInventory
 					Console.MidPrint(NULL, Requ);
 				}
 				MyPlayer.A_StartSound("DoorLocked", CHAN_BODY);
-				return;
+				return NULL;
 			}
 
 			MyPlayer.A_TakeInventory("HA_Soul", CostToSpawn);
@@ -256,8 +256,12 @@ class HA_AllySpawner : CustomInventory
 					SpawnedAI.A_SetInventory(CurrentMaxHealth, 100);
 					SpawnedAI.A_SetInventory(Level, 1);
 				}
+
+				return SpawnedAI;
 			}
 		}
+
+		return NULL;
 	}
 
 	Default
@@ -284,7 +288,7 @@ class HA_AllySpawner : CustomInventory
 		EGGC ABCB 6;
 		Loop;
 	Use:
-		TNT1 A 0 { invoker.SpawnAlly(); }
+		TNT1 A 0 { invoker.SpawnAlly(false); }
 		Fail;
 	}
 }

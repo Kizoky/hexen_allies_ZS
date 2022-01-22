@@ -10,10 +10,59 @@ class HA_Blessed : Inventory
 	}
 }
 
+// Experimental
+class HA_ZCajun : Inventory
+{
+	Actor AllyAttachee, Followee;
+
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		if (owner)
+		{
+			owner.bNOCLIP = true;
+			//owner.bPUSHABLE = true;
+			owner.Speed = 0;
+			owner.bSOLID = false;
+			owner.bCANPASS = false;
+			owner.bINVISIBLE = true;
+			owner.Player.Cheats |= CF_TOTALLYFROZEN;
+			owner.bINVULNERABLE = true;
+		}
+	}
+
+	override void Tick()
+	{
+		Super.Tick();
+		if (owner && AllyAttachee && !AllyAttachee.bKILLED)
+		{
+			owner.SetOrigin(AllyAttachee.pos+(0,0,0), TRUE);
+			owner.Angle = AllyAttachee.Angle;
+			owner.Pitch = AllyAttachee.Pitch;
+			owner.Player.Bot.dest = AllyAttachee;
+
+			if (Followee)
+			{
+				if (Followee.Player.Camera == owner.player.mo)
+				{
+					AllyAttachee.bINVISIBLE = true;
+					Console.Printf("invis");
+				}
+				else
+				{
+					AllyAttachee.bINVISIBLE = false;
+					Console.Printf("not invis");
+				}
+			}
+		}
+	}
+}
+
 class HexenAlliesCoreHandler : EventHandler 
 {
 	Array<Actor> Allies;
 	Array<Actor> Bosses;
+	Array<Actor> Bots;
 	bool BossSpawn;
 	
 	void BossSay(string msg, actor Boss)
@@ -161,6 +210,37 @@ class HexenAlliesCoreHandler : EventHandler
 		PlayerPawn n = PlayerPawn(players[e.PlayerNumber].mo);
 		if (n)
 		{
+			if (n.Player.Bot)
+			{
+				Bots.Push(n);
+				n.A_GiveInventory("HA_ZCajun", 1);
+
+				for (uint i = 0; i < MAXPLAYERS; i++)
+				{
+					if (Players[i].mo)
+					{
+						let AllySpawner = HA_AllySpawner(Players[i].mo.FindInventory("HA_AllySpawner"));
+						if (AllySpawner)
+						{
+							HA_CoreAI Ally = AllySpawner.SpawnAlly(true);
+							if (Ally)
+							{
+								let ZCajunInv = HA_ZCajun(n.FindInventory("HA_ZCajun"));
+								if (ZCajunInv)
+								{
+									ZCajunInv.AllyAttachee = Ally;
+									ZCajunInv.Followee = Players[i].mo;
+								}
+							}
+						}
+
+						break;
+					}
+				}
+
+				return;
+			}
+
 			// Core
 			n.A_GiveInventory("HA_AIHub", 1);
 			
