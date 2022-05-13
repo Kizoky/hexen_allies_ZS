@@ -4,7 +4,16 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 
     HXA_ZF_Image background;
 
+    // Automatically generated
     Array<HXA_ZF_Label> allyNameLabels;
+    Array<HXA_ZF_Button> allyNameButtons;
+
+    HXA_ZF_Button spawnButton;
+    HXA_ZF_Button incrementButton;
+
+    // Contains every labels or buttons that are not related to Ally names
+    Array<HXA_ZF_Label> labelsContainer;
+    Array<HXA_ZF_Button> buttonsContainer;
 
     HXA_AllyMenuHandler handler;
 
@@ -34,15 +43,102 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
         // Add the image element into the main frame.
         background.Pack (mainFrame);
 
+        InitializeData();
+    }
+
+    void RefreshData()
+    {
+        // Destroy ally labels and buttons
+        while (allyNameLabels.Size () > 0)
+        {
+            let label = allyNameLabels [0];
+            allyNameLabels.Delete (0, 1);
+
+            let button = allyNameButtons [0];
+            allyNameButtons.Delete (0, 1);
+
+            label.Unpack ();
+            label.Destroy ();
+
+            button.Unpack ();
+            button.Destroy ();
+        }
+
+        // Destroy label container
+        while (labelsContainer.Size() > 0)
+        {
+            let label = labelsContainer [0];
+            labelsContainer.Delete (0, 1);
+
+            label.Unpack();
+            label.Destroy();
+        }
+
+        // Destroy button container
+        while (buttonsContainer.Size() > 0)
+        {
+            let button = buttonsContainer [0];
+            buttonsContainer.Delete (0, 1);
+
+            button.Unpack();
+            button.Destroy();
+        }
+
+        InitializeData();
+    }
+
+    void InitializeData()
+    {
         let HubInv = HA_AIHub(players [consoleplayer].mo.FindInventory("HA_AIHub"));
         if (!HubInv)
             return;
 
-        AddLabelOnScreen("Active allies: x/5", Font.CR_WHITE, 150, 128);
-        AddLabelOnScreen("Ally slots: x/5", Font.CR_WHITE, 150, 140);
-        AddLabelOnScreen("Available souls: n/a", Font.CR_WHITE, 150, 152);
-        AddButtonOnScreen("UpgradeButton_Spawn", "graphics/ZForms/UpgradeButtonSpawn.png", 150, 165);
-        AddButtonOnScreen("UpgradeButton_SlotUp", "graphics/ZForms/UpgradeButtonIncrement.png", 174, 165);
+        let AllySlotInv = HA_AllySlot(players [consoleplayer].mo.FindInventory("HA_AllySlot"));
+        if (!AllySlotInv)
+            return;
+
+        let AllySpawnerInv = HA_AllySpawner(players [consoleplayer].mo.FindInventory("HA_AllySpawner"));
+        if (!AllySpawnerInv)
+            return;
+
+        string activeAllies = String.Format("Active allies: %d/%d", HubInv.UI_ActiveAIs(), AllySlotInv.UI_AllySlots());
+        AddLabelOnScreen(activeAllies, Font.CR_WHITE, 150, 128);
+
+        string allySlots = String.Format("Ally slots: %d/%d", AllySlotInv.UI_AllySlots(), AllySlotInv.UI_AllySlotsMax());
+        AddLabelOnScreen(allySlots, Font.CR_WHITE, 150, 140);
+
+        int souls = players [consoleplayer].mo.CountInv("HA_Soul");
+        string availableSouls = String.Format("Available souls: %d", souls);
+        AddLabelOnScreen(availableSouls, Font.CR_WHITE, 150, 152);
+
+        int upgradeRow = 24;
+
+        // ----------------------------------------------------------------------------------------------
+        bool spawnDisabled = ((HubInv.UI_ActiveAIs() == AllySlotInv.UI_AllySlots()) || (souls < AllySpawnerInv.UI_AllySpawnCost())) ? true : false;
+        spawnButton = AddButtonOnScreen("UpgradeButton_Spawn", "graphics/ZForms/UpgradeButtonSpawn.png", 150, 165, spawnDisabled);
+        string spawnCost = String.Format("%d", AllySpawnerInv.UI_AllySpawnCost());
+
+        if (!spawnDisabled)
+            AddLabelOnScreen(spawnCost, Font.CR_GREEN, 162, 180);
+        else
+            AddLabelOnScreen(spawnCost, Font.CR_RED, 162, 180);
+        // ----------------------------------------------------------------------------------------------
+
+        // ----------------------------------------------------------------------------------------------
+        bool incrementDisabled = ((AllySlotInv.UI_AllySlots() == AllySlotInv.UI_AllySlotsMax()) || (souls < AllySlotInv.UI_AllySlotCost())) ? true : false;
+        incrementButton = AddButtonOnScreen("UpgradeButton_SlotUp", "graphics/ZForms/UpgradeButtonIncrement.png", 150 + (24 * 1), 165, incrementDisabled);
+        string incrementCost = String.Format("%d", AllySlotInv.UI_AllySlotCost());
+
+        if (!incrementDisabled)
+            AddLabelOnScreen(incrementCost, Font.CR_GREEN, 184, 180);
+        else
+            AddLabelOnScreen(incrementCost, Font.CR_RED, 184, 180);
+        // ----------------------------------------------------------------------------------------------
+
+        //AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 2), 165, true);
+        AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 3), 165, true);
+        AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 4), 165, true);
+        AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 5), 165, true);
 
         // Stats for Information
         int lowestHealth = 999;
@@ -85,7 +181,7 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
         // Add labels (non interactive ones)
         int informationrow = 1;
 
-        // Lowest HP: num AIType
+        // Lowest HP: num AIType -------------------------------------------------------------
             string dyingText;
 
             if (lowestHealth == 100)
@@ -100,24 +196,24 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
                 string dyingTextAlly = String.Format("%s %d", pDyingAI.UI_AllyType(), pDyingAI.UI_GetSlot());
                 AddLabelOnScreen(dyingTextAlly, GetAllyColor(pDyingAI.UI_AllyColor()), 150 + smallfont.StringWidth (dyingText) + 4, 25 + (smallfont.GetHeight () - 3) * informationrow);
             }
-        //
+        // ---------------------------------------------------------------------------------
         informationrow++;
-        // Overall spawned: num
+        // Overall spawned: num ------------------------------------------------------------
              string spawnText = String.Format("Overall spawned: %d", pHubInv.UI_TotalAIsSpawned());
              AddLabelOnScreen(spawnText, Font.CR_RED, 150, 25 + (smallfont.GetHeight () - 2) * informationrow);
-        //
+        // ---------------------------------------------------------------------------------
         informationrow++;
-        // Total allies died: num
+        // Total allies died: num ----------------------------------------------------------
             string deadText = String.Format("Overall dead: %d", pHubInv.UI_TotalAIsDead());
             AddLabelOnScreen(deadText, Font.CR_RED, 150, 25 + (smallfont.GetHeight () - 2) * informationrow);
-        //
+        // ---------------------------------------------------------------------------------
         informationrow++;
-        // Total souls spent: num
+        // Total souls spent: num ----------------------------------------------------------
             string spentText = String.Format("Souls spent: %d", 5 * pHubInv.UI_TotalAIsSpawned());
             AddLabelOnScreen(spentText, Font.CR_RED, 150, 25 + (smallfont.GetHeight () - 2) * informationrow);
-        //
+        // ---------------------------------------------------------------------------------
         informationrow++;
-        // Best kills: num AIType
+        // Best kills: num AIType ----------------------------------------------------------
             string killsText;
 
             if (bestKills == 0)
@@ -132,11 +228,10 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
                 string killsTextAlly = String.Format("%s %d", pBestKillsAI.UI_AllyType(), pBestKillsAI.UI_GetSlot());
                 AddLabelOnScreen(killsTextAlly, GetAllyColor(pBestKillsAI.UI_AllyColor()), 150 + smallfont.StringWidth (killsText) + 4, 25 + (smallfont.GetHeight () - 2) * informationrow);
             }
-        //
-
+        // ---------------------------------------------------------------------------------
     }
 
-    void AddLabelOnScreen(string ttext, int tcolor, int hpos, int vpos)
+    HXA_ZF_Label AddLabelOnScreen(string ttext, int tcolor, int hpos, int vpos)
     {
         let rLabel = HXA_ZF_Label.Create
         (
@@ -164,9 +259,13 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
             textColor: tcolor
         );
         rLabel.Pack (mainFrame);
+
+        labelsContainer.Push(rLabel);
+
+        return rLabel;
     }
 
-    void AddButtonOnScreen(string CMD, string tex, int hpos, int vpos)
+    HXA_ZF_Button AddButtonOnScreen(string CMD, string tex, int hpos, int vpos, bool disabled = false)
     {
         // ----------------------------------------------------------------------------
         string UpgradeButtonCMD = String.Format(CMD);
@@ -188,9 +287,17 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 
         HXA_ZF_BoxTextures ButtonIdle = HXA_ZF_BoxTextures.createSingleTexture(tex, false);
 
-        HXA_ZF_BoxTextures ButtonHover = HXA_ZF_BoxTextures.createSingleTexture("graphics/ZForms/AllyButtonHovered.png", false);
-        HXA_ZF_BoxTextures ButtonClick = HXA_ZF_BoxTextures.createSingleTexture("graphics/ZForms/AllyButtonClicked.png", false);
-        HXA_ZF_BoxTextures ButtonDisabled = HXA_ZF_BoxTextures.createSingleTexture("graphics/ZForms/AllyButtonDisabled.png", false);
+        string texHover = tex;
+        string texClick = tex;
+        string texDisabled = tex;
+
+        texHover.Replace(".png", "_HOVER.png");
+        texClick.Replace(".png", "_CLICK.png");
+        texDisabled.Replace(".png", "_DISABLED.png");
+
+        HXA_ZF_BoxTextures ButtonHover = HXA_ZF_BoxTextures.createSingleTexture(texHover, false);
+        HXA_ZF_BoxTextures ButtonClick = HXA_ZF_BoxTextures.createSingleTexture(texClick, false);
+        HXA_ZF_BoxTextures ButtonDisabled = HXA_ZF_BoxTextures.createSingleTexture(texDisabled, false);
 
         // Set the button's textures.
         button.SetTextures
@@ -204,7 +311,15 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
             // Disabled
             ButtonDisabled
         );
+
+        if (disabled)
+            button.Disable();
+
         button.Pack (mainFrame);
+
+        buttonsContainer.Push(button);
+
+        return button;
     }
 
     // from string to int
@@ -304,10 +419,25 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
         button.Pack (mainFrame);
 
         allyNameLabels.Push (label);
+        allyNameButtons.Push (button);
     }
 
+    int internalTimer;
+    bool shouldRefresh;
     override void Ticker ()
     {
+        if (shouldRefresh)
+        {
+            // Give a few miliseconds for the Menu to "refresh"
+            internalTimer++;
+            if (internalTimer == 3)
+            {
+                RefreshData();
+                internalTimer = 0;
+                shouldRefresh = false;
+            }
+        }
+
         Super.Ticker();
     }
 }
@@ -329,12 +459,20 @@ class HXA_AllyMenuHandler : HXA_ZF_Handler
             Console.Printf("Click AllySlot: %d", AllySlot);
         }
 
-        /*
-        if (command == "AllyButton_1")
+        if (cmd ~== "UpgradeButton_Spawn")
         {
-            link.Close();
+            EventHandler.SendNetworkEvent("AllyMenu_Spawn");
+            link.shouldRefresh = true;
+            S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
         }
-        */
+
+        if (cmd ~== "UpgradeButton_SlotUp")
+        {
+            EventHandler.SendNetworkEvent("AllyMenu_Increment");
+            link.shouldRefresh = true;
+            //S_StartSound("MysticIncant", CHAN_UI);
+            S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
+        }
 
         /*
 		if (command == "ConfirmButton")

@@ -41,4 +41,40 @@ extend class HA_AIHub
     {
         return TotalAIsDead;
     }
+
+	ui int UI_ActiveAIs()
+	{
+		return TotalNum;
+	}
+}
+
+extend class HA_AllySlot
+{
+	ui int UI_AllySlots()
+	{
+		if (owner)
+		{
+			return owner.CountInv("HA_AllySlot");
+		}
+
+		return -1;
+	}
+
+	ui int UI_AllySlotsMax()
+	{
+		return 5;
+	}
+
+	ui int UI_AllySlotCost()
+	{
+		return AllySlotCost();
+	}
+}
+
+extend class HA_AllySpawner
+{
+	ui int UI_AllySpawnCost()
+	{
+		return AllySpawnCost();
+	}
 }

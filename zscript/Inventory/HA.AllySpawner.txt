@@ -41,8 +41,13 @@ class HA_AllySpawner : CustomInventory
 		"Mage"
 	};
 
+	clearscope int AllySpawnCost()
+	{
+		return 5;
+	}
+
 	// Todo: further cleanup
-	private void SpawnAlly()
+	void SpawnAlly()
 	{		
 		if (owner)
 		{
@@ -77,7 +82,7 @@ class HA_AllySpawner : CustomInventory
 				}
 			}
 
-			int CostToSpawn = 5;
+			int CostToSpawn = AllySpawnCost();
 			if (MyPlayer.CountInv("HA_Soul") < CostToSpawn)
 			{
 				int Req = CostToSpawn - MyPlayer.CountInv("HA_Soul");

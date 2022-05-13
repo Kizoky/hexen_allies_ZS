@@ -2,12 +2,17 @@
 // 'Inventory.MaxAmount' acts as the total maximum possible available allies
 class HA_AllySlot : CustomInventory
 {
-	private void TryIncrementing()
+	clearscope int AllySlotCost()
+	{
+		return 21;
+	}
+
+	void TryIncrementing()
 	{		
 		if (owner)
 		{
 			actor MyPlayer = owner;
-			int Cost = 21;
+			int Cost = AllySlotCost();
 
 			if (MyPlayer.CountInv("HA_Soul") < Cost)
 			{
