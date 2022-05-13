@@ -37,6 +37,8 @@ class HA_CoreAI : Actor
 	string Pronoun;
 	
 	string LastDamageType;
+
+	int OverallKills;
 	
 	// Override it in an actor inheriting from HA_CoreAI
 	virtual void HA_PostBeginPlay() {}

@@ -1,0 +1,44 @@
+// List of functions for UI scope
+
+extend class HA_CoreAI
+{
+    // The color + the name of the ally
+	ui string UI_AllyName()
+	{
+		return String.Format("%s %s", ChatColor, HexenType);
+	}
+
+	ui string UI_AllyColor()
+	{
+		return ChatColor;
+	}
+
+	// Gets the Ally's spawn slot
+	ui int UI_GetSlot()
+	{
+		return SpawnSlot;
+	}
+
+	ui string UI_AllyType()
+	{
+		return HexenType;
+	}
+
+    ui int UI_AllyKills()
+    {
+        return OverallKills;
+    }
+}
+
+extend class HA_AIHub
+{
+    ui int UI_TotalAIsSpawned()
+    {
+        return TotalAIsSpawned;
+    }
+
+    ui int UI_TotalAIsDead()
+    {
+        return TotalAIsDead;
+    }
+}

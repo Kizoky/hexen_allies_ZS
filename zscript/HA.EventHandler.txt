@@ -10,6 +10,19 @@ class HA_Blessed : Inventory
 	}
 }
 
+// not directly inherited from HA_Blessed intentionally
+class HA_Uni : Inventory
+{
+	Actor LastAttacker;
+	override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
+	{
+		if (owner && source)
+		{
+			LastAttacker = source;
+		}
+	}
+}
+
 class HexenAlliesCoreHandler : EventHandler 
 {
 	Array<Actor> Allies;
@@ -57,24 +70,6 @@ class HexenAlliesCoreHandler : EventHandler
 			BossSpawn = false;
 		}
 	}
-
-	/* No, I'm too lazy for this
-	override void RenderOverlay(RenderEvent e)
-	{
-		HUDFont MainFont = HUDFont.Create("CONFONT");
-
-		int OriginalWidth = StatusBar.HorizontalResolution;
-		int OriginalHeight = StatusBar.VerticalResolution;
-
-		StatusBar.BeginHUD(1.0, true);
-		StatusBar.SetSize(StatusBar.RelTop, 640, 480);
-
-		StatusBar.DrawString(MainFont, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",(0, 0), StatusBarCore.DI_SCREEN_CENTER);// | StatusBarCore.DI_FORCESCALE);
-
-		StatusBar.BeginHUD(1.0, false);
-		StatusBar.SetSize(StatusBar.RelTop, OriginalWidth, OriginalHeight);
-	}
-	*/
 
 	const Key_One = 2;
 	const Key_Two = 3;
@@ -187,6 +182,10 @@ class HexenAlliesCoreHandler : EventHandler
 				if (!BossSpawn) BossSpawn = true;
 				
 				Bosses.Push(SpawnedThing);
+			}
+			else if (SpawnedThing.bISMONSTER)
+			{
+				SpawnedThing.A_GiveInventory("HA_Uni", 1);
 			}
 		}
 	}
@@ -332,6 +331,16 @@ class HexenAlliesCoreHandler : EventHandler
 					int x = random[xsoul](-30,30);
 					int y = random[ysoul](-30,30);
 					e.Thing.spawn("HA_Soul", e.thing.pos+(x,y,35));
+
+					let pInv = HA_Uni(e.Thing.FindInventory("HA_Uni"));
+					if (pInv)
+					{
+						let pAttacker = HA_CoreAI(pInv.LastAttacker);
+						if (pAttacker)
+						{
+							pAttacker.OverallKills++;
+						}
+					}
 				}
 				else
 				{
@@ -343,6 +352,16 @@ class HexenAlliesCoreHandler : EventHandler
 						int y = random[yboss](-25,25);
 						int z = random[zboss](1,45);
 						e.Thing.spawn("HA_Soul", e.thing.pos+(x,y,z));
+					}
+
+					let pInv = HA_Blessed(e.Thing.FindInventory("HA_Blessed"));
+					if (pInv)
+					{
+						let pAttacker = HA_CoreAI(pInv.LastAttacker);
+						if (pAttacker)
+						{
+							pAttacker.OverallKills++;
+						}
 					}
 				}
 			}

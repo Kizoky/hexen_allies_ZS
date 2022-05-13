@@ -5,6 +5,7 @@ class AllyInfo play
 	string Color; 		// The translation color of the Ally
 	string Weapon; 		// Currently Active Weapon (todo later: probably not needed)
 	string ColorChat; 	// Needed for the Ally's name coloring in chat
+	int Kills;
 	actor pAlly; 		// The Pointer that holds the Ally
 }
 
@@ -31,6 +32,9 @@ class HA_AIHub : Inventory
 
 	// Debug
 	int developer;
+
+	int TotalAIsSpawned;
+	int TotalAIsDead;
 
 	override void Tick()
 	{
@@ -187,6 +191,7 @@ class HA_AIHub : Inventory
 	void AddAlly(actor Ally, string Type, string Color, string ChatColor, int Health = 100, string Weapon = "null")
 	{
 		TotalNum++;
+		TotalAIsSpawned++;
 		//Console.Printf("TotalNum: %d", TotalNum);
 		let AA = HA_CoreAI(Ally);
 		if (AA)
@@ -219,6 +224,7 @@ class HA_AIHub : Inventory
 				{
 					AIinfo[i].Health = Ally.Health;
 					AIinfo[i].Weapon = Ally.ActiveWeapon;
+					AIinfo[i].Kills = Ally.OverallKills;
 				}
 			}
 		}
@@ -235,6 +241,7 @@ class HA_AIHub : Inventory
 			{
 				AIinfo.Delete(i);
 				TotalNum--;
+				TotalAIsDead++;
 				break;
 			}
 		}
@@ -269,6 +276,7 @@ class HA_AIHub : Inventory
 				HAlly.SetCapability(UnlockWeaponry);
 				HAlly.SpawnSlot = i+1;
 				HAlly.SetStateLabel("See");
+				HAlly.OverallKills = AIinfo[i].Kills;
 
 				// Set the name properly for the Ally
 				HAlly.SetTag(HAlly.AllyName());
@@ -289,7 +297,7 @@ class HA_AIHub : Inventory
 					HAlly.A_SetInventory(Level, 1);
 				}
 
-				// Actor pointers will become garbage after a level change, so we kinda "reset" them
+				// Actor pointers will become garbage/null after a level change, so we kinda "reset" them
 				AIinfo[i].pAlly = HAlly;
 			}
 		}

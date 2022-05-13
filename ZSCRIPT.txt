@@ -8,9 +8,14 @@ version "4.3"
 #include "zscript/HA.EventHandler.txt"
 
 #include "zscript/HA.AI.txt"
+#include "zscript/HA.UIGetters.txt"
 
 #include "zscript/Allies/Hexen/HA.Fighter.txt"
 #include "zscript/Allies/Hexen/HA.Cleric.txt"
 #include "zscript/Allies/Hexen/HA.Mage.txt"
 
 #include "zscript/RadiusDebug/RadiusDebug.zc"
+
+#include "zscript/HXA_ZForms/Include.zsc"
+
+#include "zscript/AllyMenu_ZF/AllyMenu.ZS"
