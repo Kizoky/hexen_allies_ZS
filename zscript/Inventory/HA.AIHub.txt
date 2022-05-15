@@ -350,5 +350,6 @@ class HA_AIHub : Inventory
 		+INVENTORY.UNTOSSABLE;
 		+INVENTORY.PERSISTENTPOWER;
 		inventory.maxamount 1;
+		Inventory.PickupMessage "Picked up Ally Hub Manager. I'm calling the Police on you.";
 	}
 }

@@ -62,12 +62,17 @@ extend class HA_AllySlot
 
 	ui int UI_AllySlotsMax()
 	{
-		return 5;
+		return MaxAmount;
 	}
 
 	ui int UI_AllySlotCost()
 	{
 		return AllySlotCost();
+	}
+
+	ui int UI_AllySlotMaxCost()
+	{
+		return AllySlotMaxCost();
 	}
 }
 

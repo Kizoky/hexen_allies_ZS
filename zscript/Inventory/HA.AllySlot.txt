@@ -4,7 +4,54 @@ class HA_AllySlot : CustomInventory
 {
 	clearscope int AllySlotCost()
 	{
-		return 21;
+		return 20 + (5 * Amount);
+	}
+
+	clearscope Int AllySlotMaxCost()
+	{
+		return (5 + (MaxAmount * 8));
+	}
+
+	void IncreaseMaxSlot()
+	{
+		// We need to balance this right, otherwise Companions will become meatshields
+		if (owner)
+		{
+			actor MyPlayer = owner;
+			let AllySlot = MyPlayer.FindInventory("HA_AllySlot");
+
+			if (!AllySlot)
+				return;
+
+			if (MyPlayer)
+			{
+				int Cost = AllySlotMaxCost();
+				if (MyPlayer.CountInv("HA_Soul") < Cost)
+				{
+					int Req = Cost - MyPlayer.CountInv("HA_Soul");
+					string Requ = String.Format("\c[red]Not enough souls to increase maximum slot!\n\c[silver]You need %d more", Req);
+					if (MyPlayer.checkLocalView())
+					{
+						Console.MidPrint(NULL, Requ);
+					}
+					MyPlayer.A_StartSound("DoorLocked", CHAN_BODY);
+					return;
+				}
+				else if (MyPlayer.CountInv("HA_Soul") >= Cost)
+				{
+					MyPlayer.A_TakeInventory("HA_Soul", Cost);
+					MyPlayer.A_StartSound("MysticIncant", CHAN_BODY);
+					string msg = String.Format("\c[silver]You can now have %d Ally Slots!", AllySlot.MaxAmount);
+					Console.Printf("\c[white]%s\c* now has %d maximum Ally slots!", MyPlayer.player.GetUserName(), AllySlot.MaxAmount);
+					if (MyPlayer.checkLocalView())
+					{
+						Console.MidPrint(NULL, msg);
+					}
+
+					MaxAmount++;
+				}
+			}
+		}
 	}
 
 	void TryIncrementing()

@@ -76,6 +76,8 @@ class HexenAlliesCoreHandler : EventHandler
 			
 	override void NetworkProcess(ConsoleEvent e)
     {
+		// ----------------------------------------------------------------------------------------------
+		// ----------------------------------------------------------------------------------------------
 		if (e.Name ~== "AllyMenu_Spawn")
 		{
 			PlayerPawn Player = PlayerPawn(players[e.Player].mo);
@@ -101,6 +103,21 @@ class HexenAlliesCoreHandler : EventHandler
 				}
 			}
 		}
+
+		if (e.Name ~== "AllyMenu_IncrementMaxSlot")
+		{
+			PlayerPawn Player = PlayerPawn(players[e.Player].mo);
+			if (Player)
+			{
+				let AllyIncrement = HA_AllySlot(Player.FindInventory("HA_AllySlot"));
+				if (AllyIncrement)
+				{
+					AllyIncrement.IncreaseMaxSlot();
+				}
+			}
+		}
+		// ----------------------------------------------------------------------------------------------
+		// ----------------------------------------------------------------------------------------------
 
 		if (e.Name ~== "ToggleAllyGuardOption")
 		{

@@ -10,6 +10,7 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 
     HXA_ZF_Button spawnButton;
     HXA_ZF_Button incrementButton;
+    HXA_ZF_Button maxAllySlotButton;
 
     // Contains every labels or buttons that are not related to Ally names
     Array<HXA_ZF_Label> labelsContainer;
@@ -126,19 +127,29 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 
         // ----------------------------------------------------------------------------------------------
         bool incrementDisabled = ((AllySlotInv.UI_AllySlots() == AllySlotInv.UI_AllySlotsMax()) || (souls < AllySlotInv.UI_AllySlotCost())) ? true : false;
-        incrementButton = AddButtonOnScreen("UpgradeButton_SlotUp", "graphics/ZForms/UpgradeButtonIncrement.png", 150 + (24 * 1), 165, incrementDisabled);
+        incrementButton = AddButtonOnScreen("UpgradeButton_SlotUp", "graphics/ZForms/UpgradeButtonIncrement.png", 150 + (26 * 1), 165, incrementDisabled);
         string incrementCost = String.Format("%d", AllySlotInv.UI_AllySlotCost());
 
         if (!incrementDisabled)
-            AddLabelOnScreen(incrementCost, Font.CR_GREEN, 184, 180);
+            AddLabelOnScreen(incrementCost, Font.CR_GREEN, 150 + (26 * 1) + 10, 180);
         else
-            AddLabelOnScreen(incrementCost, Font.CR_RED, 184, 180);
+            AddLabelOnScreen(incrementCost, Font.CR_RED, 150 + (26 * 1) + 10, 180);
         // ----------------------------------------------------------------------------------------------
 
-        //AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 2), 165, true);
-        AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 3), 165, true);
-        AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 4), 165, true);
-        AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 5), 165, true);
+        // ----------------------------------------------------------------------------------------------
+        bool maxAllySlotDisabled = (souls < AllySlotInv.UI_AllySlotMaxCost()) ? true : false;
+        maxAllySlotButton = AddButtonOnScreen("UpgradeButton_SlotMaxUp", "graphics/ZForms/UpgradeButtonIncrementMaxSlot.png", 150 + (29 * 2), 165, maxAllySlotDisabled);
+        string maxAllySlotCost = String.Format("%d", AllySlotInv.UI_AllySlotMaxCost());
+
+        if (!maxAllySlotDisabled)
+            AddLabelOnScreen(maxAllySlotCost, Font.CR_GREEN, 150 + (29 * 2) + 10, 180);
+        else
+            AddLabelOnScreen(maxAllySlotCost, Font.CR_RED, 150 + (29 * 2) + 10, 180);
+        // ----------------------------------------------------------------------------------------------
+
+        //AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 3), 165, true);
+        //AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 4), 165, true);
+        //AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 5), 165, true);
 
         // Stats for Information
         int lowestHealth = 999;
@@ -430,7 +441,7 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
         {
             // Give a few miliseconds for the Menu to "refresh"
             internalTimer++;
-            if (internalTimer == 3)
+            if (internalTimer == 2)
             {
                 RefreshData();
                 internalTimer = 0;
@@ -470,7 +481,13 @@ class HXA_AllyMenuHandler : HXA_ZF_Handler
         {
             EventHandler.SendNetworkEvent("AllyMenu_Increment");
             link.shouldRefresh = true;
-            //S_StartSound("MysticIncant", CHAN_UI);
+            S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
+        }
+
+        if (cmd ~== "UpgradeButton_SlotMaxUp")
+        {
+            EventHandler.SendNetworkEvent("AllyMenu_IncrementMaxSlot");
+            link.shouldRefresh = true;
             S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
         }
 
