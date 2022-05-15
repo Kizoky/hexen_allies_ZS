@@ -299,6 +299,8 @@ class HA_AIHub : Inventory
 
 				// Actor pointers will become garbage/null after a level change, so we kinda "reset" them
 				AIinfo[i].pAlly = HAlly;
+
+				HAlly.TeleportToPlayer(false, false);
 			}
 		}
 	}

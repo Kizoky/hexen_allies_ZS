@@ -206,6 +206,9 @@ class HA_AllySpawner : CustomInventory
 			if (SpawnedAI)
 			{
 				SpawnedAI.MyPlayer = MyPlayer;
+				SpawnedAI.TeleportToPlayer(false);
+				spawn("teleportfog", SpawnedAI.pos+(0,0,35));
+
 				SpawnedAI.HexenType = HexenAllyList[Chosen];
 				SpawnedAI.WeaponCapability = UnlockableWeapons;
 				SpawnedAI.SetStateLabel("See");

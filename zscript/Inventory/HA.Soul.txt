@@ -46,6 +46,7 @@ class HA_Soul : Ammo
 	}
 
 	bool Attraction;
+	int blurTimer;
 	override void Tick()
 	{
 		Super.Tick();
@@ -85,7 +86,12 @@ class HA_Soul : Ammo
 					TracerAng += 1;
 				}
 
-				Actor mo = Spawn ("SoulBlur", Pos, ALLOW_REPLACE);
+				// Lot of souls at the same time causes lag, so we reduce the spawn frequency
+				if (level.time > blurTimer)
+				{
+					Actor mo = Spawn ("SoulBlur", Pos, ALLOW_REPLACE);
+					blurTimer = level.time + 3;
+				}
 				
 				if (Distance3D(target) < 35)
 				{

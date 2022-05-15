@@ -65,7 +65,6 @@ class HA_CoreAI : Actor
 			return;
 		}
 
-		spawn("Teleportfog",pos);
 		Following = true;
 
 		if (Multiplayer)
@@ -92,6 +91,68 @@ class HA_CoreAI : Actor
 		}
 
 		HA_PostBeginPlay();
+	}
+
+	void TeleportToPlayer(bool twoWayFog = true, bool teleportFog = true)
+	{
+		if (twoWayFog && teleportFog)
+			spawn("teleportfog", pos+(0,0,35));
+
+		bool clockWise = random[ttp](0,1);
+		bool success = false;
+		double i = 0;
+		int fail = 0;
+		while (!success)
+		{
+			// Look for a suitable position around the Player (in an AOE)
+			// Right or Left side spawning is randomized
+			int fX = MyPlayer.pos.x + cos(MyPlayer.Angle + i) * 75;
+			int fY = MyPlayer.pos.y + sin(MyPlayer.Angle + i) * 75; // + front || - behind
+			SetOrigin((fX, fY, MyPlayer.pos.z), TRUE);
+
+			// TestMobjLocation is not enough alone to check POS
+			if (TestMobjLocation())
+			{
+				// Location is not blocked, good to go!
+				if (CheckMove((fX, fY), 0, null))
+				{
+					success = true;
+					break;
+				}
+			}
+
+			if (i >= 180 && !clockWise)
+			{
+				i = 0;
+				clockWise = true;
+
+				fail++;
+			}
+
+			if (i <= -180 && clockWise)
+			{
+				i = 0;
+				clockWise = false;
+
+				fail++;
+			}
+
+			if (fail >= 2)
+			{
+				// No suitable area found, will stick to Player's pos
+				SetOrigin((MyPlayer.pos.x, MyPlayer.pos.y, MyPlayer.pos.z), TRUE);
+				success = true;
+				break;
+			}
+
+			if (!clockWise)
+				i++;
+			else
+				i--;
+		}
+
+		if (teleportFog)
+			spawn("teleportfog", pos+(0,0,35));
 	}
 	
 	bool CheckPath(Actor targ) 
@@ -184,9 +245,7 @@ class HA_CoreAI : Actor
 						return;
 					}
 					
-					spawn("teleportfog", pos);
-					SetOrigin(MyPlayer.pos+(0,0,50), TRUE);
-					spawn("teleportfog", pos);
+					TeleportToPlayer();
 					TimeProbablyGotStuck = 0;
 					CDtoTele = false;
 				}
@@ -305,9 +364,7 @@ class HA_CoreAI : Actor
 					{
 						CDtoTele = false;
 						target = null;
-						spawn("teleportfog", pos);
-						SetOrigin(MyPlayer.pos+(0,0,50), TRUE);
-						spawn("teleportfog", pos);
+						TeleportToPlayer();
 						TimeProbablyGotStuck = 0;
 						return;
 					}
