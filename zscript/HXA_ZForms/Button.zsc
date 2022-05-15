@@ -123,6 +123,9 @@ class HXA_ZF_Button : HXA_ZF_ButtonBase {
 	}
 
 	override bool onUIEvent(HXA_ZF_UiEvent ev) {
+		if (!getGlobalStore())
+			return false;
+			
 		// if the player's clicked, and their mouse is in the right place, set the state accordingly
 		if (ev.type == UIEvent.Type_LButtonDown) {
 			let mousePos = getGlobalStore().mousePos;

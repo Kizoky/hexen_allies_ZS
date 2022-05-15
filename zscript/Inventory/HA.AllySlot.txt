@@ -49,6 +49,10 @@ class HA_AllySlot : CustomInventory
 					}
 
 					MaxAmount++;
+
+					let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
+					if (HubInv)
+						HubInv.TotalSpent += Cost;
 				}
 			}
 		}
@@ -99,6 +103,10 @@ class HA_AllySlot : CustomInventory
 				{
 					Console.MidPrint(NULL, msg);
 				}
+
+				let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
+				if (HubInv)
+					HubInv.TotalSpent += Cost;
 			}
 		}
 	}

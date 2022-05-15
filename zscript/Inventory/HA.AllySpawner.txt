@@ -99,8 +99,8 @@ class HA_AllySpawner : CustomInventory
 			int Souls = MyPlayer.CountInv("HA_Soul");
 			MyPlayer.A_SetInventory("HA_AllySpawner", Souls);
 
-			//if (MyPlayer.CountInv("HA_Soul") == 0)
-				//MyPlayer.A_GiveInventory("HA_Soul", 1);
+			if (HubInv)
+				HubInv.TotalSpent += CostToSpawn;
 
 			string PlayerClass = MyPlayer.GetClassName();
 

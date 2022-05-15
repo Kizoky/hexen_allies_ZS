@@ -358,6 +358,7 @@ class HXA_ZF_Element ui {
 
 	/// Transforms the position from element relative positioning into screen relative positioning.
 	virtual Vector2 relToScreen(Vector2 relPos) {
+		if (master == NULL) return relPos;
 		return master.relToScreen(box.pos + relPos);
 	}
 

@@ -5,7 +5,7 @@ extend class HA_CoreAI
     // The color + the name of the ally
 	ui string UI_AllyName()
 	{
-		return String.Format("%s %s", ChatColor, HexenType);
+		return String.Format("%s", HexenType);
 	}
 
 	ui string UI_AllyColor()
