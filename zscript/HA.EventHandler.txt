@@ -187,7 +187,7 @@ class HexenAlliesCoreHandler : EventHandler
 			
 			// Usable Inventory items
 			n.A_GiveInventory("HA_AllySpawner", 1);
-			n.A_GiveInventory("HA_AllySlot", 2);
+			n.A_GiveInventory("HA_AllySlot", 1);
 		}
 	}
 
