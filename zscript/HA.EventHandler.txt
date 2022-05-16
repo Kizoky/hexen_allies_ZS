@@ -70,12 +70,32 @@ class HexenAlliesCoreHandler : EventHandler
 			BossSpawn = false;
 		}
 	}
-
-	const Key_One = 2;
-	const Key_Two = 3;
 			
 	override void NetworkProcess(ConsoleEvent e)
     {
+		if (e.Name.IndexOf("InfoButton") >= 0)
+		{
+            Array<String> infoCmd;
+            e.Name.Split(infoCmd, ":");
+            if (infoCmd[1] ~== "Guard" || infoCmd[1] ~== "Follow")
+            {
+				int allyNum = infoCmd[2].ToInt();
+
+				PlayerPawn Player = PlayerPawn(players[e.Player].mo);
+				if (Player)
+				{
+					let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
+					if (HubInv)
+					{
+						if (infoCmd[1] ~== "Guard")
+							HubInv.GetAllyByIndex(allyNum).ForceGuard();
+						else if (infoCmd[1] ~== "Follow")
+							HubInv.GetAllyByIndex(allyNum).ForceFollow();
+					}
+				}
+            }
+		}
+
 		// ----------------------------------------------------------------------------------------------
 		// ----------------------------------------------------------------------------------------------
 		if (e.Name ~== "AllyMenu_Spawn")
@@ -118,80 +138,6 @@ class HexenAlliesCoreHandler : EventHandler
 		}
 		// ----------------------------------------------------------------------------------------------
 		// ----------------------------------------------------------------------------------------------
-
-		if (e.Name ~== "ToggleAllyGuardOption")
-		{
-			//PlayerInfo player = players [e.Player];
-			bool Pressing = e.Args[1];
-			PlayerPawn Player = PlayerPawn(players[e.Player].mo);
-			if (Player)
-			{
-				if (!Pressing)
-				{
-					bool PressedSpace = false;
-					actor AllyToConf = null;
-					let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
-					if (HubInv)
-					{
-						PressedSpace = HubInv.OptionDecide;
-						AllyToConf = HubInv.OptAllyDecide;
-					}
-
-					if (PressedSpace)
-					{
-						if (e.Args[0] == Key_One)
-						{
-							let HA_Ally = HA_CoreAI(AllyToConf);
-							if (HA_Ally)
-							{
-								if (HA_Ally.CommandOrb)
-									HA_Ally.CommandOrb.Destroy();
-
-								HA_Ally.AllySay("Okay, I will stay here!");
-								if (HubInv)
-								{
-									HubInv.OptionDecide = false;
-									HubInv.OptAllyDecide = null;
-								}
-
-								if (Player.checkLocalView())
-								{
-									if (HA_Ally.MultiIndicator)
-										HA_Ally.MultiIndicator.sprite = HA_Ally.MultiIndicator.GetSpriteIndex("HXNA");
-								}
-							}
-						}
-						else
-						{
-							Console.Printf("Pressed Two!");
-						}
-					}
-
-				}
-			}
-		}
-	}
-
-	override bool InputProcess(InputEvent e)
-	{
-		bool Deciding = false;
-		let Player = players[consoleplayer].mo;
-		if (Player)
-		{
-			let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
-			if (HubInv)
-			{
-				Deciding = HubInv.OptionDecide;
-			}
-		}
-
-		if (e.KeyScan == Key_One || e.KeyScan == Key_Two)
-		{
-			SendNetworkEvent("ToggleAllyGuardOption", e.KeyScan, e.Type == e.Type_KeyDown);
-			return Deciding;
-		}
-
-        return false;
 	}
 
 	override void PlayerEntered (PlayerEvent e)

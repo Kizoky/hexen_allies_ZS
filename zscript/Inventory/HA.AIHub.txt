@@ -6,7 +6,7 @@ class AllyInfo play
 	string Weapon; 		// Currently Active Weapon (todo later: probably not needed)
 	string ColorChat; 	// Needed for the Ally's name coloring in chat
 	int Kills;
-	actor pAlly; 		// The Pointer that holds the Ally
+	HA_CoreAI pAlly; 		// The Pointer that holds the Ally
 }
 
 // Stores information about the Player's allies, then spawns them into the level accordingly
@@ -20,9 +20,6 @@ class HA_AIHub : Inventory
 
 	// Can Allies use higher tier weapons according to Weapon slot? (Default is 1)
 	int UnlockWeaponry;
-
-	bool OptionDecide;
-	actor OptAllyDecide;
 
 	// Compatibility with other mods
 	// Wrath of Cronos
@@ -201,7 +198,7 @@ class HA_AIHub : Inventory
 		}
 
 		let NewAlly = new("AllyInfo");
-		NewAlly.pAlly = Ally;
+		NewAlly.pAlly = HA_CoreAI(Ally);
 		NewAlly.Type = Type;
 		NewAlly.Color = Color;
 		NewAlly.ColorChat = ChatColor;
@@ -343,6 +340,35 @@ class HA_AIHub : Inventory
 
 		int rng = random[cls](0, NonDuplicateClasses.Size()-1);
 		return NonDuplicateClasses[rng];
+	}
+
+	HA_CoreAI GetAllyByIndex(int index)
+	{
+		HA_CoreAI pAI = null;
+
+		for (uint i = 0; i < AIinfo.size(); i++)
+		{
+			if (AIinfo[i].pAlly)
+			{
+    	        let Ally = HA_CoreAI(AIinfo[i].pAlly);
+    	        if (Ally)
+    	        {
+    	            if (Ally.SpawnSlot == index)
+    	            {
+    	                pAI = Ally;
+    	                break;
+    	            }
+    	        }
+    	    }
+    	}
+
+		return pAI;
+	}
+
+	HA_CoreAI GetRandomAlly()
+	{
+		int iRand = random[rndally](0, AIinfo.size());
+		return AIinfo[iRand].pAlly;
 	}
 
 	Default

@@ -28,6 +28,30 @@ extend class HA_CoreAI
     {
         return OverallKills;
     }
+
+	ui string UI_ActiveWeapon()
+	{
+		if (ActiveWeapon.Length() > 0)
+			return ActiveWeapon;
+		
+		return "n/a";
+	}
+
+	ui string UI_GetStatus()
+	{
+		if (Following)
+			return "Following";
+
+		return "Guarding";
+	}
+
+	ui string UI_GetCombatStatus()
+	{
+		if (target)
+			return "Combat";
+
+		return "Idle";
+	}
 }
 
 extend class HA_AIHub
