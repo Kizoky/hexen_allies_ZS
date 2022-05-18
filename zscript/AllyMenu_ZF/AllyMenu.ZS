@@ -1,3 +1,11 @@
+// todos:
+// - Destroy labels, update Button states only
+// - Don't reinitialize everything
+// these probably don't cause anything serious in SP, not sure about MP
+
+#include "zscript/AllyMenu_ZF/AllyMenu_Handler.ZS"
+#include "zscript/AllyMenu_ZF/AllyMenu.InfoDialog.ZS"
+
 class HXA_AllyMenu : HXA_ZF_GenericMenu
 {
     Font smallFont;
@@ -10,9 +18,6 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 
     HXA_ZF_Frame allyFrame;
 
-    HXA_ZF_Image allyInfoBackground;
-    HXA_ZF_Frame allyInfoFrame;
-
     HXA_ZF_Button spawnButton;
     HXA_ZF_Button incrementButton;
     HXA_ZF_Button maxAllySlotButton;
@@ -24,66 +29,6 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
     HXA_ZF_ScrollContainer scrollContainer;
 
     HXA_AllyMenuHandler handler;
-
-    bool infoDialogOpen;
-
-    void CreateAllyInfoDialog(int allyID)
-    {
-        let HubInv = HA_AIHub(players [consoleplayer].mo.FindInventory("HA_AIHub"));
-        if (!HubInv)
-            return;
-
-        infoDialogOpen = true;
-
-        allyInfoFrame = HXA_ZF_Frame.Create((110, 45), (109, 96));
-        allyInfoFrame.Pack (mainFrame);
-
-        allyInfoBackground = HXA_ZF_Image.Create
-        (
-            // Position.
-            (0, 0),
-            // Size.
-            (109, 96),
-            // Image path/name.
-            "graphics/ZForms/allyinfodialog.png",
-            // Alignment options.
-            HXA_ZF_Image.AlignType_TopLeft
-        );
-        allyInfoBackground.Pack (allyInfoFrame);
-
-        HA_CoreAI pInfoAI = HubInv.GetAllyByIndex(allyID);
-
-        int iAllyColor = GetAllyColor(pInfoAI.UI_AllyColor());
-        string allyName = String.Format("%s %d", pInfoAI.UI_AllyType(), allyID);
-        AddLabelOnScreen(allyName, iAllyColor, 29, 0, allyInfoFrame);
-
-        string hpText = String.Format("Health: %d", pInfoAI.Health);
-        AddLabelOnScreen(hpText, Font.CR_RED, 7, 11, allyInfoFrame);
-
-        string killText = String.Format("Kills: %d", pInfoAI.UI_AllyKills());
-        AddLabelOnScreen(killText, Font.CR_RED, 7, 11 + (10 * 1), allyInfoFrame);
-
-        string wepText = String.Format("Wpn: %s", pInfoAI.UI_ActiveWeapon());
-        AddLabelOnScreen(wepText, Font.CR_RED, 7, 11 + (10 * 2) - 2, allyInfoFrame);
-
-        string statusText = String.Format("%s", pInfoAI.UI_GetStatus());
-        AddLabelOnScreen(statusText, Font.CR_WHITE, 7, 11 + (10 * 3) - 2, allyInfoFrame);
-
-        string combatText = String.Format("%s", pInfoAI.UI_GetCombatStatus());
-        AddLabelOnScreen(combatText, Font.CR_GREEN, 7, 11 + (10 * 4) - 1, allyInfoFrame);
-
-        // -----------------------------------------------------------------------------------
-        // -----------------------------------------------------------------------------------
-        string guardCMD = String.Format("InfoButton:Guard:%d", allyID);
-        AddButtonOnScreen(guardCMD, "graphics/ZForms/iconempty.png", 10, 63, false, "Guard", allyInfoFrame);
-
-        string followCMD = String.Format("InfoButton:Follow:%d", allyID);
-        AddButtonOnScreen(followCMD, "graphics/ZForms/iconempty.png", 10 + (23 * 1), 63, false, "Follow", allyInfoFrame);
-
-        AddButtonOnScreen("InfoButton:Heal", "graphics/ZForms/iconempty.png", 10 + (23 * 2), 63, true, "Heal", allyInfoFrame);
-        AddButtonOnScreen("InfoButton:Upgrade", "graphics/ZForms/iconempty.png", 10 + (23 * 3), 63, true, "Upgrade", allyInfoFrame);
-
-    }
 
     override void Init (Menu parent)
     {
@@ -165,7 +110,8 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
             allyInfoBackground.Unpack();
             allyInfoBackground.Destroy();
 
-            allyInfoFrame.Destroy();
+            if (allyInfoFrame)
+                allyInfoFrame.Destroy();
         }
 
         InitializeData();
@@ -252,7 +198,7 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
                 if (Ally)
                 {
                     // Add Ally names and buttons
-                    FillAllyData(Ally.UI_AllyName(), Ally.UI_AllyColor(), Ally.UI_GetSlot());
+                    FillAllyData(Ally.UI_AllyName(), Ally.UI_AllyColor(), Ally.UI_GetSlot(), Ally);
 
                     // Ally with the lowest HP
                     if (Ally.Health < lowestHealth)
@@ -388,7 +334,7 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
         return rLabel;
     }
 
-    HXA_ZF_Button AddButtonOnScreen(string CMD, string tex, int hpos, int vpos, bool disabled = false, string hoverText = "", HXA_ZF_Frame mframe = null)
+    HXA_ZF_Button AddButtonOnScreen(string CMD, string tex, int hpos, int vpos, bool disabled = false, string hoverText = "", HXA_ZF_Frame mframe = null, int hsize = 20, int vsize = 24)
     {
         if (mframe == null)
             mframe = mainFrame;
@@ -404,7 +350,7 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
                 vpos
             ),
             // Size
-            (20, 24),
+            (hsize, vsize),
 
             text: hoverText,
 
@@ -474,13 +420,14 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
         return iAllyColor;
     }
 
-    void FillAllyData (string AllyTag, string AllyColor, int AllySpawnSlot)
+    void FillAllyData (string AllyTag, string AllyColor, int AllySpawnSlot, HA_CoreAI pAlly = null)
     {
         int verticalPos = ((smallfont.GetHeight () - 2) * allyNameLabels.size());
 
         int iAllyColor = GetAllyColor(AllyColor);
 
-        AllyTag = String.Format("%s %d", AllyTag, AllySpawnSlot);
+        string followOguard = (pAlly.Following) ? "F" : "G";
+        AllyTag = String.Format("%s %d (%s)", AllyTag, AllySpawnSlot, followOguard);
 
         // Add a label.
         let label = HXA_ZF_Label.Create
@@ -572,60 +519,5 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
         }
 
         Super.Ticker();
-    }
-}
-
-class HXA_AllyMenuHandler : HXA_ZF_Handler
-{
-    // The menu this command handler belongs to.
-    // We need this to be able to do anything with our menu.
-    HXA_AllyMenu link;
-	
-    override void buttonClickCommand (HXA_ZF_Button caller, Name command)
-    {
-        string cmd = command;
-        if (cmd.IndexOf("AllyButton_") >= 0)
-        {
-            cmd.Remove(0, 11);
-            int AllySlot = cmd.ToInt();
-
-            link.CreateAllyInfoDialog(AllySlot);
-
-            Console.Printf("Click AllySlot: %d", AllySlot);
-        }
-
-        if (cmd.IndexOf("InfoButton") >= 0)
-        {
-            EventHandler.SendNetworkEvent(cmd);
-        }
-
-        if (cmd ~== "UpgradeButton_Spawn")
-        {
-            EventHandler.SendNetworkEvent("AllyMenu_Spawn");
-            link.shouldRefresh = true;
-            S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
-        }
-
-        if (cmd ~== "UpgradeButton_SlotUp")
-        {
-            EventHandler.SendNetworkEvent("AllyMenu_Increment");
-            link.shouldRefresh = true;
-            S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
-        }
-
-        if (cmd ~== "UpgradeButton_SlotMaxUp")
-        {
-            EventHandler.SendNetworkEvent("AllyMenu_IncrementMaxSlot");
-            link.shouldRefresh = true;
-            S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
-        }
-
-        /*
-		if (command == "ConfirmButton")
-        {
-            // Change the text's colour to a random colour.
-            link.Close();
-        }
-        */
     }
 }

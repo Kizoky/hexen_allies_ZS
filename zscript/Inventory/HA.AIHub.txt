@@ -342,7 +342,7 @@ class HA_AIHub : Inventory
 		return NonDuplicateClasses[rng];
 	}
 
-	HA_CoreAI GetAllyByIndex(int index)
+	clearscope HA_CoreAI GetAllyByIndex(int index)
 	{
 		HA_CoreAI pAI = null;
 
@@ -365,7 +365,7 @@ class HA_AIHub : Inventory
 		return pAI;
 	}
 
-	HA_CoreAI GetRandomAlly()
+	clearscope HA_CoreAI GetRandomAlly()
 	{
 		int iRand = random[rndally](0, AIinfo.size());
 		return AIinfo[iRand].pAlly;

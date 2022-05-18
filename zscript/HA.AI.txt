@@ -591,17 +591,17 @@ class HA_CoreAI : Actor
 	string AllyNameColorized()
 	{
 		if (ChatColor ~== "Green") 
-			return String.Format("\c[green]%s", HexenType);
+			return String.Format("\c[green]%s %d", HexenType, SpawnSlot);
 		if (ChatColor ~== "Red")
-			return String.Format("\c[red]%s", HexenType);
+			return String.Format("\c[red]%s %d", HexenType, SpawnSlot);
 		if (ChatColor ~== "Blue")
-			return String.Format("\c[blue]%s", HexenType);
+			return String.Format("\c[blue]%s %d", HexenType, SpawnSlot);
 		if (ChatColor ~== "Silver")
-			return String.Format("\c[white]%s", HexenType);
+			return String.Format("\c[white]%s %d", HexenType, SpawnSlot);
 		if (ChatColor ~== "Yellow")
-			return String.Format("\c[yellow]%s", HexenType);
+			return String.Format("\c[yellow]%s %d", HexenType, SpawnSlot);
 
-		return String.Format("\c[white]%s", HexenType);
+		return String.Format("\c[white]%s %d", HexenType, SpawnSlot);
 	}
 
 	// Owner's name AND Colorized Ally's name included
@@ -672,7 +672,7 @@ class HA_CoreAI : Actor
 	// For Tags or other things that are displaying the Actor name
 	string AllyName()
 	{
-		return String.Format("%s's %s", MyPlayer.player.GetUserName(), HexenType);
+		return String.Format("%s's %s %d", MyPlayer.player.GetUserName(), HexenType, SpawnSlot);
 	}
 	
 	// Override it in an actor inheriting from HA_CoreAI
