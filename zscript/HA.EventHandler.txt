@@ -334,7 +334,7 @@ class HexenAlliesCoreHandler : EventHandler
 				else
 				{
 					// Bosses should spawn more Souls
-					int MaxSouls = random(7,14);
+					int MaxSouls = random[bssls](7,14);
 					for (uint i = 0; i < MaxSouls; i++)
 					{
 						int x = random[xboss](-25,25);

@@ -367,7 +367,7 @@ class HA_AIHub : Inventory
 
 	clearscope HA_CoreAI GetRandomAlly()
 	{
-		int iRand = random[rndally](0, AIinfo.size());
+		int iRand = random[rndally](0, AIinfo.size()-1);
 		return AIinfo[iRand].pAlly;
 	}
 
