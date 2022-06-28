@@ -118,8 +118,15 @@ class HA_CoreAI : Actor
 				// Location is not blocked, good to go!
 				if (CheckMove((fX, fY), 0, null))
 				{
-					success = true;
-					break;
+					// Ally is able to see the Player in this spot
+					if (CheckSight (MyPlayer, SF_IGNOREVISIBILITY | 
+											SF_SEEPASTSHOOTABLELINES | 
+											SF_SEEPASTBLOCKEVERYTHING | 
+											SF_IGNOREWATERBOUNDARY))
+					{
+						success = true;
+						break;
+					}
 				}
 			}
 
