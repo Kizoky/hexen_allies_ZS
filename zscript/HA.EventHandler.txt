@@ -145,12 +145,15 @@ class HexenAlliesCoreHandler : EventHandler
 		PlayerPawn n = PlayerPawn(players[e.PlayerNumber].mo);
 		if (n)
 		{
-			// Core
-			n.A_GiveInventory("HA_AIHub", 1);
-			
-			// Usable Inventory items
-			n.A_GiveInventory("HA_AllySpawner", 1);
-			n.A_GiveInventory("HA_AllySlot", 1);
+			// Make sure to only give Core items once per game session
+			if (n.CountInv("HA_AIHub") <= 0)
+			{
+				n.A_GiveInventory("HA_AIHub", 1);
+				
+				// Usable Inventory items
+				n.A_GiveInventory("HA_AllySpawner", 1);
+				n.A_GiveInventory("HA_AllySlot", 1);
+			}
 		}
 	}
 
