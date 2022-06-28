@@ -48,7 +48,7 @@ class HA_CoreAI : Actor
 
 	// Set from HA_AIHub
 	// Sets highest possible weapon(s) for Ally
-	void SetCapability (int Weapon2Unlock)
+	virtual void SetCapability (int Weapon2Unlock)
 	{
 		WeaponCapability = Weapon2Unlock;
 
@@ -93,6 +93,7 @@ class HA_CoreAI : Actor
 		HA_PostBeginPlay();
 	}
 
+	// This function will make the Ally to teleport in a non-blocked spot around it's Player
 	void TeleportToPlayer(bool twoWayFog = true, bool teleportFog = true)
 	{
 		if (twoWayFog && teleportFog)
@@ -155,6 +156,7 @@ class HA_CoreAI : Actor
 			spawn("teleportfog", pos+(0,0,35));
 	}
 	
+	// credit: dodopod's A* lib
 	bool CheckPath(Actor targ) 
 	{
 		if (!targ)
@@ -170,6 +172,7 @@ class HA_CoreAI : Actor
 		return true;
 	}
 
+	// credit: dodopod's A* lib
 	protected void A_MovementChase(actor targ)
 	{
 		if (targ)
@@ -351,12 +354,16 @@ class HA_CoreAI : Actor
 		{
 			if (MyPlayer)
 			{
-				if (Distance3D(MyPlayer) > 645 && !(CheckSight (MyPlayer, SF_IGNOREVISIBILITY | SF_SEEPASTSHOOTABLELINES | SF_SEEPASTBLOCKEVERYTHING | SF_IGNOREWATERBOUNDARY)) )
+				if (Distance3D(MyPlayer) > 645 && 
+					!(CheckSight (MyPlayer, SF_IGNOREVISIBILITY | 
+											SF_SEEPASTSHOOTABLELINES | 
+											SF_SEEPASTBLOCKEVERYTHING | 
+											SF_IGNOREWATERBOUNDARY)) )
 				{
 					if (!CDtoTele)
 					{
 						TimeProbablyGotStuck = level.time + 35 * 6;
-						Console.Printf("Initiating teleporting...\n");
+						//Console.Printf("Initiating teleporting...\n");
 						CDtoTele = true;
 					}
 						
@@ -378,7 +385,7 @@ class HA_CoreAI : Actor
 			A_AllyDodge();
 			
 			// Closing in or closing out
-			
+			// todo: Frightened flag and A_Chase, this is bad atm
 			if (IsRanged)
 			{
 				if (target)
@@ -416,7 +423,7 @@ class HA_CoreAI : Actor
 						}
 						else if (!CheckMove(NMEPos, flags: PCM_NOLINES | PCM_NOACTORS))
 						{
-							Console.Printf("HA: Can't reach non-flying enemy");
+							//Console.Printf("HA: Can't reach non-flying enemy");
 							IgnoreTarget.Push(target);
 							TimeResetIgnoreTargets = level.time + 35 * 5;
 							target = null;
@@ -453,7 +460,7 @@ class HA_CoreAI : Actor
 				!target.InStateSequence(target.CurState, target.ResolveState("See")))
 			{
 				dodge = true;
-				Console.Printf("Dodging");
+				//Console.Printf("Dodging");
 			}
 		}
 		
@@ -706,7 +713,7 @@ class HA_CoreAI : Actor
 			if (level.time > SectorDMGTime)
 			{
 				//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);	
-				Console.Printf("Damage Type: %s", cursector.damagetype);
+				//Console.Printf("Damage Type: %s", cursector.damagetype);
 				int dd = DamageMobj(self, NULL, SectorDMGAmount, cursector.damagetype);
 				SectorDMGTime = level.time + SectorDMGInterval;
 				

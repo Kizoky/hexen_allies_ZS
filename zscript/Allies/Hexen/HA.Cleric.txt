@@ -41,6 +41,8 @@ class HA_Cleric : HA_CoreAI
 
 	bool CLERIC_Mace()
 	{
+		bool result = false;
+		
 		FTranslatedLineTarget t;
 
 		int damage = random[MaceAtk](25, 40);
@@ -58,7 +60,7 @@ class HA_Cleric : HA_CoreAI
 						AdjustPlayerAngle(t);
 						SetStateLabel("Melee");
 						//vel.xy = (0,0);
-						return true;
+						result = true;
 					}
 				}
 			}
@@ -68,13 +70,15 @@ class HA_Cleric : HA_CoreAI
 		double slope = AimLineAttack (angle, DEFMELEERANGE, null, 0., ALF_CHECK3D);
 		LineAttack (angle, DEFMELEERANGE, slope, damage, 'Melee', "HammerPuff");
 		SetStateLabel("Melee");
-		return false;
+		return result;
 		//vel.xy = (0,0);
 	}
 
 	// todo: Lifesteal vs. missile mana consumption
 	bool CLERIC_Staff()
 	{
+		bool result = false;
+		
 		FTranslatedLineTarget t;
 
 		int damage = random[StaffCheck](20, 35);
@@ -104,7 +108,7 @@ class HA_Cleric : HA_CoreAI
 					}
 					SetStateLabel("Melee");
 					//vel.xy = (0,0);
-					return true;
+					result = true;
 				}
 			}
 		}
@@ -128,10 +132,10 @@ class HA_Cleric : HA_CoreAI
 
 			//vel.xy = (0,0);
 			SetStateLabel("Missile");
-			return true;
+			result = true;
 		}
 
-		return false;
+		return result;
 	}
 
 	bool CLERIC_Flame()
@@ -174,12 +178,34 @@ class HA_Cleric : HA_CoreAI
 		return false;
 	}
 
+	// We don't want them to repeatedly spam projectiles (more strict than Fighter)
+	int TimeBeforeRangeAttack;
+	int RangeAttacks;
+
 	override void HA_MeleeShoot()
 	{
-		if (!(ActiveWeapon ~== "Flame") && !(ActiveWeapon ~== "Wraith"))
-			if (!IsMelee) return;
-
-		if (!CheckMeleeRange() && !IsRanged) return;
+		bool ranged = false;
+		
+		// Not within melee range
+		if (!CheckMeleeRange())
+		{
+			// Can we shoot with projectiles though?
+			if (!CanShootProj)
+				return;
+			
+			if (TimeBeforeRangeAttack > level.time)
+				return;
+			
+			if (RangeAttacks > 2)
+			{
+				TimeBeforeRangeAttack = level.time + (35 + (random[lgf](2,3)));
+				RangeAttacks = 0;
+				return;
+			}
+			
+			ranged = true;
+		}
+		
 		angle = AngleTo(target);
 
 		// ================================= Mace of Contrition
@@ -197,24 +223,41 @@ class HA_Cleric : HA_CoreAI
 			if (CLERIC_Staff())
 			{
 				// Mana -= 3;
+				
+				if (ranged)
+				{
+					RangeAttacks++;
+				}
 			}
 		}
 
 		// ================================= Firestorm
 		if (ActiveWeapon ~== "Flame")
 		{
+			// Switch move AI
+			isRanged = true;
+			isMelee = false;
+			
 			if (CLERIC_Flame())
 			{
 				// Mana -= 5;
+				
+				RangeAttacks++;
 			}
 		}
 
 		// ================================= Wraithverge
 		if (ActiveWeapon ~== "Wraith")
 		{
+			// Switch move AI
+			isRanged = true;
+			isMelee = false;
+			
 			if (CLERIC_Wraith())
 			{
 				// Mana -= 15;
+				
+				RangeAttacks++;
 			}
 		}
 	}

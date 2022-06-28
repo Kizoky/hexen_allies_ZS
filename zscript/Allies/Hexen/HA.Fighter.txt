@@ -67,6 +67,8 @@ class HA_Fighter : HA_CoreAI
 
 	bool FIGHTER_Axe()
 	{
+		bool result = false;
+		
 		FTranslatedLineTarget t;
 
 		int damage = random[AxeAtk](40, 55);
@@ -106,7 +108,7 @@ class HA_Fighter : HA_CoreAI
 
 						//vel.xy = (0,0);
 						SetStateLabel("Missile");
-						return true;
+						result = true;
 					}
 				}
 			}
@@ -118,11 +120,12 @@ class HA_Fighter : HA_CoreAI
 		//vel.xy = (0,0);
 		SetStateLabel("Missile");
 
-		return false;
+		return result;
 	}
 
 	bool FIGHTER_Hammer()
 	{
+		bool result = false;
 		FTranslatedLineTarget t;
 
 		int damage = random[HammerAtk](60, 123);
@@ -145,7 +148,7 @@ class HA_Fighter : HA_CoreAI
 						// Don't throw a hammer
 						//vel.xy = (0,0);
 						SetStateLabel("Missile");
-						return true;
+						result = true;
 					}
 				}
 			}
@@ -161,10 +164,10 @@ class HA_Fighter : HA_CoreAI
 			A_SpawnProjectile("HammerMissile", 55);
 			//vel.xy = (0,0);
 			SetStateLabel("Missile");
-			return true;
+			result = true;
 		}
 
-		return false;
+		return result;
 	}
 
 	bool FIGHTER_Quietus()
@@ -187,10 +190,34 @@ class HA_Fighter : HA_CoreAI
 		return false;
 	}
 
+	// We don't want them to repeatedly spam projectiles (That's the Mage's job!)
+	int TimeBeforeRangeAttack;
+	int RangeAttacks;
+	
 	override void HA_MeleeShoot()
 	{
-		if (!IsMelee) return;
-		if (!CheckMeleeRange() && !IsRanged) return;
+		bool ranged = false;
+		
+		// Not within melee range
+		if (!CheckMeleeRange())
+		{
+			// Can we shoot with projectiles though?
+			if (!CanShootProj)
+				return;
+			
+			if (TimeBeforeRangeAttack > level.time)
+				return;
+			
+			if (RangeAttacks > 4)
+			{
+				TimeBeforeRangeAttack = level.time + (35 + (random[lgf](2,3)));
+				RangeAttacks = 0;
+				return;
+			}
+			
+			ranged = true;
+		}
+		
 		angle = AngleTo(target);
 
 		// ================================= Fist
@@ -201,7 +228,7 @@ class HA_Fighter : HA_CoreAI
 				// nothing
 			}
 		}
-
+		else
 		// ================================= Timon's Axe
 		if (ActiveWeapon ~== "Axe")
 		{
@@ -210,22 +237,32 @@ class HA_Fighter : HA_CoreAI
 				// Mana -= 3;
 			}
 		}
-
+		else
 		// ================================= Hammer of Retribution
 		if (ActiveWeapon ~== "Hammer")
 		{	
 			if (FIGHTER_Hammer())
 			{
 				// Mana -= 5;
+				
+				if (ranged)
+				{
+					RangeAttacks++;
+				}
 			}
 		}
-
+		else
 		// ================================= Quietus
 		if (ActiveWeapon ~== "Quietus")
 		{
 			if (FIGHTER_Quietus())
 			{
 				// Mana -= 15;
+				
+				if (ranged)
+				{
+					RangeAttacks++;
+				}
 			}
 		}
 

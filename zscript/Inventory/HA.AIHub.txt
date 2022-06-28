@@ -5,8 +5,8 @@ class AllyInfo play
 	string Color; 		// The translation color of the Ally
 	string Weapon; 		// Currently Active Weapon (todo later: probably not needed)
 	string ColorChat; 	// Needed for the Ally's name coloring in chat
-	int Kills;
-	HA_CoreAI pAlly; 		// The Pointer that holds the Ally
+	int Kills;			// Stats: Total Kills
+	HA_CoreAI pAlly; 	// The Pointer that holds the Ally
 }
 
 // Stores information about the Player's allies, then spawns them into the level accordingly
@@ -49,6 +49,8 @@ class HA_AIHub : Inventory
 				{
 					class<weapon> weapon = MyPlayer.player.ReadyWeapon.GetClassName();
 
+					// Look for the Player's current weapon's slot
+					// looking for hardcoded weapon names is a bad idea, because we want to be compatible with other mods
 					bool _; int slot;
 					[_, slot] = MyPlayer.player.weapons.locateWeapon(weapon);
 
@@ -69,11 +71,7 @@ class HA_AIHub : Inventory
 						{
 							if (AIinfo[i].pAlly)
 							{
-								let Ally = HA_CoreAI(AIinfo[i].pAlly);
-								if (Ally)
-								{
-									Ally.SetCapability(UnlockWeaponry);
-								}
+								AIinfo[i].pAlly.SetCapability(UnlockWeaponry);
 							}
 						}
 
@@ -217,13 +215,9 @@ class HA_AIHub : Inventory
 		{
 			if (AIinfo[i].pAlly)
 			{
-				let Ally = HA_CoreAI(AIinfo[i].pAlly);
-				if (Ally)
-				{
-					AIinfo[i].Health = Ally.Health;
-					AIinfo[i].Weapon = Ally.ActiveWeapon;
-					AIinfo[i].Kills = Ally.OverallKills;
-				}
+				AIinfo[i].Health = AIinfo[i].pAlly.Health;
+				AIinfo[i].Weapon = AIinfo[i].pAlly.ActiveWeapon;
+				AIinfo[i].Kills = AIinfo[i].pAlly.OverallKills;
 			}
 		}
 	}
@@ -315,17 +309,13 @@ class HA_AIHub : Inventory
 			{
 				if (AIinfo[i].pAlly)
 				{
-					let Ally = HA_CoreAI(AIinfo[i].pAlly);
-					if (Ally)
+					for (uint j = 0; j < HA_AllySpawner.HexenAllyList.Size(); j++)
 					{
-						for (uint j = 0; j < HA_AllySpawner.HexenAllyList.Size(); j++)
+						if (!(AIinfo[i].pAlly.HexenType ~== HA_AllySpawner.HexenAllyList[j]))
 						{
-							if (!(Ally.HexenType ~== HA_AllySpawner.HexenAllyList[j]))
+							if (j != ActiveClass)
 							{
-								if (j != ActiveClass)
-								{
-									NonDuplicateClasses.Push(j);
-								}
+								NonDuplicateClasses.Push(j);
 							}
 						}
 					}
@@ -350,14 +340,10 @@ class HA_AIHub : Inventory
 		{
 			if (AIinfo[i].pAlly)
 			{
-    	        let Ally = HA_CoreAI(AIinfo[i].pAlly);
-    	        if (Ally)
+    	        if (AIinfo[i].pAlly.SpawnSlot == index)
     	        {
-    	            if (Ally.SpawnSlot == index)
-    	            {
-    	                pAI = Ally;
-    	                break;
-    	            }
+    	            pAI = AIinfo[i].pAlly;
+    	            break;
     	        }
     	    }
     	}
