@@ -263,9 +263,6 @@ class HA_AllySpawner : CustomInventory
 					SpawnedAI.A_SetInventory(CurrentMaxHealth, 100);
 					SpawnedAI.A_SetInventory(Level, 1);
 				}
-				
-				if (HubInv)
-					SpawnedAI.SetCapability(HubInv.UnlockWeaponry);
 			}
 		}
 	}

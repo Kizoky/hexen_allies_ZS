@@ -39,21 +39,21 @@ class HXA_AllyMenuHandler : HXA_ZF_Handler
         {
             EventHandler.SendNetworkEvent("AllyMenu_Spawn");
             link.shouldRefresh = true;
-            S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
+            //S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
         }
 
         if (cmd ~== "UpgradeButton_SlotUp")
         {
             EventHandler.SendNetworkEvent("AllyMenu_Increment");
             link.shouldRefresh = true;
-            S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
+            //S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
         }
 
         if (cmd ~== "UpgradeButton_SlotMaxUp")
         {
             EventHandler.SendNetworkEvent("AllyMenu_IncrementMaxSlot");
             link.shouldRefresh = true;
-            S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
+            //S_StartSound("MysticIncant",CHAN_VOICE,CHANF_UI,volume:snd_menuvolume);
         }
     }
 }

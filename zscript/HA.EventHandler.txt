@@ -171,7 +171,8 @@ class HexenAlliesCoreHandler : EventHandler
 			// Challenge the Player by reducing the Bosses' Pain Chance and increasing Health
 			if (SpawnedThing.bBOSS || IsHexenBoss(SpawnedThing))
 			{
-				if (!BossSpawn) BossSpawn = true;
+				if (!BossSpawn) 
+					BossSpawn = true;
 				
 				Bosses.Push(SpawnedThing);
 			}

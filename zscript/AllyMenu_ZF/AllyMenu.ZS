@@ -34,6 +34,8 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
     {
         Super.Init (parent);
 
+		menuactive = OnNoPause;
+
         // Set our base resolution to 320x200.
         SetBaseResolution ((320, 200));
 
@@ -506,7 +508,7 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
     bool shouldRefresh;
     override void Ticker ()
     {
-        if (shouldRefresh)
+        if (shouldRefresh /*|| (level.time % (35 * 1) == 0)*/)
         {
             // Give a few miliseconds for the Menu to "refresh"
             internalTimer++;

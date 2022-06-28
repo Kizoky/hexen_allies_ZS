@@ -11,12 +11,12 @@ class HA_Cleric : HA_CoreAI
 
 	override void SetActiveWeapon()
 	{
+		// Default (1)
+		ActiveWeapon = "Mace";
+		CanShootProj = false;
+	
 		switch (WeaponCapability)
 		{
-			// Default (1)
-			ActiveWeapon = "Mace";
-			CanShootProj = false;
-
 			case Staff: 	ActiveWeapon = "Staff";		CanShootProj = true;	break;
 			case Flame: 	ActiveWeapon = "Flame";		CanShootProj = true;	break;
 			case Wraith: 	ActiveWeapon = "Wraith";	CanShootProj = true; 	break;

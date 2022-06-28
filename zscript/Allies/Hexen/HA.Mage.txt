@@ -11,17 +11,8 @@ class HA_Mage : HA_CoreAI
 
 	override void SetActiveWeapon()
 	{
-		switch (WeaponCapability)
-		{
-			// Default (1)
-			ActiveWeapon = "Wand";
-			// He can always shoot
-			CanShootProj = true;
-
-			case Frost: 	ActiveWeapon = "Frost";			break;
-			case Lightning: ActiveWeapon = "Lightning";		break;
-			case Blood: 	ActiveWeapon = "Blood";			break;
-		}
+		ActiveWeapon = WeaponList[WeaponCapability-1];
+		CanShootProj = true;
 	}
 
 	static const string WeaponList[] =
@@ -37,6 +28,7 @@ class HA_Mage : HA_CoreAI
 		IsMelee = false;
 		IsRanged = true;
 		Pronoun = "He";
+		
 		//Mana = 999;
 	}
 

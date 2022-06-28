@@ -14,12 +14,12 @@ class HA_Fighter : HA_CoreAI
 
 	override void SetActiveWeapon()
 	{
+		// Default (1)
+		ActiveWeapon = "Fist";
+		CanShootProj = false;
+	
 		switch (WeaponCapability)
 		{
-			// Default (1)
-			ActiveWeapon = "Fist";
-			CanShootProj = false;
-
 			case Axe:		ActiveWeapon = "Axe";		CanShootProj = false;	break;
 			case Hammer:	ActiveWeapon = "Hammer";	CanShootProj = true;	break;
 			case Quietus:	ActiveWeapon = "Quietus";	CanShootProj = true;	break;

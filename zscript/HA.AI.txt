@@ -48,16 +48,28 @@ class HA_CoreAI : Actor
 
 	// Set from HA_AIHub
 	// Sets highest possible weapon(s) for Ally
-	virtual void SetCapability (int Weapon2Unlock)
+	void SetCapability (int Weapon2Unlock)
 	{
 		WeaponCapability = Weapon2Unlock;
 
 		SetActiveWeapon();
 	}
+	
+	protected int GetCapability()
+	{
+		int cap = 1;
+		
+		let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
+		if (HubInv)
+		{
+			cap = HubInv.UnlockWeaponry;
+		}
+		
+		return cap;
+	}
 
 	override void PostBeginPlay()
 	{
-		Super.PostBeginPlay();
 		if (!MyPlayer)
 		{
 			Console.Printf("\c[red]Hexen Allies:\c[yellow] Summoning via console isn't supported!");
@@ -89,8 +101,13 @@ class HA_CoreAI : Actor
 				}
 			}
 		}
+		
+		// This is very important so they'll always start with a weapon
+		SetCapability(GetCapability());
 
 		HA_PostBeginPlay();
+		
+		Super.PostBeginPlay();
 	}
 
 	// This function will make the Ally to teleport in a non-blocked spot around it's Player
@@ -119,10 +136,10 @@ class HA_CoreAI : Actor
 				if (CheckMove((fX, fY), 0, null))
 				{
 					// Ally is able to see the Player in this spot
-					if (CheckSight (MyPlayer, SF_IGNOREVISIBILITY | 
-											SF_SEEPASTSHOOTABLELINES | 
-											SF_SEEPASTBLOCKEVERYTHING | 
-											SF_IGNOREWATERBOUNDARY))
+					if (CheckSight (MyPlayer, 	SF_IGNOREVISIBILITY | 
+												SF_SEEPASTSHOOTABLELINES | 
+												SF_SEEPASTBLOCKEVERYTHING | 
+												SF_IGNOREWATERBOUNDARY))
 					{
 						success = true;
 						break;
