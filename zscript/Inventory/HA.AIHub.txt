@@ -34,10 +34,26 @@ class HA_AIHub : Inventory
 	int TotalAIsDead;
 	int TotalSpent;
 
+	override void PostBeginPlay()
+	{
+		TotalNum = 0;
+		UnlockWeaponry = 1;
+
+		// Grab color from cvar if we are in Multiplayer only once
+		if (Multiplayer)
+		{
+			cvar logocolorcvar = cvar.findcvar('hxa_logocolor');
+			if (logocolorcvar)
+			{
+				MultiplayerActiveColor = MpLogoColors[logocolorcvar.GetInt()];
+			}
+		}
+		
+		Super.PostBeginPlay();
+	}
+
 	override void Tick()
 	{
-		Super.Tick();
-
 		actor MyPlayer = owner;
 		if (MyPlayer)
 		{
@@ -79,6 +95,8 @@ class HA_AIHub : Inventory
 				}
 			}
 		}
+		
+		Super.Tick();
 	}
 
 	void PrintTip(string Tip, int param1 = 0, double param2 = -1)
@@ -163,23 +181,6 @@ class HA_AIHub : Inventory
 		"Purple",
 		"Orange"
 	};
-
-	override void PostBeginPlay()
-	{
-		Super.PostBeginPlay();
-		TotalNum = 0;
-		UnlockWeaponry = 1;
-
-		// Grab color from cvar if we are in Multiplayer only once
-		if (Multiplayer)
-		{
-			cvar logocolorcvar = cvar.findcvar('hxa_logocolor');
-			if (logocolorcvar)
-			{
-				MultiplayerActiveColor = MpLogoColors[logocolorcvar.GetInt()];
-			}
-		}
-	}
 
 	// Add an Ally for future restoration
 	// Preserves everything, with the exception of Actor array, which needs to be refilled
@@ -324,8 +325,7 @@ class HA_AIHub : Inventory
 		}
 		else
 		{
-			Console.Printf("Hexen Allies: Warning, tried to use NonDuplicateClass without a single Ally spawned (TotalNum variable)");
-			Console.Printf("Hexen Allies: This causes an array out of bounds.");
+			Console.Printf("Hexen Allies: Possible array out of bounds in 'HA_AIHub::NonDuplicateClass'");
 		}
 
 		int rng = random[cls](0, NonDuplicateClasses.Size()-1);

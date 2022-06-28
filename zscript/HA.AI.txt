@@ -96,6 +96,7 @@ class HA_CoreAI : Actor
 	// This function will make the Ally to teleport in a non-blocked spot around it's Player
 	void TeleportToPlayer(bool twoWayFog = true, bool teleportFog = true)
 	{
+		// Teleport fog from far away
 		if (twoWayFog && teleportFog)
 			spawn("teleportfog", pos+(0,0,35));
 
@@ -111,7 +112,7 @@ class HA_CoreAI : Actor
 			int fY = MyPlayer.pos.y + sin(MyPlayer.Angle + i) * 75; // + front || - behind
 			SetOrigin((fX, fY, MyPlayer.pos.z), TRUE);
 
-			// TestMobjLocation is not enough alone to check POS
+			// TestMobjLocation is not enough alone to check POS (in combination with SetOrigin)
 			if (TestMobjLocation())
 			{
 				// Location is not blocked, good to go!
@@ -152,6 +153,7 @@ class HA_CoreAI : Actor
 				i--;
 		}
 
+		// Teleport fog in our new spot
 		if (teleportFog)
 			spawn("teleportfog", pos+(0,0,35));
 	}
@@ -275,13 +277,14 @@ class HA_CoreAI : Actor
 	int TimeBeforeRandomTurn, TimeProbablyGotStuck, TimeResetIgnoreTargets;
 	virtual void A_FollowerChase()
 	{
+		// Dead monsters or players are invalid
 		if ((target && target.bKILLED) || (target && target is "PlayerPawn"))
 		{
 			target = null;
 			TimeProbablyGotStuck = 0;
 		}
 		
-		// Follow our player, or guard Area
+		// Follow our player, or guard spot
 		if (!target && MyPlayer)
 		{
 			if (Following)
@@ -295,6 +298,7 @@ class HA_CoreAI : Actor
 		{
 			LookForEnemies(false);
 
+			// Make sure it's not an enemy we ignored for some reason
 			for (uint i = 0; i < IgnoreTarget.size(); i++)
 			{
 				if (IgnoreTarget[i] == target)
@@ -304,7 +308,7 @@ class HA_CoreAI : Actor
 				}
 			}
 			
-			if (!IsRanged)
+			if (IsMelee)
 			{
 				if (!CheckPath(target) || !(IsVisible (target, true)))
 				{
@@ -312,7 +316,7 @@ class HA_CoreAI : Actor
 					return;
 				}
 			}
-			else
+			else if (IsRanged)
 			{
 				if (!CheckPath(target) && !(IsVisible (target, true)))
 				{
@@ -349,7 +353,7 @@ class HA_CoreAI : Actor
 			
 		}
 		
-		// Active target we have
+		// Target
 		if (target && !target.bKILLED)
 		{
 			if (MyPlayer)
@@ -451,7 +455,7 @@ class HA_CoreAI : Actor
 		// Special handling for WoC, possibly fixes issues with other mods too
 		// todo WoC: Check the base monster actor and check for specific states
 		bool dodge = false;
-		if (WoC || !WoC)
+		//if (WoC || !WoC)
 		{
 			if (!target.InStateSequence(target.CurState, target.ResolveState("Spawn")) &&
 				!target.InStateSequence(target.CurState, target.ResolveState("Pain")) &&

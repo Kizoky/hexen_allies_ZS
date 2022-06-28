@@ -33,7 +33,6 @@ class HA_Cleric : HA_CoreAI
 
 	override void HA_PostBeginPlay()
 	{
-		ActiveWeapon = "Mace";
 		IsMelee = true;
 		IsRanged = false;
 		Pronoun = "He";

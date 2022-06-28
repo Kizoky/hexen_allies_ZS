@@ -34,12 +34,10 @@ class HA_Mage : HA_CoreAI
 
 	override void HA_PostBeginPlay()
 	{
-		ActiveWeapon = "Wand";
 		IsMelee = false;
 		IsRanged = true;
 		Pronoun = "He";
 		//Mana = 999;
-		//WeaponCapability = 3;
 	}
 
 	override void HA_Tick()

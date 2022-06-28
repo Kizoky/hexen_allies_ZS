@@ -36,7 +36,6 @@ class HA_Fighter : HA_CoreAI
 
 	override void HA_PostBeginPlay()
 	{
-		ActiveWeapon = "Fist";
 		IsMelee = true;
 		IsRanged = false;
 		Pronoun = "He";
