@@ -728,46 +728,49 @@ class HA_CoreAI : Actor
 		TextureID Fire = texman.CheckForTexture("X_001");
 		// Special sector damage flags
 		// Sometimes a sector doesn't have a flag set, but could still do damage
-		bool DamagingSector = ((cursector.Flags & cursector.SECF_DAMAGEFLAGS) || cursector.damageamount > 0);
-		if (DamagingSector)
+		if (pos.z <= floorz)
 		{
-			if (SectorDMGInterval != cursector.damageinterval ||
-				SectorDMGAmount != cursector.damageamount)
+			bool DamagingSector = ((cursector.Flags & cursector.SECF_DAMAGEFLAGS) || cursector.damageamount > 0);
+			if (DamagingSector)
 			{
-				SectorDMGInterval = cursector.damageinterval;
-				SectorDMGAmount = cursector.damageamount;
-			}
-			
-			if (level.time > SectorDMGTime)
-			{
-				//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);	
-				//Console.Printf("Damage Type: %s", cursector.damagetype);
-				int dd = DamageMobj(self, NULL, SectorDMGAmount, cursector.damagetype);
-				SectorDMGTime = level.time + SectorDMGInterval;
+				if (SectorDMGInterval != cursector.damageinterval ||
+					SectorDMGAmount != cursector.damageamount)
+				{
+					SectorDMGInterval = cursector.damageinterval;
+					SectorDMGAmount = cursector.damageamount;
+				}
 				
-				// Play Lava sizzling sound
-				if ((cursector.GetTexture(cursector.floor)) == Fire)
+				if (level.time > SectorDMGTime)
+				{
+					//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);	
+					//Console.Printf("Damage Type: %s", cursector.damagetype);
+					int dd = DamageMobj(self, NULL, SectorDMGAmount, cursector.damagetype);
+					SectorDMGTime = level.time + SectorDMGInterval;
+					
+					// Play Lava sizzling sound
+					if ((cursector.GetTexture(cursector.floor)) == Fire)
+						A_StartSound("LavaSizzle", CHAN_BODY);
+				}
+			}
+			// Check if current floor texture is Fire (even without flags it damages the Player, so it should the allies too)
+			else if ((cursector.GetTexture(cursector.floor)) == Fire)
+			{
+				if (SectorDMGInterval != 32 || SectorDMGAmount != 5)
+				{
+					SectorDMGInterval = 32;
+					SectorDMGAmount = 5;
+				}
+				
+				if (level.time > SectorDMGTime)
+				{
+					//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);
+					int dd = DamageMobj(self, NULL, SectorDMGAmount, "Fire");
 					A_StartSound("LavaSizzle", CHAN_BODY);
+					SectorDMGTime = level.time + SectorDMGInterval;
+				}
+				
+				//Console.Printf("Texture floor: %d", cursector.GetTexture(cursector.floor));
 			}
-		}
-		// Check if current floor texture is Fire (even without flags it damages the Player, so it should the allies too)
-		else if ((cursector.GetTexture(cursector.floor)) == Fire)
-		{
-			if (SectorDMGInterval != 32 || SectorDMGAmount != 5)
-			{
-				SectorDMGInterval = 32;
-				SectorDMGAmount = 5;
-			}
-			
-			if (level.time > SectorDMGTime)
-			{
-				//Console.Printf("Sector Damage: %d | Interval: %d", cursector.damageamount, cursector.damageinterval);
-				int dd = DamageMobj(self, NULL, SectorDMGAmount, "Fire");
-				A_StartSound("LavaSizzle", CHAN_BODY);
-				SectorDMGTime = level.time + SectorDMGInterval;
-			}
-			
-			//Console.Printf("Texture floor: %d", cursector.GetTexture(cursector.floor));
 		}
 		
 		// Monsters are more likely to get stuck if they spawn in-air
