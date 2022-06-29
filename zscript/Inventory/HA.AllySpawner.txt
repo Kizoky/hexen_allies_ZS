@@ -190,7 +190,7 @@ class HA_AllySpawner : CustomInventory
 			else
 			{
 				// todo: Should we leave this as totally random, or introduce a ruling?
-				Chosen = random[tas](0, HexenSpawnList.Size()-1);
+				Chosen = HubInv.LeastOwnedClass(); //random[tas](0, HexenSpawnList.Size()-1);
 				
 				// Todo: Force spawn a class if desired
 				//Chosen = 2;

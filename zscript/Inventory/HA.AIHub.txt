@@ -331,6 +331,71 @@ class HA_AIHub : Inventory
 		int rng = random[cls](0, NonDuplicateClasses.Size()-1);
 		return NonDuplicateClasses[rng];
 	}
+	
+	// Get the least owned class
+	// i.e. you have 2 Fighters and 2 Clerics, but not a single Mage, then it should return Mage class
+	// otherwise just randomize it
+	int LeastOwnedClass()
+	{
+		int leastClass = 0;
+		
+		Array<int> Classes;
+		Classes.Push(0); // Fighter
+		Classes.Push(0); // Cleric
+		Classes.Push(0); // Mage
+		
+		for (uint i = 0; i < AIinfo.size(); i++)
+		{
+			if (AIinfo[i].pAlly)
+			{
+				for (uint j = 0; j < HA_AllySpawner.HexenAllyList.Size(); j++)
+				{
+					if (AIinfo[i].pAlly.HexenType ~== HA_AllySpawner.HexenAllyList[j])
+					{
+						Classes[j]++;
+					}
+				}
+			}
+		}
+		
+		// Find the least class
+		int least = Classes[0];
+		for (uint i = 0; i < Classes.Size(); i++)
+		{
+			if (Classes[i] < least)
+			{
+				least = Classes[i];
+				leastClass = i;
+			}
+		}
+		
+		// Identical amount?
+		bool identical = false;
+		Array<int> IdenticalClasses;
+		for (uint i = 0; i < Classes.Size(); i++)
+		{
+			if (i != leastClass)
+			{
+				if (Classes[i] == Classes[leastClass])
+				{
+					identical = true;
+					IdenticalClasses.Push(i);
+				}
+			}
+		}
+		
+		if (identical)
+		{
+			//Console.Printf("Found identical owned classes!");
+			//IdenticalClasses.Push(leastClass);
+			
+			leastClass = random[cls](IdenticalClasses[0], IdenticalClasses[IdenticalClasses.Size()-1]);
+		}
+	
+		//Console.Printf("Least owned class: %s", HA_AllySpawner.HexenAllyList[leastClass]);
+	
+		return leastClass;
+	}
 
 	clearscope HA_CoreAI GetAllyByIndex(int index)
 	{
