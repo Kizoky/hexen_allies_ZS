@@ -70,7 +70,15 @@ class HexenAlliesCoreHandler : EventHandler
 			BossSpawn = false;
 		}
 	}
-			
+	
+	// Inventory items sometimes will get their amount stuck when using the Ally Menu
+	// Ideally this is not the best way to fix it
+	void StuckSoulsFix(PlayerPawn Player)
+	{
+		Player.A_GiveInventory("HA_Soul", 1);
+		Player.A_TakeInventory("HA_Soul", 1);
+	}
+	
 	override void NetworkProcess(ConsoleEvent e)
     {
 		if (e.Name.IndexOf("InfoButton") >= 0)
@@ -107,6 +115,7 @@ class HexenAlliesCoreHandler : EventHandler
 				if (AllySpawner)
 				{
 					AllySpawner.SpawnAlly();
+					StuckSoulsFix(Player);
 				}
 			}
 		}
@@ -120,6 +129,7 @@ class HexenAlliesCoreHandler : EventHandler
 				if (AllyIncrement)
 				{
 					AllyIncrement.TryIncrementing();
+					StuckSoulsFix(Player);
 				}
 			}
 		}
@@ -133,6 +143,7 @@ class HexenAlliesCoreHandler : EventHandler
 				if (AllyIncrement)
 				{
 					AllyIncrement.IncreaseMaxSlot();
+					StuckSoulsFix(Player);
 				}
 			}
 		}
