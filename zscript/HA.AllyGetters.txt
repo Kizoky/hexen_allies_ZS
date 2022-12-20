@@ -1,0 +1,199 @@
+extend class HA_AIHub
+{
+	// If one Ally has been spawned already, check for the other class that's not a duplicate
+	// and isn't the Player's doppelganger
+	int NonDuplicateClass(int ActiveClass)
+	{
+		Array<int> NonDuplicateClasses;
+
+		if (TotalNum != 0)
+		{
+			for (uint i = 0; i < AIinfo.size(); i++)
+			{
+				if (AIinfo[i].pAlly)
+				{
+					for (uint j = 0; j < HA_AllySpawner.HexenAllyList.Size(); j++)
+					{
+						if (!(AIinfo[i].pAlly.HexenType ~== HA_AllySpawner.HexenAllyList[j]))
+						{
+							if (j != ActiveClass)
+							{
+								NonDuplicateClasses.Push(j);
+							}
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			Console.Printf("Hexen Allies: Possible array out of bounds in 'HA_AIHub::NonDuplicateClass'");
+		}
+
+		int rng = random[cls](0, NonDuplicateClasses.Size()-1);
+		return NonDuplicateClasses[rng];
+	}
+	
+	// Get the least owned class
+	// i.e. you have 2 Fighters and 2 Clerics, but not a single Mage, then it should return Mage class
+	// otherwise just randomize it
+	int LeastOwnedClass()
+	{
+		int leastClass = 0;
+		
+		Array<int> Classes;
+		Classes.Push(0); // Fighter
+		Classes.Push(0); // Cleric
+		Classes.Push(0); // Mage
+		
+		for (uint i = 0; i < AIinfo.size(); i++)
+		{
+			if (AIinfo[i].pAlly)
+			{
+				for (uint j = 0; j < HA_AllySpawner.HexenAllyList.Size(); j++)
+				{
+					if (AIinfo[i].pAlly.HexenType ~== HA_AllySpawner.HexenAllyList[j])
+					{
+						Classes[j]++;
+					}
+				}
+			}
+		}
+		
+		// Find the least class
+		int least = Classes[0];
+		for (uint i = 0; i < Classes.Size(); i++)
+		{
+			if (Classes[i] < least)
+			{
+				least = Classes[i];
+				leastClass = i;
+			}
+		}
+		
+		// Identical amount?
+		bool identical = false;
+		Array<int> IdenticalClasses;
+		for (uint i = 0; i < Classes.Size(); i++)
+		{
+			if (i != leastClass)
+			{
+				if (Classes[i] == Classes[leastClass])
+				{
+					identical = true;
+					IdenticalClasses.Push(i);
+				}
+			}
+		}
+		
+		if (identical)
+		{
+			//Console.Printf("Found identical owned classes!");
+			//IdenticalClasses.Push(leastClass);
+			
+			leastClass = random[cls](IdenticalClasses[0], IdenticalClasses[IdenticalClasses.Size()-1]);
+		}
+	
+		//Console.Printf("Least owned class: %s", HA_AllySpawner.HexenAllyList[leastClass]);
+	
+		return leastClass;
+	}
+
+	clearscope HA_CoreAI GetAllyByIndex(int index)
+	{
+		HA_CoreAI pAI = null;
+
+		for (uint i = 0; i < AIinfo.size(); i++)
+		{
+			if (AIinfo[i].pAlly)
+			{
+    	        if (AIinfo[i].pAlly.SpawnSlot == index)
+    	        {
+    	            pAI = AIinfo[i].pAlly;
+    	            break;
+    	        }
+    	    }
+    	}
+
+		return pAI;
+	}
+
+	clearscope HA_CoreAI GetRandomAlly()
+	{
+		int iRand = random[rndally](0, AIinfo.size()-1);
+		return AIinfo[iRand].pAlly;
+	}
+	
+	clearscope HA_CoreAI GetLowestHPAlly()
+	{
+		HA_CoreAI pAI = NULL;
+		
+		uint health = 2147483647;
+		
+		for (uint i = 0; i < AIinfo.size(); i++)
+		{
+			if (AIinfo[i].pAlly)
+			{
+    	        if (AIinfo[i].pAlly.Health < health)
+    	        {
+    	            health = AIinfo[i].pAlly.Health;
+					pAI = AIinfo[i].pAlly;
+    	        }
+    	    }
+    	}
+		
+		return pAI;
+	}
+	
+	// Possible colors: White, Green, Red, Blue, Silver, Yellow
+	clearscope HA_CoreAI GetAllyByColor(string Color)
+	{
+		HA_CoreAI pAI = NULL;
+		
+		for (uint i = 0; i < AIinfo.size(); i++)
+		{
+			if (AIinfo[i].pAlly)
+			{
+    	        if (AIinfo[i].pAlly.ChatColor ~== Color)
+    	        {
+    	            pAI = AIinfo[i].pAlly;
+					break;
+    	        }
+    	    }
+    	}
+		
+		return pAI;
+	}
+	
+	// Gets the Ally with a specified stat
+	clearscope HA_CoreAI GetAllyByStat(string Stat, bool Highest = true)
+	{
+		HA_CoreAI pAI = NULL;
+		
+		if (Stat ~== "Kills")
+		{
+			int bestKills = -1;
+			if (!Highest)
+				bestKills = 2147483647;
+			
+			for (uint i = 0; i < AIinfo.size(); i++)
+			{
+				if (AIinfo[i].pAlly)
+				{
+					if (Highest && AIinfo[i].pAlly.Stats.Kills > bestKills)
+					{
+						bestKills = AIinfo[i].pAlly.Stats.Kills;
+						pAI = AIinfo[i].pAlly;
+					}
+					else if (!Highest && AIinfo[i].pAlly.Stats.Kills < bestKills)
+					{
+						bestKills = AIinfo[i].pAlly.Stats.Kills;
+						pAI = AIinfo[i].pAlly;
+					}
+				}
+			}
+		}
+		
+		return pAI;
+	}
+}

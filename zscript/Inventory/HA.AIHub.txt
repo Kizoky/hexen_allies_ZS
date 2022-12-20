@@ -1,13 +1,21 @@
 class AllyInfo play
 {
 	int Health;
-	string Type; 		// The Class type of the Ally (Fighter, Cleric, Mage ...)
-	string Color; 		// The translation color of the Ally
-	string Weapon; 		// Currently Active Weapon (todo later: probably not needed)
-	string ColorChat; 	// Needed for the Ally's name coloring in chat
-	int Kills;			// Stats: Total Kills
-	HA_CoreAI pAlly; 	// The Pointer that holds the Ally
+	string Type; 			// The Class type of the Ally (Fighter, Cleric, Mage ...)
+	string Color; 			// The translation color of the Ally
+	string Weapon; 			// Currently Active Weapon (todo later: probably not needed)
+	string ColorChat; 		// Needed for the Ally's name coloring in chat
+	AllyInfoStats Stats;	// Stats
+	HA_CoreAI pAlly; 		// The Pointer that holds the Ally
 }
+
+// Stats information about Allies
+// Variables should be equal to the ones from HA_CoreAI
+struct AllyInfoStats
+{
+	int Kills;			// Total Kills
+}
+
 
 // Stores information about the Player's allies, then spawns them into the level accordingly
 // Core inventory item, without this the mod won't work properly
@@ -15,30 +23,38 @@ class HA_AIHub : Inventory
 {
 	// The total amount of active/spawned Allies
 	int TotalNum;
-
+	
 	Array<AllyInfo> AIinfo;
-
+	
 	// Can Allies use higher tier weapons according to Weapon slot? (Default is 1)
 	int UnlockWeaponry;
-
+	
 	// Compatibility with other mods
 	// Wrath of Cronos
 	bool WoCMod;
-
+	
 	string MultiplayerActiveColor;
-
+	
 	// Debug
 	int developer;
-
+	
 	int TotalAIsSpawned;
 	int TotalAIsDead;
 	int TotalSpent;
-
+	
+	// Force refresh the UI if opened
+	bool ForceRefresh;
+	
+	void SetForceRefresh(bool set)
+	{
+		ForceRefresh = set;
+	}
+	
 	override void PostBeginPlay()
 	{
 		TotalNum = 0;
 		UnlockWeaponry = 1;
-
+	
 		// Grab color from cvar if we are in Multiplayer only once
 		if (Multiplayer)
 		{
@@ -51,7 +67,7 @@ class HA_AIHub : Inventory
 		
 		Super.PostBeginPlay();
 	}
-
+	
 	override void Tick()
 	{
 		actor MyPlayer = owner;
@@ -64,24 +80,24 @@ class HA_AIHub : Inventory
 				if (wepP)
 				{
 					class<weapon> weapon = MyPlayer.player.ReadyWeapon.GetClassName();
-
+	
 					// Look for the Player's current weapon's slot
 					// looking for hardcoded weapon names is a bad idea, because we want to be compatible with other mods
 					bool _; int slot;
 					[_, slot] = MyPlayer.player.weapons.locateWeapon(weapon);
-
+	
 					if (slot > UnlockWeaponry)
 					{
 						int differ = slot - UnlockWeaponry;
-
+	
 						// Player might just never equip the previous slot weapon, so big brain time
 						UnlockWeaponry += slot - UnlockWeaponry;
-
+	
 						if (differ == 1)
 							PrintTip("Slots", slot);
 						else 
 							PrintTip("Slots", slot, differ);
-
+	
 						// Unlock weapon(s) for active allies on the level
 						for (uint i = 0; i < AIinfo.size(); i++)
 						{
@@ -90,7 +106,7 @@ class HA_AIHub : Inventory
 								AIinfo[i].pAlly.SetCapability(UnlockWeaponry);
 							}
 						}
-
+	
 					}
 				}
 			}
@@ -98,7 +114,7 @@ class HA_AIHub : Inventory
 		
 		Super.Tick();
 	}
-
+	
 	void PrintTip(string Tip, int param1 = 0, double param2 = -1)
 	{
 		actor MyPlayer = owner;
@@ -110,7 +126,7 @@ class HA_AIHub : Inventory
 				{
 					string Display = "n/a";
 					string number = "n/a";
-
+	
 					if (param2 < 0)
 					{
 						switch (param1)
@@ -119,37 +135,37 @@ class HA_AIHub : Inventory
 							case 2: number = "Second"; break;
 							case 3: number = "Third"; break;
 						}
-
+	
 						if (param1 != 4)
 							Display = string.Format("\c*Your allies are now able to use their %s weapon!", number);
 						else
 							Display = string.Format("\c*Your allies are now able to use all weapons!");
-
+	
 						Console.MidPrint(NULL, Display);
 					}
 					else
 					{
 						// For some reason... the player skipped a weapon slot, we don't know why, and we'll never know why
-
+	
 						// Slot 3, but the difference is 2 (Player equipped Slot 1 -> Slot 3)
 						if (param1 == 3 && param2 == 2)
 						{
 							Display = string.Format("\c*Your allies are now able to use their Second and Third weapons!");
 						}
-
+	
 						// We don't care, it's Slot 4
 						if (param1 == 4)
 						{
 							Display = string.Format("\c*Your allies are now able to use all weapons!");
 						}
-
+	
 						Console.MidPrint(NULL, Display);
 					}
 				}
 			}
 		}
 	}
-
+	
 	override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
 	{
 		if (owner && source is "HA_CoreAI")
@@ -157,7 +173,7 @@ class HA_AIHub : Inventory
 			newdamage = 0;
 		}
 	}
-
+	
 	// Must be on par with from MENUDEF (HXAColorOption)
 	static const string MpLogoColors[] =
 	{
@@ -181,7 +197,7 @@ class HA_AIHub : Inventory
 		"Purple",
 		"Orange"
 	};
-
+	
 	// Add an Ally for future restoration
 	// Preserves everything, with the exception of Actor array, which needs to be refilled
 	// after a new level (See RestoreAlly below)
@@ -195,7 +211,7 @@ class HA_AIHub : Inventory
 		{
 			AA.SpawnSlot = TotalNum;
 		}
-
+	
 		let NewAlly = new("AllyInfo");
 		NewAlly.pAlly = HA_CoreAI(Ally);
 		NewAlly.Type = Type;
@@ -203,10 +219,10 @@ class HA_AIHub : Inventory
 		NewAlly.ColorChat = ChatColor;
 		NewAlly.Health = Health;
 		NewAlly.Weapon = Weapon;
-
+	
 		AIinfo.Push(NewAlly);
 	}
-
+	
 	// Update information on the allies before destroying them, and changing onto the next level
 	// i.e. They should not have more Health if they were hurt previously
 	// Look inside HA.EventHandler.txt, WorldUnloaded function
@@ -218,11 +234,27 @@ class HA_AIHub : Inventory
 			{
 				AIinfo[i].Health = AIinfo[i].pAlly.Health;
 				AIinfo[i].Weapon = AIinfo[i].pAlly.ActiveWeapon;
-				AIinfo[i].Kills = AIinfo[i].pAlly.OverallKills;
+				
+				SaveAllyStats(i);
 			}
 		}
 	}
-
+	
+	/////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////
+	// Should be less pain in the ass to add new stats in the future
+	void SaveAllyStats(int index)
+	{
+		AIinfo[index].Stats.Kills = AIinfo[index].pAlly.Stats.Kills;
+	}
+	
+	void RestoreAllyStats(HA_CoreAI pOpt, int index)
+	{
+		pOpt.Stats.Kills = AIinfo[index].Stats.Kills;
+	}
+	/////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////
+	
 	// Remove an Ally from restoration
 	// Mainly because they died
 	// Look also in HA.EventHandler how actors are getting removed on each level reset
@@ -239,23 +271,23 @@ class HA_AIHub : Inventory
 			}
 		}
 	}
-
+	
 	void RestoreAlly()
 	{
 		for (uint i = 0; i < AIinfo.Size(); ++i)
 		{
 			class<Actor> AllySpawn = null;
-
+	
 			if (AIinfo[i].Type ~== "Fighter") AllySpawn = "HA_Fighter";
 			if (AIinfo[i].Type ~== "Cleric") AllySpawn = "HA_Cleric";
 			if (AIinfo[i].Type ~== "Mage") AllySpawn = "HA_Mage";
-
+	
 			if (!AllySpawn)
 			{
 				Console.Printf("Hexen Allies: Unknown Ally Type found! (%s)", AIinfo[i].Type);
 				return;
 			}
-
+	
 			HA_CoreAI HAlly = HA_CoreAI(spawn(AllySpawn, owner.pos, ALLOW_REPLACE));
 			if (HAlly)
 			{
@@ -269,11 +301,12 @@ class HA_AIHub : Inventory
 				HAlly.SetCapability(UnlockWeaponry);
 				HAlly.SpawnSlot = i+1;
 				HAlly.SetStateLabel("See");
-				HAlly.OverallKills = AIinfo[i].Kills;
-
+				
+				RestoreAllyStats(HAlly,i);
+	
 				// Set the name properly for the Ally
 				HAlly.SetTag(HAlly.AllyName());
-
+	
 				if (WoCMod)
 				{
 					// No experience for now, will have to save that too into an array
@@ -289,139 +322,15 @@ class HA_AIHub : Inventory
 					HAlly.A_SetInventory(CurrentMaxHealth, 100);
 					HAlly.A_SetInventory(Level, 1);
 				}
-
+	
 				// Actor pointers will become garbage/null after a level change, so we kinda "reset" them
 				AIinfo[i].pAlly = HAlly;
-
+	
 				HAlly.TeleportToPlayer(false, false);
 			}
 		}
 	}
-
-	// If one Ally has been spawned already, check for the other class that's not a duplicate
-	// and isn't the Player's doppelganger
-	int NonDuplicateClass(int ActiveClass)
-	{
-		Array<int> NonDuplicateClasses;
-
-		if (TotalNum != 0)
-		{
-			for (uint i = 0; i < AIinfo.size(); i++)
-			{
-				if (AIinfo[i].pAlly)
-				{
-					for (uint j = 0; j < HA_AllySpawner.HexenAllyList.Size(); j++)
-					{
-						if (!(AIinfo[i].pAlly.HexenType ~== HA_AllySpawner.HexenAllyList[j]))
-						{
-							if (j != ActiveClass)
-							{
-								NonDuplicateClasses.Push(j);
-							}
-						}
-					}
-				}
-			}
-		}
-		else
-		{
-			Console.Printf("Hexen Allies: Possible array out of bounds in 'HA_AIHub::NonDuplicateClass'");
-		}
-
-		int rng = random[cls](0, NonDuplicateClasses.Size()-1);
-		return NonDuplicateClasses[rng];
-	}
 	
-	// Get the least owned class
-	// i.e. you have 2 Fighters and 2 Clerics, but not a single Mage, then it should return Mage class
-	// otherwise just randomize it
-	int LeastOwnedClass()
-	{
-		int leastClass = 0;
-		
-		Array<int> Classes;
-		Classes.Push(0); // Fighter
-		Classes.Push(0); // Cleric
-		Classes.Push(0); // Mage
-		
-		for (uint i = 0; i < AIinfo.size(); i++)
-		{
-			if (AIinfo[i].pAlly)
-			{
-				for (uint j = 0; j < HA_AllySpawner.HexenAllyList.Size(); j++)
-				{
-					if (AIinfo[i].pAlly.HexenType ~== HA_AllySpawner.HexenAllyList[j])
-					{
-						Classes[j]++;
-					}
-				}
-			}
-		}
-		
-		// Find the least class
-		int least = Classes[0];
-		for (uint i = 0; i < Classes.Size(); i++)
-		{
-			if (Classes[i] < least)
-			{
-				least = Classes[i];
-				leastClass = i;
-			}
-		}
-		
-		// Identical amount?
-		bool identical = false;
-		Array<int> IdenticalClasses;
-		for (uint i = 0; i < Classes.Size(); i++)
-		{
-			if (i != leastClass)
-			{
-				if (Classes[i] == Classes[leastClass])
-				{
-					identical = true;
-					IdenticalClasses.Push(i);
-				}
-			}
-		}
-		
-		if (identical)
-		{
-			//Console.Printf("Found identical owned classes!");
-			//IdenticalClasses.Push(leastClass);
-			
-			leastClass = random[cls](IdenticalClasses[0], IdenticalClasses[IdenticalClasses.Size()-1]);
-		}
-	
-		//Console.Printf("Least owned class: %s", HA_AllySpawner.HexenAllyList[leastClass]);
-	
-		return leastClass;
-	}
-
-	clearscope HA_CoreAI GetAllyByIndex(int index)
-	{
-		HA_CoreAI pAI = null;
-
-		for (uint i = 0; i < AIinfo.size(); i++)
-		{
-			if (AIinfo[i].pAlly)
-			{
-    	        if (AIinfo[i].pAlly.SpawnSlot == index)
-    	        {
-    	            pAI = AIinfo[i].pAlly;
-    	            break;
-    	        }
-    	    }
-    	}
-
-		return pAI;
-	}
-
-	clearscope HA_CoreAI GetRandomAlly()
-	{
-		int iRand = random[rndally](0, AIinfo.size()-1);
-		return AIinfo[iRand].pAlly;
-	}
-
 	Default
 	{
 		+INVENTORY.UNDROPPABLE;

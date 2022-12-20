@@ -51,7 +51,7 @@ extend class HXA_AllyMenu
         string hpText = String.Format("Health: %d", pInfoAI.Health);
         infoLabelsContainer.Push(AddLabelOnScreen(hpText, Font.CR_RED, 7, 11, allyInfoFrame));
 
-        string killText = String.Format("Kills: %d", pInfoAI.UI_AllyKills());
+        string killText = String.Format("Kills: %d", pInfoAI.UI_AllyStatInt("Kills"));
         infoLabelsContainer.Push(AddLabelOnScreen(killText, Font.CR_RED, 7, 11 + (10 * 1), allyInfoFrame));
 
         string wepText = String.Format("Wpn: %s", pInfoAI.UI_ActiveWeapon());

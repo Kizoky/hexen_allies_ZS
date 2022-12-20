@@ -9,6 +9,7 @@ version "4.3"
 
 #include "zscript/HA.AI.txt"
 #include "zscript/HA.UIGetters.txt"
+#include "zscript/HA.AllyGetters.txt"
 
 #include "zscript/Allies/Hexen/HA.Fighter.txt"
 #include "zscript/Allies/Hexen/HA.Cleric.txt"

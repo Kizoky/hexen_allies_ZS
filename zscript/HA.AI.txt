@@ -1,6 +1,14 @@
+// Stats
+struct HA_CoreAIStats
+{
+	int Kills;
+}
+
 // HA_CoreAI is the core actor of all Allies
 class HA_CoreAI : Actor
 {
+	HA_CoreAIStats Stats;
+	
 	// Ignore targets for a couple of seconds
 	Array<actor> IgnoreTarget;
 	
@@ -37,8 +45,6 @@ class HA_CoreAI : Actor
 	string Pronoun;
 	
 	string LastDamageType;
-
-	int OverallKills;
 	
 	// Override it in an actor inheriting from HA_CoreAI
 	virtual void HA_PostBeginPlay() {}

@@ -2,33 +2,41 @@
 
 extend class HA_CoreAI
 {
-    // The color + the name of the ally
+	// The color + the name of the ally
 	ui string UI_AllyName()
 	{
-		return String.Format("%s", HexenType);
+		return String.Format("%s", UI_AllyType());
 	}
-
+	
 	ui string UI_AllyColor()
 	{
 		return ChatColor;
 	}
-
+	
 	// Gets the Ally's spawn slot
 	ui int UI_GetSlot()
 	{
 		return SpawnSlot;
 	}
-
+	
 	ui string UI_AllyType()
 	{
 		return HexenType;
 	}
-
-    ui int UI_AllyKills()
-    {
-        return OverallKills;
-    }
-
+	
+	ui int UI_AllyStatInt(string Stat)
+	{
+		if (Stat ~== "Kills")
+			return Stats.Kills;
+			
+		return 0;
+	}
+	
+	ui int UI_AllyStatStr(string Stat)
+	{		
+		return 0;
+	}
+	
 	ui string UI_ActiveWeapon()
 	{
 		if (ActiveWeapon.Length() > 0)
@@ -36,36 +44,36 @@ extend class HA_CoreAI
 		
 		return "n/a";
 	}
-
+	
 	ui string UI_GetStatus()
 	{
 		if (Following)
 			return "Following";
-
+	
 		return "Guarding";
 	}
-
+	
 	ui string UI_GetCombatStatus()
 	{
 		if (target)
 			return "Combat";
-
+	
 		return "Idle";
 	}
 }
 
 extend class HA_AIHub
 {
-    ui int UI_TotalAIsSpawned()
-    {
-        return TotalAIsSpawned;
-    }
-
-    ui int UI_TotalAIsDead()
-    {
-        return TotalAIsDead;
-    }
-
+	ui int UI_TotalAIsSpawned()
+	{
+		return TotalAIsSpawned;
+	}
+	
+	ui int UI_TotalAIsDead()
+	{
+		return TotalAIsDead;
+	}
+	
 	ui int UI_ActiveAIs()
 	{
 		return TotalNum;
@@ -80,20 +88,20 @@ extend class HA_AllySlot
 		{
 			return owner.CountInv("HA_AllySlot");
 		}
-
+	
 		return -1;
 	}
-
+	
 	ui int UI_AllySlotsMax()
 	{
 		return MaxAmount;
 	}
-
+	
 	ui int UI_AllySlotCost()
 	{
 		return AllySlotCost();
 	}
-
+	
 	ui int UI_AllySlotMaxCost()
 	{
 		return AllySlotMaxCost();

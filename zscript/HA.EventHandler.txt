@@ -149,6 +149,32 @@ class HexenAlliesCoreHandler : EventHandler
 		}
 		// ----------------------------------------------------------------------------------------------
 		// ----------------------------------------------------------------------------------------------
+		
+		if (e.Name ~== "AllyMenu_StopUIRefresh")
+		{
+			PlayerPawn Player = PlayerPawn(players[e.Player].mo);
+			if (Player)
+			{
+				let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
+				if (HubInv)
+				{
+					HubInv.SetForceRefresh(false);
+				}
+			}
+		}
+		
+		if (e.Name ~== "AllyMenu_StartUIRefresh")
+		{
+			PlayerPawn Player = PlayerPawn(players[e.Player].mo);
+			if (Player)
+			{
+				let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
+				if (HubInv)
+				{
+					HubInv.SetForceRefresh(true);
+				}
+			}
+		}
 	}
 
 	override void PlayerEntered (PlayerEvent e)
@@ -288,6 +314,7 @@ class HexenAlliesCoreHandler : EventHandler
 						if (HubInv)
 						{
 							HubInv.RemoveAlly(Ally);
+							HubInv.SetForceRefresh(true);
 						}
 					}
 				}
@@ -342,7 +369,7 @@ class HexenAlliesCoreHandler : EventHandler
 						let pAttacker = HA_CoreAI(pInv.LastAttacker);
 						if (pAttacker)
 						{
-							pAttacker.OverallKills++;
+							pAttacker.Stats.Kills++;
 						}
 					}
 				}
@@ -364,7 +391,7 @@ class HexenAlliesCoreHandler : EventHandler
 						let pAttacker = HA_CoreAI(pInv.LastAttacker);
 						if (pAttacker)
 						{
-							pAttacker.OverallKills++;
+							pAttacker.Stats.Kills++;
 						}
 					}
 				}
