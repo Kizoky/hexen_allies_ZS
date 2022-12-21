@@ -8,7 +8,7 @@ class HA_Cleric : HA_CoreAI
 		Flame,
 		Wraith
 	}
-
+	
 	override void SetActiveWeapon()
 	{
 		// Default (1)
@@ -22,7 +22,7 @@ class HA_Cleric : HA_CoreAI
 			case Wraith: 	ActiveWeapon = "Wraith";	CanShootProj = true; 	break;
 		}
 	}
-
+	
 	static const string WeaponList[] =
 	{
 		"Mace",
@@ -30,20 +30,18 @@ class HA_Cleric : HA_CoreAI
 		"Flame",
 		"Wraith"
 	};
-
+	
 	override void HA_PostBeginPlay()
 	{
 		IsMelee = true;
 		IsRanged = false;
 		Pronoun = "He";
 	}
-
+	
 	bool CLERIC_Mace()
 	{
-		bool result = false;
-		
 		FTranslatedLineTarget t;
-
+	
 		int damage = random[MaceAtk](25, 40);
 		for (int i = 0; i < 16; i++)
 		{
@@ -59,27 +57,25 @@ class HA_Cleric : HA_CoreAI
 						AdjustPlayerAngle(t);
 						SetStateLabel("Melee");
 						//vel.xy = (0,0);
-						result = true;
+						return true;
 					}
 				}
 			}
 		}
-
+	
 		// didn't find any creatures, so try to strike any walls
 		double slope = AimLineAttack (angle, DEFMELEERANGE, null, 0., ALF_CHECK3D);
 		LineAttack (angle, DEFMELEERANGE, slope, damage, 'Melee', "HammerPuff");
 		SetStateLabel("Melee");
-		return result;
+		return false;
 		//vel.xy = (0,0);
 	}
-
+	
 	// todo: Lifesteal vs. missile mana consumption
 	bool CLERIC_Staff()
 	{
-		bool result = false;
-		
 		FTranslatedLineTarget t;
-
+	
 		int damage = random[StaffCheck](20, 35);
 		int max = 100;
 		for (int i = 0; i < 3; i++)
@@ -107,11 +103,11 @@ class HA_Cleric : HA_CoreAI
 					}
 					SetStateLabel("Melee");
 					//vel.xy = (0,0);
-					result = true;
+					return true;
 				}
 			}
 		}
-
+	
 		// didn't find any targets in meleerange, so set to throw out missile attack
 		if (random[chanceshoot]() > 160 && 
 			!(InStateSequence(CurState, ResolveState("Missile"))) && 
@@ -128,15 +124,15 @@ class HA_Cleric : HA_CoreAI
 				mo.WeaveIndexXY = 0;
 			}
 			A_StartSound ("ClericCStaffFire", CHAN_BODY);
-
+	
 			//vel.xy = (0,0);
 			SetStateLabel("Missile");
-			result = true;
+			return true;
 		}
-
-		return result;
+	
+		return false;
 	}
-
+	
 	bool CLERIC_Flame()
 	{
 		if (random[chanceshoot]() > 215 && 
@@ -145,15 +141,15 @@ class HA_Cleric : HA_CoreAI
 		{
 			SpawnPlayerMissile ("CFlameMissile");
 			A_StartSound ("ClericFlameFire", CHAN_BODY);
-
+	
 			//vel.xy = (0,0);
 			SetStateLabel("Missile");
 			return true;
 		}
-
+	
 		return false;
 	}
-
+	
 	bool CLERIC_Wraith()
 	{
 		if (random[chanceshoot]() > 215 && 
@@ -161,26 +157,26 @@ class HA_Cleric : HA_CoreAI
 			CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0) )
 		{
 			FTranslatedLineTarget t;
-
+	
 			Actor missile = SpawnPlayerMissile ("HolyMissile", angle, pLineTarget:t);
 			if (missile != null && !t.unlinked)
 			{
 				missile.tracer = t.linetarget;
 			}
-
+	
 			A_StartSound ("HolySymbolFire", CHAN_BODY);
 			//vel.xy = (0,0);
 			SetStateLabel("Missile");
 			return true;
 		}
-
+	
 		return false;
 	}
-
+	
 	// We don't want them to repeatedly spam projectiles (more strict than Fighter)
 	int TimeBeforeRangeAttack;
 	int RangeAttacks;
-
+	
 	override void HA_MeleeShoot()
 	{
 		bool ranged = false;
@@ -206,7 +202,7 @@ class HA_Cleric : HA_CoreAI
 		}
 		
 		angle = AngleTo(target);
-
+	
 		// ================================= Mace of Contrition
 		if (ActiveWeapon ~== "Mace")
 		{
@@ -215,7 +211,7 @@ class HA_Cleric : HA_CoreAI
 				// none
 			}
 		}
-
+	
 		// ================================= Serpent Staff
 		if (ActiveWeapon ~== "Staff")
 		{
@@ -229,7 +225,7 @@ class HA_Cleric : HA_CoreAI
 				}
 			}
 		}
-
+	
 		// ================================= Firestorm
 		if (ActiveWeapon ~== "Flame")
 		{
@@ -244,7 +240,7 @@ class HA_Cleric : HA_CoreAI
 				RangeAttacks++;
 			}
 		}
-
+	
 		// ================================= Wraithverge
 		if (ActiveWeapon ~== "Wraith")
 		{

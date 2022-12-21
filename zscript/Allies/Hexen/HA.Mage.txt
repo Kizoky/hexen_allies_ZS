@@ -8,13 +8,13 @@ class HA_Mage : HA_CoreAI
 		Lightning,
 		Blood
 	}
-
+	
 	override void SetActiveWeapon()
 	{
 		ActiveWeapon = WeaponList[WeaponCapability-1];
 		CanShootProj = true;
 	}
-
+	
 	static const string WeaponList[] =
 	{
 		"Wand",
@@ -22,7 +22,7 @@ class HA_Mage : HA_CoreAI
 		"Lightning",
 		"Blood"
 	};
-
+	
 	override void HA_PostBeginPlay()
 	{
 		IsMelee = false;
@@ -31,7 +31,7 @@ class HA_Mage : HA_CoreAI
 		
 		//Mana = 999;
 	}
-
+	
 	override void HA_Tick()
 	{
 		if (ActiveWeapon ~== "Lightning")
@@ -42,13 +42,13 @@ class HA_Mage : HA_CoreAI
 				A_StartSound ("MageLightningReady", CHAN_WEAPON);
 			}
 		}
-
+	
 		//if (level.time % 35 == 0)
 		//{
 		//	Console.Printf("Mage Mana: %d", Mana);
 		//}
 	}
-
+	
 	// Using bools making sure it was a success shoot
 	bool MAGE_Wand()
 	{
@@ -63,16 +63,17 @@ class HA_Mage : HA_CoreAI
 				return true;
 			}
 		}
-
+	
 		return false;
 	}
-
+	
+	// aka. Frost Cone
 	bool MAGE_Frost()
 	{
 		if (random[chanceshoot]() > 175)
 		{
 			bool success = false;
-
+	
 			bool conedone=false;
 			FTranslatedLineTarget t;
 			A_StartSound ("MageShardsFire", CHAN_BODY);
@@ -106,13 +107,13 @@ class HA_Mage : HA_CoreAI
 				SetStateLabel("Missile");
 				success = true;
 			}
-
+	
 			return success;
 		}
-
+	
 		return false;
 	}
-
+	
 	bool MAGE_Lightning()
 	{
 		if (random[chanceshoot]() > 225)
@@ -138,14 +139,14 @@ class HA_Mage : HA_CoreAI
 			SetStateLabel("Missile");
 			return true;
 		}
-
+	
 		return false;
 	}
-
+	
 	private void Blood_MStaffSpawn (double angle, Actor alttarget)
 	{
 		FTranslatedLineTarget t;
-
+	
 		Actor mo = SpawnPlayerMissile ("MageStaffFX2", angle, pLineTarget:t);
 		if (mo)
 		{
@@ -156,7 +157,7 @@ class HA_Mage : HA_CoreAI
 				mo.tracer = alttarget;
 		}
 	}
-
+	
 	bool MAGE_Blood()
 	{
 		if (random[chanceshoot]() > 225)
@@ -178,19 +179,19 @@ class HA_Mage : HA_CoreAI
 		}
 		return false;
 	}
-
+	
 	// Mage cannot do melee attack
 	override void HA_MeleeShoot() {}
-
+	
 	override void HA_RangeShoot()
 	{
 		//int asd = random[asd](0, WeaponList.Size()-1);
 		//ActiveWeapon = WeaponList[asd];
-
+	
 		angle = AngleTo(target, true);
 		if (!CheckLOF(0, 0, 0, 0, 0, 0, 0, AAPTR_TARGET, 0)) return;
 		if (InStateSequence(CurState, ResolveState("Missile"))) return;
-
+	
 		// ================================= Wand
 		if (ActiveWeapon ~== "Wand")
 		{
@@ -199,7 +200,7 @@ class HA_Mage : HA_CoreAI
 				//Mana += 1;
 			}
 		}
-
+	
 		// ================================= Frost Cone 
 		if (ActiveWeapon ~== "Frost")
 		{
@@ -208,7 +209,7 @@ class HA_Mage : HA_CoreAI
 				//Mana -= 3;
 			}
 		}
-
+	
 		// ================================= Lightning Arc of Death
 		if (ActiveWeapon ~== "Lightning")
 		{
@@ -217,7 +218,7 @@ class HA_Mage : HA_CoreAI
 				//Mana -= 5;
 			}
 		}
-
+	
 		// ================================= Bloodscourge
 		if (ActiveWeapon ~== "Blood")
 		{

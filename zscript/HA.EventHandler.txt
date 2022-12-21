@@ -219,6 +219,16 @@ class HexenAlliesCoreHandler : EventHandler
 					HubInv.PlayerIndex = e.PlayerNumber;
 				}
 			}
+			else
+			{
+				let HubInv = HA_AIHub(players[e.PlayerNumber].mo.FindInventory("HA_AIHub"));
+				if (HubInv)
+				{
+					// Better safe than sorry
+					HubInv.SetMenuActive(false);
+					HubInv.SetForceRefresh(false);
+				}
+			}
 		}
 	}
 

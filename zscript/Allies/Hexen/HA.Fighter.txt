@@ -3,7 +3,7 @@ class HA_Fighter : HA_CoreAI
 {
 	const AXERANGE = (2.25 * DEFMELEERANGE);
 	const HAMMER_RANGE = 1.5 * DEFMELEERANGE;
-
+	
 	enum UnlockedWep
 	{
 		Fist = 1,
@@ -11,7 +11,7 @@ class HA_Fighter : HA_CoreAI
 		Hammer,
 		Quietus
 	}
-
+	
 	override void SetActiveWeapon()
 	{
 		// Default (1)
@@ -25,7 +25,7 @@ class HA_Fighter : HA_CoreAI
 			case Quietus:	ActiveWeapon = "Quietus";	CanShootProj = true;	break;
 		}
 	}
-
+	
 	static const string WeaponList[] =
 	{
 		"Fist",
@@ -33,48 +33,70 @@ class HA_Fighter : HA_CoreAI
 		"Hammer",
 		"Quietus"
 	};
-
+	
 	override void HA_PostBeginPlay()
 	{
 		IsMelee = true;
 		IsRanged = false;
 		Pronoun = "He";
 	}
-
+	
+	int attacksRow;
 	bool FIGHTER_Fist()
 	{
+		Class<Actor> pufftype;
 		int damage = random[FighterAtk](40, 55);
 		FTranslatedLineTarget t;
-
-		double slope = AimLineAttack (angle, 2*DEFMELEERANGE, t, 0, ALF_CHECK3D);
+		int power = 2;
+	
+		double slope = AimLineAttack (angle, 2*DEFMELEERANGE, t, 0., ALF_CHECK3D);
 		if (t.linetarget != null)
 		{
-			Actor puff = LineAttack (angle, 2*DEFMELEERANGE, slope, damage, "FriendlyFire", "PunchPuff", LAF_TARGETISSOURCE, t);
+			if (++attacksRow >= 3)
+			{
+				damage <<= 1;
+				power *= 3;
+				pufftype = "HammerPuff";
+			}
+			else
+			{
+				pufftype = "PunchPuff";
+			}
+		
+			LineAttack (angle, 2*DEFMELEERANGE, slope, damage, 'Melee', pufftype, true, t);
 			if (t.linetarget != null && t.linetarget != MyPlayer)
 			{
-				if (!t.linetarget.bDontThrust)
-					t.linetarget.Thrust(2, t.attackAngleFromSource);
-
+				if (t.linetarget.player != null || 
+					(t.linetarget.Mass < 10000000 && (t.linetarget.bIsMonster)))
+				{
+					if (!t.linetarget.bDontThrust)
+						t.linetarget.Thrust(2, t.attackAngleFromSource);
+				}
+				
+				if (attacksRow >= 3)
+				{
+					A_StartSound ("*fistgrunt", CHAN_VOICE);
+					attacksRow = 0;
+				}
+	
 				//vel.xy = (0,0);
 				SetStateLabel("Missile");
 				return true;
 			}
 		}
-
+	
 		return false;
 	}
-
+	
 	bool FIGHTER_Axe()
 	{
-		bool result = false;
-		
 		FTranslatedLineTarget t;
-
+	
 		int damage = random[AxeAtk](40, 55);
 		damage += random[AxeAtk](0, 7);
 		int power = 0;
 		class<Actor> pufftype;
-
+	
 		// Todo: Mana, glow, extra damage
 		bool Glow = random[glw](0,1);
 		if (Glow)
@@ -87,7 +109,7 @@ class HA_Fighter : HA_CoreAI
 		{
 			pufftype = "AxePuff";
 		}
-
+	
 		for (int i = 0; i < 16; i++)
 		{
 			for (int j = 1; j >= -1; j -= 2)
@@ -104,29 +126,28 @@ class HA_Fighter : HA_CoreAI
 							t.linetarget.Thrust(power, t.attackAngleFromSource);
 						}
 						AdjustPlayerAngle(t);
-
+	
 						//vel.xy = (0,0);
 						SetStateLabel("Missile");
-						result = true;
+						return true;
 					}
 				}
 			}
 		}
-
+	
 		// didn't find any creatures, so try to strike any walls
 		double slope = AimLineAttack (angle, DEFMELEERANGE, null, 0., ALF_CHECK3D);
 		LineAttack (angle, DEFMELEERANGE, slope, damage, 'Melee', pufftype, true);
 		//vel.xy = (0,0);
 		SetStateLabel("Missile");
-
-		return result;
+	
+		return false;
 	}
-
+	
 	bool FIGHTER_Hammer()
 	{
-		bool result = false;
 		FTranslatedLineTarget t;
-
+	
 		int damage = random[HammerAtk](60, 123);
 		for (int i = 0; i < 16; i++)
 		{
@@ -147,12 +168,12 @@ class HA_Fighter : HA_CoreAI
 						// Don't throw a hammer
 						//vel.xy = (0,0);
 						SetStateLabel("Missile");
-						result = true;
+						return true;
 					}
 				}
 			}
 		}
-
+	
 		// didn't find any targets in meleerange, so set to throw out a hammer
 		// Todo: don't spawn Hammer if there's not enough mana
 		if (random[chanceshoot]() > 225 && 
@@ -163,12 +184,12 @@ class HA_Fighter : HA_CoreAI
 			A_SpawnProjectile("HammerMissile", 55);
 			//vel.xy = (0,0);
 			SetStateLabel("Missile");
-			result = true;
+			return true;
 		}
-
-		return result;
+	
+		return false;
 	}
-
+	
 	bool FIGHTER_Quietus()
 	{
 		if (random[chanceshoot]() > 225 && 
@@ -185,10 +206,10 @@ class HA_Fighter : HA_CoreAI
 			SetStateLabel("Missile");
 			return true;
 		}
-
+	
 		return false;
 	}
-
+	
 	// We don't want them to repeatedly spam projectiles (That's the Mage's job!)
 	int TimeBeforeRangeAttack;
 	int RangeAttacks;
@@ -218,7 +239,7 @@ class HA_Fighter : HA_CoreAI
 		}
 		
 		angle = AngleTo(target);
-
+	
 		// ================================= Fist
 		if (ActiveWeapon ~== "Fist")
 		{
@@ -264,7 +285,7 @@ class HA_Fighter : HA_CoreAI
 				}
 			}
 		}
-
+	
 	}
 
 	Default
