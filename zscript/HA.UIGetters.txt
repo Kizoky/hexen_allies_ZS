@@ -78,6 +78,11 @@ extend class HA_AIHub
 	{
 		return TotalNum;
 	}
+	
+	ui int UI_GetPlayerIndex()
+	{
+		return PlayerIndex;
+	}
 }
 
 extend class HA_AllySlot

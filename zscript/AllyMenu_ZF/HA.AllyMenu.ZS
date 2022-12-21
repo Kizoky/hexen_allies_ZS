@@ -3,8 +3,8 @@
 // - Don't reinitialize everything
 // these probably don't cause anything serious in SP, not sure about MP
 
-#include "zscript/AllyMenu_ZF/AllyMenu_Handler.ZS"
-#include "zscript/AllyMenu_ZF/AllyMenu.InfoDialog.ZS"
+#include "zscript/AllyMenu_ZF/HA.AllyMenu_Handler.ZS"
+#include "zscript/AllyMenu_ZF/HA.AllyMenu.InfoDialog.ZS"
 
 class HXA_AllyMenu : HXA_ZF_GenericMenu
 {
@@ -30,9 +30,28 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 	
 	HXA_AllyMenuHandler handler;
 	
+	override void handleBack()
+	{
+		let HubInv = HA_AIHub(players [consoleplayer].mo.FindInventory("HA_AIHub"));
+		if (HubInv)
+		{
+			string Event = String.Format("AllyMenu_Active:%d:0", HubInv.UI_GetPlayerIndex());
+			EventHandler.SendNetworkEvent(Event);
+		}
+		
+		HXA_ZF_GenericMenu.handleBack();
+	}
+	
 	override void Init (Menu parent)
 	{
 		Super.Init (parent);
+		
+		let HubInv = HA_AIHub(players [consoleplayer].mo.FindInventory("HA_AIHub"));
+		if (HubInv)
+		{
+			string Event = String.Format("AllyMenu_Active:%d:1", HubInv.UI_GetPlayerIndex());
+			EventHandler.SendNetworkEvent(Event);
+		}
 	
 		menuactive = OnNoPause;
 	
@@ -501,7 +520,7 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 		{
 			// Give a few miliseconds for the Menu to "refresh"
 			internalTimer++;
-			if (internalTimer == 2)
+			if (internalTimer == 5)
 			{
 				internalTimer = 0;
 				RefreshData();
@@ -512,12 +531,17 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 		{
 			// Give a few miliseconds for the Menu to "refresh"
 			internalTimer++;
-			if (internalTimer == 2)
+			if (internalTimer == 5)
 			{
-				EventHandler.SendNetworkEvent("AllyMenu_StopUIRefresh");
-				internalTimer = 0;
-				RefreshData();
-				shouldRefreshPlay = false;
+				let HubInv = HA_AIHub(players [consoleplayer].mo.FindInventory("HA_AIHub"));
+				if (HubInv && HubInv.ForceRefresh)
+				{
+					string Event = String.Format("AllyMenu_StopUIRefresh:%d", HubInv.UI_GetPlayerIndex());
+					EventHandler.SendNetworkEvent(Event);
+					internalTimer = 0;
+					RefreshData();
+					shouldRefreshPlay = false;
+				}
 			}
 		}
 		else

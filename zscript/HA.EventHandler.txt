@@ -150,13 +150,17 @@ class HexenAlliesCoreHandler : EventHandler
 		// ----------------------------------------------------------------------------------------------
 		// ----------------------------------------------------------------------------------------------
 		
-		if (e.Name ~== "AllyMenu_StopUIRefresh")
+		if (e.Name.IndexOf("AllyMenu_StopUIRefresh") >= 0)
 		{
-			PlayerPawn Player = PlayerPawn(players[e.Player].mo);
+			Array<String> UICmd;
+			e.Name.Split(UICmd, ":");
+			int playerNum = UICmd[1].ToInt();
+			
+			PlayerPawn Player = PlayerPawn(players[playerNum].mo);
 			if (Player)
 			{
 				let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
-				if (HubInv)
+				if (HubInv && HubInv.MenuActive)
 				{
 					HubInv.SetForceRefresh(false);
 				}
@@ -169,9 +173,27 @@ class HexenAlliesCoreHandler : EventHandler
 			if (Player)
 			{
 				let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
-				if (HubInv)
+				if (HubInv && HubInv.MenuActive)
 				{
 					HubInv.SetForceRefresh(true);
+				}
+			}
+		}
+		
+		if (e.Name.IndexOf("AllyMenu_Active") >= 0)
+		{
+			Array<String> UICmd;
+			e.Name.Split(UICmd, ":");
+			int playerNum = UICmd[1].ToInt();
+			bool set = UICmd[2].ToInt();
+			
+			PlayerPawn Player = PlayerPawn(players[playerNum].mo);
+			if (Player)
+			{
+				let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
+				if (HubInv)
+				{
+					HubInv.SetMenuActive(set);
 				}
 			}
 		}
@@ -190,6 +212,12 @@ class HexenAlliesCoreHandler : EventHandler
 				// Usable Inventory items
 				n.A_GiveInventory("HA_AllySpawner", 1);
 				n.A_GiveInventory("HA_AllySlot", 1);
+				
+				let HubInv = HA_AIHub(players[e.PlayerNumber].mo.FindInventory("HA_AIHub"));
+				if (HubInv)
+				{
+					HubInv.PlayerIndex = e.PlayerNumber;
+				}
 			}
 		}
 	}
@@ -314,7 +342,9 @@ class HexenAlliesCoreHandler : EventHandler
 						if (HubInv)
 						{
 							HubInv.RemoveAlly(Ally);
-							HubInv.SetForceRefresh(true);
+							
+							if (HubInv.MenuActive)
+								HubInv.SetForceRefresh(true);
 						}
 					}
 				}

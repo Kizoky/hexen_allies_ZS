@@ -15,8 +15,8 @@ version "4.3"
 #include "zscript/Allies/Hexen/HA.Cleric.txt"
 #include "zscript/Allies/Hexen/HA.Mage.txt"
 
-#include "zscript/RadiusDebug/RadiusDebug.zc"
+#include "zscript/lib/RadiusDebug/RadiusDebug.zc"
 
-#include "zscript/HXA_ZForms/Include.zsc"
+#include "zscript/lib/HXA_ZForms/Include.zsc"
 
-#include "zscript/AllyMenu_ZF/AllyMenu.ZS"
+#include "zscript/AllyMenu_ZF/HA.AllyMenu.ZS"

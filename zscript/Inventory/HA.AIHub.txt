@@ -45,9 +45,19 @@ class HA_AIHub : Inventory
 	// Force refresh the UI if opened
 	bool ForceRefresh;
 	
+	// Menu is opened
+	bool MenuActive;
+	
+	int PlayerIndex;
+	
 	void SetForceRefresh(bool set)
 	{
 		ForceRefresh = set;
+	}
+	
+	void SetMenuActive(bool set)
+	{
+		MenuActive = set;
 	}
 	
 	override void PostBeginPlay()

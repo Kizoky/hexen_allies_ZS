@@ -5,7 +5,7 @@ extend class HA_AIHub
 	int NonDuplicateClass(int ActiveClass)
 	{
 		Array<int> NonDuplicateClasses;
-
+	
 		if (TotalNum != 0)
 		{
 			for (uint i = 0; i < AIinfo.size(); i++)
@@ -29,7 +29,7 @@ extend class HA_AIHub
 		{
 			Console.Printf("Hexen Allies: Possible array out of bounds in 'HA_AIHub::NonDuplicateClass'");
 		}
-
+	
 		int rng = random[cls](0, NonDuplicateClasses.Size()-1);
 		return NonDuplicateClasses[rng];
 	}
@@ -98,26 +98,26 @@ extend class HA_AIHub
 	
 		return leastClass;
 	}
-
+	
 	clearscope HA_CoreAI GetAllyByIndex(int index)
 	{
 		HA_CoreAI pAI = null;
-
+	
 		for (uint i = 0; i < AIinfo.size(); i++)
 		{
 			if (AIinfo[i].pAlly)
 			{
-    	        if (AIinfo[i].pAlly.SpawnSlot == index)
-    	        {
-    	            pAI = AIinfo[i].pAlly;
-    	            break;
-    	        }
-    	    }
-    	}
-
+				if (AIinfo[i].pAlly.SpawnSlot == index)
+				{
+					pAI = AIinfo[i].pAlly;
+					break;
+				}
+			}
+		}
+	
 		return pAI;
 	}
-
+	
 	clearscope HA_CoreAI GetRandomAlly()
 	{
 		int iRand = random[rndally](0, AIinfo.size()-1);
@@ -134,13 +134,13 @@ extend class HA_AIHub
 		{
 			if (AIinfo[i].pAlly)
 			{
-    	        if (AIinfo[i].pAlly.Health < health)
-    	        {
-    	            health = AIinfo[i].pAlly.Health;
+				if (AIinfo[i].pAlly.Health < health)
+				{
+					health = AIinfo[i].pAlly.Health;
 					pAI = AIinfo[i].pAlly;
-    	        }
-    	    }
-    	}
+				}
+			}
+		}
 		
 		return pAI;
 	}
@@ -154,13 +154,13 @@ extend class HA_AIHub
 		{
 			if (AIinfo[i].pAlly)
 			{
-    	        if (AIinfo[i].pAlly.ChatColor ~== Color)
-    	        {
-    	            pAI = AIinfo[i].pAlly;
+				if (AIinfo[i].pAlly.ChatColor ~== Color)
+				{
+					pAI = AIinfo[i].pAlly;
 					break;
-    	        }
-    	    }
-    	}
+				}
+			}
+		}
 		
 		return pAI;
 	}
