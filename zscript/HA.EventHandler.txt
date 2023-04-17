@@ -81,6 +81,35 @@ class HexenAlliesCoreHandler : EventHandler
 	
 	override void NetworkProcess(ConsoleEvent e)
     {
+		// Triggered from settings dialog when you choose a new color
+		if (e.Name.IndexOf("MPColorButton_") >= 0)
+		{
+			//EventHandler.SendNetworkEvent(cmd);
+	
+			//link.RefreshSettingsDialog();
+			
+			Array<String> cmd;
+            e.Name.Split(cmd, "_");
+			if (cmd[1])
+			{
+				cvar logocolorcvar = cvar.getcvar("hxa_logocolor", players[e.Player]);
+				if (logocolorcvar)
+				{
+					logocolorcvar.SetInt(cmd[1].ToInt());
+					
+					PlayerPawn Player = PlayerPawn(players[e.Player].mo);
+					if (Player)
+					{
+						let HubInv = HA_AIHub(Player.FindInventory("HA_AIHub"));
+						if (HubInv)
+						{
+							HubInv.ResetMultiplayerColor();
+						}
+					}
+				}
+			}
+		}
+		
 		if (e.Name.IndexOf("InfoButton") >= 0)
 		{
             Array<String> infoCmd;
@@ -217,6 +246,9 @@ class HexenAlliesCoreHandler : EventHandler
 				if (HubInv)
 				{
 					HubInv.PlayerIndex = e.PlayerNumber;
+					
+					// Grab the logo color for multiplayer
+					HubInv.ResetMultiplayerColor();
 				}
 			}
 			else

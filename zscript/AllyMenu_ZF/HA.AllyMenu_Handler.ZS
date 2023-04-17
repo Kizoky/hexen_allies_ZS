@@ -7,6 +7,28 @@ class HXA_AllyMenuHandler : HXA_ZF_Handler
 	override void buttonClickCommand (HXA_ZF_Button caller, Name command)
 	{
 		string cmd = command;
+		
+		// for Settings
+		if (cmd ~== "SettingsButton")
+		{
+			link.CreateSettingsDialog();
+		}
+		
+		if (cmd ~== "Settings_MPColor")
+		{
+			link.ToggleColorList();
+		}
+		
+		if (cmd.IndexOf("MPColorButton_") >= 0)
+		{
+			EventHandler.SendNetworkEvent(cmd);
+	
+			// So unfortunately the bane of "destroying things too quickly which leads into a VM Abort" strikes here... again...
+			link.shouldRefresh = true;
+		}
+		
+		//////////////////////////////////////////////////////////
+		
 		if (cmd.IndexOf("AllyButton_") >= 0)
 		{
 			cmd.Remove(0, 11);

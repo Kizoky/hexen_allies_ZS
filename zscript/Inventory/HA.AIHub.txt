@@ -64,18 +64,24 @@ class HA_AIHub : Inventory
 	{
 		TotalNum = 0;
 		UnlockWeaponry = 1;
-	
-		// Grab color from cvar if we are in Multiplayer only once
-		if (Multiplayer)
-		{
-			cvar logocolorcvar = cvar.findcvar('hxa_logocolor');
-			if (logocolorcvar)
-			{
-				MultiplayerActiveColor = MpLogoColors[logocolorcvar.GetInt()];
-			}
-		}
 		
 		Super.PostBeginPlay();
+	}
+	
+	// Gets the new color from cvar, then also resets the logo above all allies
+	void ResetMultiplayerColor()
+	{
+		cvar logocolorcvar = cvar.getcvar("hxa_logocolor", Owner.Player);
+		if (logocolorcvar)
+			MultiplayerActiveColor = MpLogoColors[logocolorcvar.GetInt()];
+			
+		for (uint i = 0; i < AIinfo.size(); i++)
+		{
+			if (AIinfo[i].pAlly)
+			{
+				AIinfo[i].pAlly.ResetAllyIndicator();
+			}
+		}
 	}
 	
 	override void Tick()

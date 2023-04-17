@@ -1,10 +1,6 @@
-// todos:
-// - Destroy labels, update Button states only
-// - Don't reinitialize everything
-// these probably don't cause anything serious in SP, not sure about MP
-
 #include "zscript/AllyMenu_ZF/HA.AllyMenu_Handler.ZS"
 #include "zscript/AllyMenu_ZF/HA.AllyMenu.InfoDialog.ZS"
+#include "zscript/AllyMenu_ZF/HA.AllyMenu.SettingsDialog.ZS"
 
 class HXA_AllyMenu : HXA_ZF_GenericMenu
 {
@@ -83,6 +79,11 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 	// aka. DESTROY everything!
 	void RefreshData()
 	{
+		if (bListToggled)
+		{
+			DestroySettingsScroll();
+		}
+		
 		// Destroy ally labels and buttons
 		while (allyNameLabels.Size () > 0)
 		{
@@ -133,6 +134,15 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 	
 			if (allyInfoFrame)
 				allyInfoFrame.Destroy();
+		}
+		
+		if (settingsBackground)
+		{
+			settingsBackground.Unpack();
+			settingsBackground.Destroy();
+			
+			if (settingsFrame)
+				settingsFrame.Destroy();
 		}
 	
 		InitializeData();
@@ -202,6 +212,8 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 		//AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 3), 165, true);
 		//AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 4), 165, true);
 		//AddButtonOnScreen("UpgradeButton_Placeholder", "graphics/ZForms/UpgradeButtonPlaceholder.png", 150 + (24 * 5), 165, true);
+		
+		AddButtonOnScreen("SettingsButton", "graphics/ZForms/SettingsButton.png", 7, 9, false, "", null, 22, 18);
 	
 		// Stats for Information
 	

@@ -1,4 +1,4 @@
-user String radiusDebug = "None";
+server String radiusDebug = "None";
 
 user bool hxa_friendlyfire = false;
 user bool hxa_seek = false;

@@ -74,19 +74,13 @@ class HA_CoreAI : Actor
 		return cap;
 	}
 
-	override void PostBeginPlay()
+	void ResetAllyIndicator()
 	{
-		if (!MyPlayer)
-		{
-			Console.Printf("\c[red]Hexen Allies:\c[yellow] Summoning via console isn't supported!");
-			Destroy();
-			return;
-		}
-
-		Following = true;
-
 		if (Multiplayer)
 		{
+			if (MultiIndicator)
+				MultiIndicator.Destroy();
+			
 			let identifier = HA_AllyIdentifier(spawn("HA_AllyIdentifier", pos));
 			if (identifier)
 			{
@@ -107,6 +101,20 @@ class HA_CoreAI : Actor
 				}
 			}
 		}
+	}
+
+	override void PostBeginPlay()
+	{
+		if (!MyPlayer)
+		{
+			Console.Printf("\c[red]Hexen Allies:\c[yellow] Summoning via console isn't supported!");
+			Destroy();
+			return;
+		}
+
+		Following = true;
+
+		ResetAllyIndicator();
 		
 		// This is very important so they'll always start with a weapon
 		SetCapability(GetCapability());
@@ -308,10 +316,13 @@ class HA_CoreAI : Actor
 	virtual void A_FollowerChase()
 	{
 		// Dead monsters or players are invalid
-		if ((target && target.bKILLED) || (target && target is "PlayerPawn"))
+		if (target)
 		{
-			target = null;
-			TimeProbablyGotStuck = 0;
+			if (target.bKILLED || target is "PlayerPawn")
+			{
+				target = null;
+				TimeProbablyGotStuck = 0;
+			}
 		}
 		
 		// Follow our player, or guard spot
@@ -378,7 +389,10 @@ class HA_CoreAI : Actor
 
 				// Target is too far away
 				if (Distance3D(target) > 750)
-					target = null; return;
+				{
+					target = null; 
+					return;
+				}
 			}
 			
 		}
@@ -609,6 +623,7 @@ class HA_CoreAI : Actor
 				return Super.DamageMobj(inflictor,source,0,mod,flags,angle);
 			}
 
+			// Taking damage from the map!
 			if (!source.bIsMonster)
 			{
 				LastDamageType = mod;
