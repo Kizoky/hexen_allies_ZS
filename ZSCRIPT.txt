@@ -11,6 +11,8 @@ version "4.3"
 #include "zscript/HA.UIGetters.txt"
 #include "zscript/HA.AllyGetters.txt"
 
+#include "zscript/Allies/Heretic/HA.Corvus.txt"
+
 #include "zscript/Allies/Hexen/HA.Fighter.txt"
 #include "zscript/Allies/Hexen/HA.Cleric.txt"
 #include "zscript/Allies/Hexen/HA.Mage.txt"

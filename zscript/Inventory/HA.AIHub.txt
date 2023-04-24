@@ -29,10 +29,6 @@ class HA_AIHub : Inventory
 	// Can Allies use higher tier weapons according to Weapon slot? (Default is 1)
 	int UnlockWeaponry;
 	
-	// Compatibility with other mods
-	// Wrath of Cronos
-	bool WoCMod;
-	
 	string MultiplayerActiveColor;
 	
 	// Debug
@@ -50,6 +46,8 @@ class HA_AIHub : Inventory
 	
 	int PlayerIndex;
 	
+	bool bHeretic;
+	
 	void SetForceRefresh(bool set)
 	{
 		ForceRefresh = set;
@@ -66,6 +64,9 @@ class HA_AIHub : Inventory
 		UnlockWeaponry = 1;
 		
 		Super.PostBeginPlay();
+		
+		HexenAlliesCoreHandler EventHandler = HexenAlliesCoreHandler(StaticEventHandler.Find("HexenAlliesCoreHandler"));
+		bHeretic = EventHandler.isHeretic();
 	}
 	
 	// Gets the new color from cvar, then also resets the logo above all allies
@@ -90,6 +91,7 @@ class HA_AIHub : Inventory
 		if (MyPlayer)
 		{
 			// Check every 2 seconds the Player's weapon to unlock the arsenal of all Allies
+			// todo: dismantle this in favor of weapon upgrades
 			if (level.time % (35 * 2) == 0)
 			{
 				let wepP = MyPlayer.player.ReadyWeapon;
@@ -150,6 +152,10 @@ class HA_AIHub : Inventory
 							case 1: number = "First"; break;
 							case 2: number = "Second"; break;
 							case 3: number = "Third"; break;
+							case 4: number = "Fourth"; break;
+							case 5: number = "Fifth"; break;
+							case 6: number = "Sixth"; break;
+							case 7: number = "Seventh"; break;
 						}
 	
 						if (param1 != 4)
@@ -163,16 +169,23 @@ class HA_AIHub : Inventory
 					{
 						// For some reason... the player skipped a weapon slot, we don't know why, and we'll never know why
 	
-						// Slot 3, but the difference is 2 (Player equipped Slot 1 -> Slot 3)
-						if (param1 == 3 && param2 == 2)
+						if (!bHeretic)
 						{
-							Display = string.Format("\c*Your allies are now able to use their Second and Third weapons!");
+							// Slot 3, but the difference is 2 (Player equipped Slot 1 -> Slot 3)
+							if (param1 == 3 && param2 == 2)
+							{
+								Display = string.Format("\c*Your allies are now able to use their Second and Third weapons!");
+							}
+							
+							// We don't care, it's Slot 4
+							if (param1 == 4)
+							{
+								Display = string.Format("\c*Your allies are now able to use all weapons!");
+							}
 						}
-	
-						// We don't care, it's Slot 4
-						if (param1 == 4)
+						else
 						{
-							Display = string.Format("\c*Your allies are now able to use all weapons!");
+							Display = string.Format("\c*Your allies are now able to use weapon slots up to %d!", param1);
 						}
 	
 						Console.MidPrint(NULL, Display);
@@ -297,6 +310,8 @@ class HA_AIHub : Inventory
 			if (AIinfo[i].Type ~== "Fighter") AllySpawn = "HA_Fighter";
 			if (AIinfo[i].Type ~== "Cleric") AllySpawn = "HA_Cleric";
 			if (AIinfo[i].Type ~== "Mage") AllySpawn = "HA_Mage";
+			
+			if (AIinfo[i].Type ~== "Corvus") AllySpawn = "HA_Corvus";
 	
 			if (!AllySpawn)
 			{
@@ -323,20 +338,23 @@ class HA_AIHub : Inventory
 				// Set the name properly for the Ally
 				HAlly.SetTag(HAlly.AllyName());
 	
-				if (WoCMod)
+				if (!bHeretic)
 				{
-					// No experience for now, will have to save that too into an array
-					HAlly.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
-					HAlly.WoC = true;
-					
-					string WoCItem1 = "CurrentMaxHealth";
-					string WoCItem2 = "Level";
-					class<Inventory> CurrentMaxHealth = WoCItem1;
-					class<Inventory> Level = WoCItem2;
-					
-					// Fix bug with the HUD
-					HAlly.A_SetInventory(CurrentMaxHealth, 100);
-					HAlly.A_SetInventory(Level, 1);
+					HexenAlliesCoreHandler EventHandler = HexenAlliesCoreHandler(StaticEventHandler.Find("HexenAlliesCoreHandler"));
+					if (EventHandler.WrathOfCronos())
+					{
+						// No experience for now, will have to save that too into an array
+						HAlly.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
+						
+						string WoCItem1 = "CurrentMaxHealth";
+						string WoCItem2 = "Level";
+						class<Inventory> CurrentMaxHealth = WoCItem1;
+						class<Inventory> Level = WoCItem2;
+						
+						// Fix bug with the HUD
+						HAlly.A_SetInventory(CurrentMaxHealth, 100);
+						HAlly.A_SetInventory(Level, 1);
+					}
 				}
 	
 				// Actor pointers will become garbage/null after a level change, so we kinda "reset" them

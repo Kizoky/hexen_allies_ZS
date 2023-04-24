@@ -3,6 +3,20 @@
 // After a couple of seconds it will start seeking for Players to be picked up
 class HA_Soul : Ammo
 {
+	bool bHeretic;
+	
+	int AttractTime;
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		HexenAlliesCoreHandler EventHandler = HexenAlliesCoreHandler(StaticEventHandler.Find("HexenAlliesCoreHandler"));
+		
+		// We can't jump in Heretic, so don't make Players wait there
+		AttractTime = EventHandler.isHeretic() ? 1 : 7;
+		Speed = EventHandler.isHeretic() ? 6 : 1;
+		TracerAng = EventHandler.isHeretic() ? 10 : 0;
+	}
+	
 	void SoulToAmount(bool FirstPickup = false)
 	{
 		int Souls = owner.CountInv("HA_Soul");
@@ -41,7 +55,7 @@ class HA_Soul : Ammo
 			tracer = target;
 			A_Tracer2(TracerAng);
 			
-			Vel.Z = (target.pos.Z + target.Height/2 - pos.Z) / DistanceBySpeed(target, 2);
+			Vel.Z = (target.pos.Z /*+ target.Height/2*/ - pos.Z*2) / DistanceBySpeed(target, 2);
 		}
 	}
 
@@ -54,7 +68,7 @@ class HA_Soul : Ammo
 			return;
 
 		// Start seeking after 10 seconds
-		if (GetAge() > (35 * 10))
+		if (GetAge() > (35 * AttractTime))
 		{
 			if (!target)
 			{
@@ -97,6 +111,10 @@ class HA_Soul : Ammo
 				{
 					// Make the Player "wiggle" a little bit if they are standing still
 					target.vel.xy = (0.01, 0.01);
+					
+					// Player is probably cheating so remove ourselves
+					if (target.CountInv("HA_Soul") >= 999)
+						Destroy();
 				}
 			}
 		}

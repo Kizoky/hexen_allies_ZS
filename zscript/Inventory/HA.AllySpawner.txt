@@ -101,169 +101,13 @@ class HA_AllySpawner : CustomInventory
 
 			if (HubInv)
 				HubInv.TotalSpent += CostToSpawn;
-
-			string PlayerClass = MyPlayer.GetClassName();
-
-			//------------ WoC support
-
-			// Check for an item that is 100% always in the mod, and not in any other mod
-			bool isWoCLoaded = false;
-			string WoCItem = "WoC_Stat";
-			class<Actor> woc = WoCItem;
-			if (woc)
-			{
-				Console.Printf("\c[red]Hexen Allies: \c[yellow]Wrath of Cronos \c[red]detected!");
-				isWoCLoaded = true;
 				
-				// Make the Hub inventory item aware of WoC
-				if (HubInv)
-				{
-					HubInv.WoCMod = true;
-				}
-			}
-
-			//------------------------------ WoC support
-			if (isWoCLoaded)
-			{
-				if (PlayerClass ~== "NewFighterPlayer")
-					PlayerClass = "FighterPlayer";
-				if (PlayerClass ~== "NewClericPlayer")
-					PlayerClass = "ClericPlayer";
-				if (PlayerClass ~== "NewMagePlayer")
-					PlayerClass = "MagePlayer";
-				// todo: #1 WoC: Add Ally version of Hunter, Necromancer, and Assassin
-				if (PlayerClass ~== "NewHunterPlayer" ||
-					PlayerClass ~== "NewNecromancerPlayer" ||
-					PlayerClass ~== "NewAssassinPlayer")
-					{
-						Console.Printf("\c[red]Hexen Allies: \c[yellow]The Playerclass you play as doesn't have an Ally version!");
-						int randomclass = random[woc](0, HexenListName.Size()-1);
-						PlayerClass = HexenListName[randomclass];
-					}
-			}
-			//------------------------------
-
-			int TotalAlliesSpawned = 0;
-			int Chosen = 0;
-
-			if (HubInv)
-			{
-				TotalAlliesSpawned = HubInv.TotalNum;
-			}
-
-			if (TotalAlliesSpawned <= 2)
-			{
-				int ActiveClass = 0;
-				Array<int> AvailableClass;
-				for (int i = 0; i < HexenListName.Size(); i++)
-				{
-					if (PlayerClass ~== HexenListName[i])
-					{
-						ActiveClass = i;
-					}
-
-					if (!(PlayerClass ~== HexenListName[i]))
-					{
-						AvailableClass.Push(i);
-					}
-				}
-
-				// Randomize the Ally's class on spawn
-				int chsn = random[choose](0, AvailableClass.Size()-1);
-				Chosen = AvailableClass[chsn];
-
-				// The idea here is that until the Player has 2 allies do not spawn an Ally class identical to the Player's
-				if (HubInv && TotalAlliesSpawned > 0)
-				{
-					Chosen = HubInv.NonDuplicateClass(ActiveClass);
-				}
-
-				// We can just assume the Third Ally's class will always be the same like the Player's
-				if (TotalAlliesSpawned == 2)
-				{
-					Chosen = ActiveClass;
-				}
-				
-				// Todo: Force spawn a class if desired
-				//Chosen = 2;
-			}
-			else
-			{
-				// todo: Should we leave this as totally random, or introduce a ruling?
-				Chosen = HubInv.LeastOwnedClass(); //random[tas](0, HexenSpawnList.Size()-1);
-				
-				// Todo: Force spawn a class if desired
-				//Chosen = 2;
-			}
-
-			int UnlockableWeapons = 1;
-			if (HubInv)
-			{
-				UnlockableWeapons = HubInv.UnlockWeaponry;
-			}
-
-			HA_CoreAI SpawnedAI = HA_CoreAI(spawn(HexenSpawnList[Chosen], MyPlayer.pos, ALLOW_REPLACE));
-			if (SpawnedAI)
-			{
-				SpawnedAI.MyPlayer = MyPlayer;
-				SpawnedAI.TeleportToPlayer(false);
-
-				SpawnedAI.HexenType = HexenAllyList[Chosen];
-				SpawnedAI.WeaponCapability = UnlockableWeapons;
-				SpawnedAI.SetStateLabel("See");
-				// Say hooray for Color randomization!
-				int rndColor = random[clr](0, HexenColors.Size()-1);
-				string AIcolor = "n/a";
-				if (SpawnedAI.HexenType ~== "Cleric" || 
-					SpawnedAI.HexenType ~== "Mage")
-				{
-					AIcolor = String.Format("CM%s", HexenColors[rndColor]);
-					// Cleric and Mage is blue by default, so we don't need to set it
-					if (rndColor != HA_BLUE)
-						SpawnedAI.A_SetTranslation(AIcolor);
-					else AIcolor = "default";
-				}
-				else if (SpawnedAI.HexenType ~== "Fighter")
-				{
-					AIcolor = String.Format("F%s", HexenColors[rndColor]);
-					// Fighter is Silver by default
-					if (rndColor != HA_SILVER)
-						SpawnedAI.A_SetTranslation(AIcolor);
-					else AIcolor = "default";
-				}
-
-				// Needed for chat coloring
-				SpawnedAI.ChatColor = HexenColors[rndColor];
-
-				// Execute function from Player's inventory
-				if (HubInv)
-				{
-					// Store Ally information
-					HubInv.AddAlly(SpawnedAI, SpawnedAI.HexenType, AIcolor, SpawnedAI.ChatColor, 100, SpawnedAI.ActiveWeapon);
-				}
-
-				SpawnedAI.AllySay("Ready for action!");
-				SpawnedAI.Following = true;
-
-				SpawnedAI.SetTag(SpawnedAI.AllyName());
-
-				// Settings for AI after WoC is detected
-				if (isWoCLoaded)
-				{
-					// No experience for now, will have to save that too into an array
-					SpawnedAI.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
-					SpawnedAI.WoC = true;
-					
-					string WoCItem1 = "CurrentMaxHealth";
-					string WoCItem2 = "Level";
-					class<Inventory> CurrentMaxHealth = WoCItem1;
-					class<Inventory> Level = WoCItem2;
-					
-					// Force set this for now
-					SpawnedAI.A_SetInventory(CurrentMaxHealth, 100);
-					SpawnedAI.A_SetInventory(Level, 1);
-				}
-			}
+			HexenAlliesCoreHandler EventHandler = HexenAlliesCoreHandler(StaticEventHandler.Find("HexenAlliesCoreHandler"));
+			
+			if (EventHandler.isHexen())
+				SpawnHexen();
+			else if (EventHandler.isHeretic())
+				SpawnHeretic();
 		}
 	}
 
@@ -293,5 +137,209 @@ class HA_AllySpawner : CustomInventory
 	Use:
 		TNT1 A 0 { invoker.SpawnAlly(); }
 		Fail;
+	}
+}
+
+extend class HA_AllySpawner
+{
+	void SpawnHexen()
+	{
+		actor MyPlayer = owner;
+		let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
+		
+		string PlayerClass = MyPlayer.GetClassName();
+
+		int TotalAlliesSpawned = 0;
+		int Chosen = 0;
+
+		if (HubInv)
+		{
+			TotalAlliesSpawned = HubInv.TotalNum;
+		}
+		
+		//------------ Mod support
+		
+		HexenAlliesCoreHandler EventHandler = HexenAlliesCoreHandler(StaticEventHandler.Find("HexenAlliesCoreHandler"));
+
+		//------------------------------ WoC support
+		if (EventHandler.WrathOfCronos())
+		{
+			if (PlayerClass ~== "NewFighterPlayer")
+				PlayerClass = "FighterPlayer";
+			if (PlayerClass ~== "NewClericPlayer")
+				PlayerClass = "ClericPlayer";
+			if (PlayerClass ~== "NewMagePlayer")
+				PlayerClass = "MagePlayer";
+			// todo: #1 WoC: Add Ally version of Hunter, Necromancer, and Assassin
+			if (PlayerClass ~== "NewHunterPlayer" ||
+				PlayerClass ~== "NewNecromancerPlayer" ||
+				PlayerClass ~== "NewAssassinPlayer")
+				{
+					Console.Printf("\c[red]Hexen Allies: \c[yellow]The Playerclass you play as doesn't have an Ally version!");
+					int randomclass = random[woc](0, HexenListName.Size()-1);
+					PlayerClass = HexenListName[randomclass];
+				}
+		}
+		//------------------------------
+
+		if (TotalAlliesSpawned <= 2)
+		{
+			int ActiveClass = 0;
+			Array<int> AvailableClass;
+			for (int i = 0; i < HexenListName.Size(); i++)
+			{
+				if (PlayerClass ~== HexenListName[i])
+				{
+					ActiveClass = i;
+				}
+
+				if (!(PlayerClass ~== HexenListName[i]))
+				{
+					AvailableClass.Push(i);
+				}
+			}
+
+			// Randomize the Ally's class on spawn
+			int chsn = random[choose](0, AvailableClass.Size()-1);
+			Chosen = AvailableClass[chsn];
+
+			// The idea here is that until the Player has 2 allies do not spawn an Ally class identical to the Player's
+			if (HubInv && TotalAlliesSpawned > 0)
+			{
+				Chosen = HubInv.NonDuplicateClass(ActiveClass);
+			}
+
+			// We can just assume the Third Ally's class will always be the same like the Player's
+			if (TotalAlliesSpawned == 2)
+			{
+				Chosen = ActiveClass;
+			}
+			
+			// Todo: Force spawn a class if desired
+			//Chosen = 2;
+		}
+		else
+		{
+			// todo: Should we leave this as totally random, or introduce a ruling?
+			Chosen = HubInv.LeastOwnedClass(); //random[tas](0, HexenSpawnList.Size()-1);
+			
+			// Todo: Force spawn a class if desired
+			//Chosen = 2;
+		}
+
+		int UnlockableWeapons = 1;
+		if (HubInv)
+		{
+			UnlockableWeapons = HubInv.UnlockWeaponry;
+		}
+
+		HA_CoreAI SpawnedAI = HA_CoreAI(spawn(HexenSpawnList[Chosen], MyPlayer.pos, ALLOW_REPLACE));
+		if (SpawnedAI)
+		{
+			SpawnedAI.MyPlayer = MyPlayer;
+			SpawnedAI.TeleportToPlayer(false);
+
+			SpawnedAI.HexenType = HexenAllyList[Chosen];
+			SpawnedAI.WeaponCapability = UnlockableWeapons;
+			SpawnedAI.SetStateLabel("See");
+			// Say hooray for Color randomization!
+			int rndColor = random[clr](0, HexenColors.Size()-1);
+			string AIcolor = "n/a";
+			if (SpawnedAI.HexenType ~== "Cleric" || 
+				SpawnedAI.HexenType ~== "Mage")
+			{
+				AIcolor = String.Format("CM%s", HexenColors[rndColor]);
+				// Cleric and Mage is blue by default, so we don't need to set it
+				if (rndColor != HA_BLUE)
+					SpawnedAI.A_SetTranslation(AIcolor);
+				else AIcolor = "default";
+			}
+			else if (SpawnedAI.HexenType ~== "Fighter")
+			{
+				AIcolor = String.Format("F%s", HexenColors[rndColor]);
+				// Fighter is Silver by default
+				if (rndColor != HA_SILVER)
+					SpawnedAI.A_SetTranslation(AIcolor);
+				else AIcolor = "default";
+			}
+
+			// Needed for chat coloring
+			SpawnedAI.ChatColor = HexenColors[rndColor];
+
+			// Execute function from Player's inventory
+			if (HubInv)
+			{
+				// Store Ally information
+				HubInv.AddAlly(SpawnedAI, SpawnedAI.HexenType, AIcolor, SpawnedAI.ChatColor, 100, SpawnedAI.ActiveWeapon);
+			}
+
+			SpawnedAI.AllySay("Ready for action!");
+			SpawnedAI.Following = true;
+
+			SpawnedAI.SetTag(SpawnedAI.AllyName());
+
+			// Settings for AI after WoC is detected
+			if (EventHandler.WrathOfCronos())
+			{
+				// No experience for now, will have to save that too into an array
+				SpawnedAI.ACS_NamedExecuteAlways("WOC Monster Init", 0, 256, 0);
+				
+				string WoCItem1 = "CurrentMaxHealth";
+				string WoCItem2 = "Level";
+				class<Inventory> CurrentMaxHealth = WoCItem1;
+				class<Inventory> Level = WoCItem2;
+				
+				// Force set this for now
+				SpawnedAI.A_SetInventory(CurrentMaxHealth, 100);
+				SpawnedAI.A_SetInventory(Level, 1);
+			}
+		}
+	}
+	
+	// Fortunately we don't have to do bizarre class calculation here.
+	void SpawnHeretic()
+	{
+		actor MyPlayer = owner;
+		let HubInv = HA_AIHub(MyPlayer.FindInventory("HA_AIHub"));
+		
+		int UnlockableWeapons = 1;
+		if (HubInv)
+		{
+			UnlockableWeapons = HubInv.UnlockWeaponry;
+		}
+		
+		HA_CoreAI SpawnedAI = HA_CoreAI(spawn("HA_Corvus", MyPlayer.pos, ALLOW_REPLACE));
+		if (SpawnedAI)
+		{
+			SpawnedAI.MyPlayer = MyPlayer;
+			SpawnedAI.TeleportToPlayer(false);
+
+			SpawnedAI.HexenType = "Corvus";
+			SpawnedAI.WeaponCapability = UnlockableWeapons;
+			SpawnedAI.SetStateLabel("See");
+			
+			// Say hooray for Color randomization!
+			int rndColor = random[clr](0, HexenColors.Size()-1);
+			string AIcolor = String.Format("HC%s", HexenColors[rndColor]);
+			if (rndColor != HA_GREEN)
+				SpawnedAI.A_SetTranslation(AIcolor);
+			else 
+				AIcolor = "default";
+
+			// Needed for chat coloring
+			SpawnedAI.ChatColor = HexenColors[rndColor];
+
+			// Execute function from Player's inventory
+			if (HubInv)
+			{
+				// Store Ally information
+				HubInv.AddAlly(SpawnedAI, SpawnedAI.HexenType, AIcolor, SpawnedAI.ChatColor, 100, SpawnedAI.ActiveWeapon);
+			}
+
+			SpawnedAI.AllySay("Ready for action!");
+			SpawnedAI.Following = true;
+
+			SpawnedAI.SetTag(SpawnedAI.AllyName());
+		}
 	}
 }

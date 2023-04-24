@@ -59,6 +59,11 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 		handler = new ("HXA_AllyMenuHandler");
 		handler.link = self;
 	
+		string PanelBG = "graphics/ZForms/Panel.png";
+		HexenAlliesCoreHandler EventHandler = HexenAlliesCoreHandler(StaticEventHandler.Find("HexenAlliesCoreHandler"));
+		if (EventHandler.isHereticUI())
+			PanelBG = "graphics/ZForms/HereticPanel.png";
+	
 		background = HXA_ZF_Image.Create
 		(
 			// Position.
@@ -66,7 +71,7 @@ class HXA_AllyMenu : HXA_ZF_GenericMenu
 			// Size.
 			(320, 200),
 			// Image path/name.
-			"graphics/ZForms/Panel.png",
+			PanelBG,
 			// Alignment options.
 			HXA_ZF_Image.AlignType_TopLeft
 		);

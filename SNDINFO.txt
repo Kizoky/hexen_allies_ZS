@@ -2,3 +2,6 @@ $random hxawhisper { hxa/soulwhisper hxa/soulwhisperreverse }
 
 hxa/soulwhisper				sounds/SoulWhisp.ogg
 hxa/soulwhisperreverse		sounds/SoulWhispReverse.ogg
+
+hxa_corvus/pain				plrpai
+hxa_corvus/death			plrdth

@@ -23,11 +23,81 @@ class HA_Uni : Inventory
 	}
 }
 
-class HexenAlliesCoreHandler : EventHandler 
+class HexenAlliesCoreHandler : StaticEventHandler 
 {
 	Array<Actor> Allies;
 	Array<Actor> Bosses;
 	bool BossSpawn;
+	
+	IWADInfo GameIWAD;
+	MODInfo GameMOD;
+	
+	struct MODInfo
+	{
+		// Add mods here...
+		bool isWoC;
+	}
+	
+	struct IWADInfo
+	{
+		bool isHeretic;
+		bool isHexen;
+	}
+	
+	override void OnRegister()
+	{
+		Console.Printf("\c[red]Hexen Allies: \c[yellow]Detecting IWAD and mods...");
+		Console.Printf("\c[yellow]------------------------------------------------------------------");
+		
+		/*
+		if ( gameinfo.gametype == GAME_Doom )
+        {
+            bool d2Sprite = int(Texman.CheckForTexture("FATTA1", TexMan.Type_Sprite)) != -1;
+            bool tntPatch = int(Texman.CheckForTexture("TYWHEEL1", TexMan.Type_WallPatch)) != -1;
+            bool plutPatch = int(Texman.CheckForTexture("A-CAMO3", TexMan.Type_Wall)) != -1;
+            if ( !d2Sprite )
+				Console.Printf("\c[red]Hexen Allies: \c[yellow]DOOM IWAD \c[red]detected!");
+            else if ( tntPatch && plutPatch )
+                Console.Printf("\c[red]Hexen Allies: \c[yellow]WADSMOOSH \c[red]detected!");
+            else if ( tntPatch )
+                Console.Printf("\c[red]Hexen Allies: \c[yellow]TNT Evilution IWAD \c[red]detected!");
+            else if ( plutPatch )
+                Console.Printf("\c[red]Hexen Allies: \c[yellow]Plutonia Experiment IWAD \c[red]detected!");
+            else
+                Console.Printf("\c[red]Hexen Allies: \c[yellow]DOOM II IWAD \c[red]detected!");
+        }
+		*/
+		
+		if ( gameinfo.gametype == GAME_Hexen )
+		{
+			Console.Printf("\c[red]Hexen Allies: \c[yellow]Hexen IWAD \c[red]detected!");
+			GameIWAD.isHexen = true;
+		}
+		else if ( gameinfo.gametype == GAME_Heretic )
+		{
+			Console.Printf("\c[red]Hexen Allies: \c[yellow]Heretic IWAD \c[red]detected!");
+			GameIWAD.isHeretic = true;
+		}
+		else
+		{
+			Console.Printf("\c[yellow]unsupported IWAD \c[red]detected!");
+		}
+		
+		if (!GameIWAD.isHexen && !GameIWAD.isHeretic)
+		{
+			ThrowAbortException("\n\c[yellow]------------------------------------------------------------------\nOnly \c[red]Hexen\c[yellow] or \c[red]Heretic\c[yellow] are supported!\nIf you believe this is a mistake please contact Kizoky\n------------------------------------------------------------------");
+			return;
+		}
+		
+		// Wrath of Cronos
+		string WoCItem = "WoC_Stat";
+		class<Actor> woc = WoCItem;
+		if (woc)
+		{
+			Console.Printf("\c[red]Hexen Allies: \c[yellow]Wrath of Cronos \c[red]detected!");
+			GameMOD.isWoC = true;
+		}
+	}
 	
 	void BossSay(string msg, actor Boss)
 	{
@@ -364,6 +434,25 @@ class HexenAlliesCoreHandler : EventHandler
 		
 		return IsBoss;
 	}
+	
+	bool IsHereticBoss(actor Whom)
+	{
+		bool IsBoss = false;
+		if (Whom && Whom.bISMONSTER)
+		{
+			// D'Sparil
+			if (Whom is 'Sorcerer1' || Whom is 'Sorcerer2')
+			{
+				IsBoss = true;
+			}
+			else if (Whom is 'Ironlich')
+			{
+				IsBoss = true;
+			}
+		}
+		
+		return IsBoss;
+	}
 
 	override void WorldThingDied(WorldEvent e)
 	{	
@@ -392,7 +481,7 @@ class HexenAlliesCoreHandler : EventHandler
 				}
 			}
 
-			if (e.Thing.bBOSS || IsHexenBoss(e.Thing))
+			if (e.Thing.bBOSS || IsHexenBoss(e.Thing) || IsHereticBoss(e.Thing))
 			{
 				let Blessed = HA_Blessed(e.Thing.FindInventory("HA_Blessed"));
 				if (Blessed)
@@ -471,4 +560,16 @@ class HexenAlliesCoreHandler : EventHandler
 		}
 		
 	}
+}
+
+extend class HexenAlliesCoreHandler
+{
+	bool isHexen() { return GameIWAD.isHexen; }
+	bool isHeretic() { return GameIWAD.isHeretic; }
+	
+	ui bool isHexenUI() { return GameIWAD.isHexen; }
+	ui bool isHereticUI() { return GameIWAD.isHeretic; }
+	
+	// Mod specific
+	bool WrathOfCronos() { return GameMOD.isWoC; }
 }

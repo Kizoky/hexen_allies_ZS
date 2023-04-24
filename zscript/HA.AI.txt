@@ -11,9 +11,6 @@ class HA_CoreAI : Actor
 	
 	// Ignore targets for a couple of seconds
 	Array<actor> IgnoreTarget;
-	
-	// cross-mod specific variables
-	bool WoC;
 
 	// Hexen Allies variables
 	actor MyPlayer, attacker, GuardSpot;
