@@ -863,7 +863,10 @@ class HA_CoreAI : Actor
 		if (!Following)
 		{
 			Following = true;
-			GuardSpot.Destroy();
+			
+			if (GuardSpot)
+				GuardSpot.Destroy();
+			
 			AllySay("Okay, I'm following you!");
 		}
 	}
@@ -889,7 +892,10 @@ class HA_CoreAI : Actor
 				else if (!Following)
 				{
 					Following = true;
-					GuardSpot.Destroy();
+					
+					if (GuardSpot)
+						GuardSpot.Destroy();
+					
 					AllySay("Okay, I'm following you!");
 				}
 			}
